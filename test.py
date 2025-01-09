@@ -69,21 +69,44 @@ class Client(discord.Client):
 
         # Ping all users with this character ping
         if message.content.startswith('~artping'):
-            
-            character = message.content[9:]
-            try:
-                cur.execute('SELECT Pings FROM "Artpings" WHERE Character = ?', [character])
-                users = cur.fetchone()[0]
-                check = 0
-                output = ''
-                # Add @ in front of all ids
-                for i in range(len(users)):
-                    if users[i] == ',':
-                        output += ' <@' + users[check:i] + '>'
-                        check = i + 1
-                await message.channel.send(f'{character}:' + output)
-            except:
-                await message.channel.send(f'{character} ping does not exist.')
+
+            # Account for multiple characters:
+            char_list = []
+            chars= message.content[9:]
+            temp = ''
+            # Add characters to list
+            for i in range(len(chars)):
+                if chars[i] != ' ' and i == len(chars) - 1:
+                    temp += chars[i]
+                    char_list.append(temp)
+                    temp = ''
+                elif chars[i] != ' ':
+                    temp += chars[i]          
+                else:
+                    char_list.append(temp)
+                    temp = ''
+            output_characters = ', '.join(char_list)
+            output_pings = ''
+            # Iterate through multiple characters
+            for character in char_list:
+                try:
+                    cur.execute('SELECT Pings FROM "Artpings" WHERE Character = ?', [character])
+                    users = cur.fetchone()[0]
+                    check = 0
+                    # Add @ in front of all ids
+                    for i in range(len(users)):
+                        if users[i] == ',':
+                            ping = ' <@' + users[check:i] + '>'
+                            # Make sure we don't double ping
+                            if ping not in output_pings:
+                                output_pings = ' <@' + users[check:i] + '>'
+                            else:
+                                pass
+                            check = i + 1
+                except:
+                    await message.channel.send(f'{character} ping does not exist.')
+
+            await message.channel.send(f'{output_characters}:' + output_pings)
 
 intents = discord.Intents.default()
 intents.message_content = True
