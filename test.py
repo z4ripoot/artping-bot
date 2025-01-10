@@ -108,6 +108,16 @@ class Client(discord.Client):
 
             await message.channel.send(f'{output_characters}:' + output_pings)
 
+        # Checkping function 
+        if message.content.startswith("~checkping"):
+            user = '%' + str(message.author.id) + '%'
+            cur.execute('SELECT Character FROM "Artpings" WHERE Pings like ?', [user])
+            characters = cur.fetchall()
+            out = "{name}\'s pings:".format(name = message.author.global_name) + '\n'
+            for row in characters:
+                out += row[0] + '\n'
+            await message.channel.send(out)
+
 intents = discord.Intents.default()
 intents.message_content = True
 
