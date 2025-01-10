@@ -118,6 +118,16 @@ class Client(discord.Client):
                 out += row[0] + '\n'
             await message.channel.send(out)
 
+        # Help function to detail all the commands
+        if message.content.startswith('~help'):
+            out = 'Commands (content in brackets is what to add when using command):\n' \
+            + '~addcharacter (character name): Add a character to the list of pingable characters \n'\
+            + '~addping (character name): Call to add yourself to the pinglist when this character is pinged \n'\
+            + '~removeping (character name): Remove yourself from the pinglist of this character \n'\
+            + '~artping (character name): Ping users for art of this character \n'\
+            + '~checkping: See which characters you are being pinged for \n'
+            await message.channel.send(out)
+
 intents = discord.Intents.default()
 intents.message_content = True
 
