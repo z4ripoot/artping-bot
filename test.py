@@ -99,7 +99,7 @@ class Client(discord.Client):
                             ping = ' <@' + users[check:i] + '>'
                             # Make sure we don't double ping
                             if ping not in output_pings:
-                                output_pings = ' <@' + users[check:i] + '>'
+                                output_pings += ' <@' + users[check:i] + '>'
                             else:
                                 pass
                             check = i + 1
