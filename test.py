@@ -14,7 +14,7 @@ class Client(discord.Client):
 
         # Add character to table of pings
         if message.content.startswith('~addcharacter'):
-            character = message.content[14:]
+            character = message.content[14:].title()
             
             try:
                 cur.execute('INSERT INTO "Artpings" ("character", "pings") VALUES(?,?)', [character, ''])
@@ -28,7 +28,7 @@ class Client(discord.Client):
 
         # Add user to character ping string
         if message.content.startswith('~addping'):
-            character = message.content[9:]
+            character = message.content[9:].title()
             try:
                 cur.execute('SELECT Pings FROM "Artpings" WHERE Character = ?', [character])
                 temp = cur.fetchone()[0]
@@ -48,7 +48,7 @@ class Client(discord.Client):
 
         # Remove this ping for this user
         if message.content.startswith('~removeping'):
-            character = message.content[12:]
+            character = message.content[12:].title()
             try:
                 cur.execute('SELECT Pings FROM "Artpings" WHERE Character = ?', [character])
                 temp = cur.fetchone()[0]
@@ -78,12 +78,12 @@ class Client(discord.Client):
             for i in range(len(chars)):
                 if chars[i] != ' ' and i == len(chars) - 1:
                     temp += chars[i]
-                    char_list.append(temp)
+                    char_list.append(temp.title())
                     temp = ''
                 elif chars[i] != ' ':
                     temp += chars[i]          
                 else:
-                    char_list.append(temp)
+                    char_list.append(temp.title())
                     temp = ''
             output_characters = ', '.join(char_list)
             output_pings = ''
