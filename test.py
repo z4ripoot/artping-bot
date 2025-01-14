@@ -1,5 +1,7 @@
 import discord
 import sqlite3
+import datetime
+from discord.ext import tasks
 
 con = sqlite3.connect("test.db")
 cur = con.cursor()
@@ -7,6 +9,10 @@ cur = con.cursor()
 class Client(discord.Client):
     async def on_ready(self):
         print(f'Welcome {self.user}!')
+        if not arena_ping_1_hour.is_running():
+            arena_ping_1_hour.start()
+        if not arena_ping_5_hour.is_running():
+            arena_ping_5_hour.start()
 
     async def on_message(self, message):
         if message.author == self.user:
@@ -105,7 +111,7 @@ class Client(discord.Client):
                             check = i + 1
                 except:
                     await message.channel.send(f'{character} ping does not exist.')
-
+            print(output_pings)
             await message.channel.send(f'{output_characters}:' + output_pings)
 
         # Checkping function 
@@ -131,5 +137,28 @@ class Client(discord.Client):
 intents = discord.Intents.default()
 intents.message_content = True
 
+# Time in UTC
+# 1 hour ping
+@tasks.loop(time = datetime.time(hour = 22, minute = 0)) 
+async def arena_ping_1_hour():
+    weekday = datetime.datetime.now().weekday()
+    print(weekday)
+    if weekday == 0:
+        channel = client.get_channel()
+        await channel.send("Colosseum/Aether Raids closes in 1 hour.")
+    else:
+        pass
+
+# 5 hour ping
+@tasks.loop(time = datetime.time(hour = 18, minute = 0)) 
+async def arena_ping_5_hour():
+    weekday = datetime.datetime.now().weekday()
+    print(weekday)
+    if weekday == 0:
+        channel = client.get_channel()
+        await channel.send("Colosseum/Aether Raids closes in 1 hour.")
+    else:
+        pass
+     
 client = Client(intents=intents)
 client.run('')
