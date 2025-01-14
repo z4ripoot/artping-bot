@@ -156,7 +156,7 @@ async def arena_ping_5_hour():
     print(weekday)
     if weekday == 0:
         channel = client.get_channel()
-        await channel.send("Colosseum/Aether Raids closes in 1 hour.")
+        await channel.send("Colosseum/Aether Raids closes in 5 hour.")
     else:
         pass
      
