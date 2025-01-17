@@ -66,7 +66,7 @@ class CharacterRepository():
             return result
         except sqlite3.OperationalError as e:
             logging.error("Failed to get character %s. %s", character, e)
-            return False
+            return None
         except:
             logging.info("Failed to get character %s", character)
             return None
