@@ -1,6 +1,10 @@
-import logging
-import discord
+import configparser
 import client.art_ping_client
+import discord
+import logging
+
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 logging.basicConfig(
     level = logging.INFO,
@@ -13,5 +17,5 @@ INTENTS.message_content = True
 
 CLIENT = client.art_ping_client.ArtPingClient(intents=INTENTS)
 logging.info("Bot is running")
-CLIENT.run('')
+CLIENT.run(config.get('discord', 'token'))
 

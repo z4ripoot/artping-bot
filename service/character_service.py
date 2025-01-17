@@ -8,7 +8,7 @@ from util.character_util import getFirstCharacter
 class CharacterService():
     def addCharacterPing(message: discord.Message):
         character = getFirstCharacter(message.content)
-                
+        
         if CharacterService.hasExistingCharacter(character):
             logging.info("Character %s already exists", character)
             return f"Failed to add character {character}. Character {character} already exists"
@@ -46,7 +46,7 @@ class CharacterService():
             logging.info("Character %s doesn't exist", character)
             return f"Character {character} doesn't exist"
         
-        logging.info("Adding character %s", character)
+        logging.info("Checking for character %s", character)
         
         entry = CharacterRepository.getCharacter(character)
         
@@ -57,5 +57,4 @@ class CharacterService():
         
     def hasExistingCharacter(character):
         logging.info("Checking for existing characters for character %s", character)
-        existingEntry = CharacterRepository.getCharacter(character)
-        return existingEntry is None or len(existingEntry) > 0
+        return CharacterRepository.getCharacter(character)

@@ -1,7 +1,9 @@
 import logging
 import sqlite3
 
-CONN = sqlite3.connect("test.db")
+from util.repository_util import getDatabaseConnection
+
+CONN = getDatabaseConnection()
 CURSOR = CONN.cursor()
 
 class CharacterRepository():
@@ -32,7 +34,7 @@ class CharacterRepository():
             CURSOR.execute("""
             DELETE FROM CHARACTERS AS C
             WHERE LOWER(C.NAME) = ?
-            """, (str(character).lower,))
+            """, (str(character).lower(),))
             CONN.commit()
             
             logging.info("Removed character %s", character)
@@ -53,7 +55,7 @@ class CharacterRepository():
             SELECT C.NAME 
             FROM CHARACTERS C
             WHERE LOWER(C.NAME) IS ?
-            """, (str(character).lower,))
+            """, (str(character).lower(),))
             result = CURSOR.fetchone()[0]
             
             if result is None:
