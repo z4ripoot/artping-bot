@@ -7,6 +7,81 @@ CONN = getDatabaseConnection()
 CURSOR = CONN.cursor()
 
 class CharacterRepository():
+    def getCharacterRow(character):
+        try:
+            logging.info("Getting character %s", character)
+            
+            CURSOR.execute(f"""
+            SELECT C.CHARACTER_ID, C.NAME
+            FROM CHARACTERS C
+            WHERE LOWER(C.NAME) = ?
+            """, (str(character).lower(),))
+            result = CURSOR.fetchone()
+            
+            if result is None:
+                raise Exception
+            
+            logging.info("Got character %s", character)
+            
+            return result
+        except sqlite3.OperationalError as e:
+            logging.error("Failed to get character %s. %s", character, e)
+            return None
+        except:
+            logging.info("Failed to get character %s", character)
+            return None
+        
+    def getCharacterRows(characters):
+        try:
+            logging.info("Getting characters %s", characters)
+            
+            sql = """
+            SELECT *
+            FROM CHARACTERS C
+            WHERE LOWER(C.NAME) IN ({})
+            """.format(','.join("?" * len(characters)))
+            
+            parameters = (list(map(str.lower, characters)))
+            CURSOR.execute(sql, (parameters))
+            result = CURSOR.fetchall()
+            
+            if result is None:
+                raise Exception
+            
+            logging.info("Got characters %s", characters)
+            
+            return result
+        except sqlite3.OperationalError as e:
+            logging.error("Failed to get characters %s. %s", characters, e)
+            return None
+        except:
+            logging.info("Failed to get characters %s", characters)
+            return None
+        
+    def getCharacter(character):
+        try:
+            logging.info("Getting character %s", character)
+            
+            CURSOR.execute(f"""
+            SELECT C.NAME 
+            FROM CHARACTERS C
+            WHERE LOWER(C.NAME) IS ?
+            """, (str(character).lower(),))
+            result = CURSOR.fetchone()[0]
+            
+            if result is None:
+                raise Exception
+            
+            logging.info("Got character %s", character)
+            
+            return result
+        except sqlite3.OperationalError as e:
+            logging.error("Failed to get character %s. %s", character, e)
+            return None
+        except:
+            logging.info("Failed to get character %s", character)
+            return None
+        
     def addCharacter(character):
         try:
             logging.info("Adding character %s", character)
@@ -46,27 +121,3 @@ class CharacterRepository():
         except:
             logging.error("Failed to remove character %s", character)
             return False
-        
-    def getCharacter(character):
-        try:
-            logging.info("Getting character %s", character)
-            
-            CURSOR.execute(f"""
-            SELECT C.NAME 
-            FROM CHARACTERS C
-            WHERE LOWER(C.NAME) IS ?
-            """, (str(character).lower(),))
-            result = CURSOR.fetchone()[0]
-            
-            if result is None:
-                raise Exception
-            
-            logging.info("Got character %s", character)
-            
-            return result
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to get character %s. %s", character, e)
-            return None
-        except:
-            logging.info("Failed to get character %s", character)
-            return None

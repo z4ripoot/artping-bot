@@ -8,7 +8,7 @@ class CharacterService():
     def addCharacterPing(message: discord.Message):
         character = getFirstCharacter(message.content)
         
-        if CharacterService.hasExistingCharacter(character):
+        if CharacterRepository.getCharacter(character):
             logging.info("Character %s already exists", character)
             return f"Failed to add character {character}. Character {character} already exists"
         
@@ -24,7 +24,7 @@ class CharacterService():
     def removeCharacter(message: discord.Message):
         character = getFirstCharacter(message.content)
         
-        if not CharacterService.hasExistingCharacter(character):
+        if not CharacterRepository.getCharacter(character):
             logging.info("Character %s doesn't exist", character)
             return f"Character {character} doesn't exist"
         
@@ -41,7 +41,7 @@ class CharacterService():
     def checkCharacter(message: discord.Message):
         character = getFirstCharacter(message.content)
         
-        if not CharacterService.hasExistingCharacter(character):
+        if not CharacterRepository.getCharacter(character):
             logging.info("Character %s doesn't exist", character)
             return f"Character {character} doesn't exist"
         
@@ -53,7 +53,3 @@ class CharacterService():
             return f"Character entry found for {entry}"
         else:
             return f"Failed to check character {character}"
-        
-    def hasExistingCharacter(character):
-        logging.info("Checking for existing characters for character %s", character)
-        return CharacterRepository.getCharacter(character)

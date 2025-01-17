@@ -18,3 +18,15 @@ def getCharacters(content):
 
 def getFirstCharacter(content):
     return content.split(" ")[1]
+
+def getCharacterIds(characterRows):
+    characterIds = []
+    for row in characterRows:
+        characterIds.append(row[0])
+    return characterIds
+
+def getCharacterNames(characterRows):
+    characterNames = []
+    for row in characterRows:
+        characterNames.append(row[1])
+    return characterNames
