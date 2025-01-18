@@ -31,7 +31,7 @@ class ArtPingClient(discord.Client):
         content = discordMessage.content.lower()
         if content.startswith(ART_PING):
             # Ping all users for corresponding characters
-            out = ArtPingService.doArtPing(discordMessage)
+            out = await ArtPingService.doArtPing(discordMessage)
             await discordMessage.channel.send(out)
         elif content.startswith(ADD_PING):
             # Add ping from user

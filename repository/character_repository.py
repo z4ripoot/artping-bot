@@ -58,6 +58,39 @@ class CharacterRepository():
             logging.info("Failed to get characters %s", characters)
             return None
         
+    def getMissingCharacterRows(characters):
+        try:
+            logging.info("Getting missing characters %s", characters)
+            
+            sql = """
+            WITH INPUT(NAME) AS (
+                VALUES {}
+            )
+            SELECT I.NAME
+            FROM INPUT I
+            WHERE I.NAME NOT IN (
+                SELECT LOWER(C.NAME)
+                FROM CHARACTERS C
+            )
+            """.format(','.join(("(?)",) * len(characters)))
+            
+            parameters = (list(map(str.lower, characters)))
+            CURSOR.execute(sql, (parameters))
+            result = CURSOR.fetchall()
+            
+            if result is None:
+                raise Exception
+            
+            logging.info("Got missing characters %s", characters)
+            
+            return result
+        except sqlite3.OperationalError as e:
+            logging.error("Failed to get missing characters %s. %s", characters, e)
+            return None
+        except:
+            logging.info("Failed to get missing characters %s", characters)
+            return None
+        
     def getCharacter(character):
         try:
             logging.info("Getting character %s", character)
