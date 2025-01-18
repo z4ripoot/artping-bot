@@ -2,14 +2,22 @@ import logging
 import discord
 from repository.art_ping_repository import ArtPingRepository
 from repository.character_repository import CharacterRepository
-from service.character_service import CharacterService
 from util.character_util import getCharacterIds, getCharacterNames, getCharacters, getFirstCharacter
 
 class ArtPingService():
-    def doArtPing(message : discord.Message):
+    async def doArtPing(message : discord.Message):
         characters = getCharacters(message.content)
         
+        if not characters:
+            return "Character is missing. Please add the character to your ping"
+        
+        missingCharacters = await ArtPingService.getMissingCharacters(message, characters)        
+        characters = list(filter(lambda character: character not in missingCharacters, characters))
+        
         logging.info("Pinging characters %s", characters)
+        
+        if not characters:
+            return "Character is missing. Please add the character to your ping"
         
         characterRows = CharacterRepository.getCharacterRows(characters)
         users = ArtPingRepository.getArtPings(getCharacterIds(characterRows))
@@ -83,3 +91,18 @@ class ArtPingService():
             return f"Ping for {character} has been removed"
         else:
             return f"Failed to remove ping for {character}"
+        
+    async def getMissingCharacters(message: discord.Message, characters):
+        logging.info("Checking for missing characters")
+        
+        missingCharacters = []
+        missingCharacterRows = CharacterRepository.getMissingCharacterRows(characters)
+        
+        if missingCharacterRows:
+            logging.info("Missing characters found")
+            
+            for row in missingCharacterRows:
+                missingCharacters.append(row[0])
+            await message.channel.send(f"No character entry for {', '.join(missingCharacters)}")
+            
+        return missingCharacters
