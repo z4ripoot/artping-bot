@@ -68,11 +68,7 @@ class ArtPingClient(discord.Client):
         elif content.startswith(HELP):
             # Help function to detail all the commands
             await ArtPingClient.showHelp(discordMessage)
-        else:
-            logging.info("Unknown command %s", discordMessage.content)
-            await discordMessage.channel.send("Unknown command. Type \"~help\" to see available commands")
         
-            
     async def showHelp(message : discord.Message):
         out = 'Commands (content in brackets is what to add when using command):\n' \
             + '~addcharacter (character name): Add a character to the list of pingable characters \n'\
