@@ -27,8 +27,8 @@ HELP = "~help"
 
 JST = pytz.timezone("Asia/Tokyo")
 
-ARENA_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=7, minute=0, second=0, tzinfo=JST)
-ARENA_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=2, minute=0, second=0, tzinfo=JST)
+COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=7, minute=0, second=0, tzinfo=JST)
+COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=2, minute=0, second=0, tzinfo=JST)
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -36,7 +36,7 @@ CONFIG.read('config.ini')
 class ArtPingClient(discord.Client):
     async def on_ready(self):
         logging.info("Initiating tasks")
-        self.taskColiseumOneHourBeforeClosing.start()
+        self.taskColiseumBeforeClosingNotification.start()
     
     async def on_message(self, message):
         discordMessage : discord.Message = message
@@ -96,18 +96,17 @@ class ArtPingClient(discord.Client):
             + '~checkping: See which characters you are being pinged for \n'
         await message.channel.send(out)
         
-    @tasks.loop(time=ARENA_ONE_HOUR_BEFORE_CLOSING_TIME)
-    @tasks.loop(time=ARENA_FIVE_HOUR_BEFORE_CLOSING_TIME)
-    async def taskColiseumOneHourBeforeClosing(self):
+    @tasks.loop(time=[COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME, COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME])
+    async def taskColiseumBeforeClosingNotification(self):
         datetimeJst = datetime.now(tz=JST)
         if (datetimeJst.weekday() == 1):
-            channel_name =CONFIG.get('tasks', 'arena_notification_channel_name')
+            channel_name =CONFIG.get('tasks', 'coliseum_notification_channel_name')
             channel = discord.utils.get(self.get_all_channels(), name=channel_name)
             if channel is None:
                 logging.error("Invalid channel. Task will be skipped")
             else:
                 closingTime = datetimeJst.replace(hour=8, minute=0, second=0, microsecond=0).timestamp().__floor__()
-                message = f"Colosseum/Aether Raids closes <t:{closingTime}:R> at <t:{closingTime}:f>"
+                message = f"Coliseum/Aether Raids closes <t:{closingTime}:R> at <t:{closingTime}:f>"
                 
                 logging.info(message)
                 await channel.send(message)
