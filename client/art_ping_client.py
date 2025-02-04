@@ -33,10 +33,19 @@ COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=2, minute=0, second=0, tzinfo
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
+COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name')
+
 class ArtPingClient(discord.Client):
     async def on_ready(self):
         logging.info("Initiating tasks")
-        self.taskColiseumBeforeClosingNotification.start()
+        
+        if COLISEUM_NOTIFICATION_CHANNEL_NAME is None:
+            logging.warning("No channel name is configured for Coliseum notifications. Coliseum notification task will not be initiated")
+        else:
+            logging.info("Initiating Coliseum notification task")
+            self.taskColiseumBeforeClosingNotification.start()
+            
+        logging.info("Tasks are initiated")
     
     async def on_message(self, message):
         discordMessage : discord.Message = message
@@ -89,19 +98,21 @@ class ArtPingClient(discord.Client):
         
     async def showHelp(message : discord.Message):
         out = 'Commands (content in brackets is what to add when using command):\n' \
-            + '~addcharacter (character name): Add a character to the list of pingable characters \n'\
+            + '~artping (character name): Ping users for art of this character \n'\
             + '~addping (character name): Call to add yourself to the ping list when this character is pinged \n'\
             + '~removeping (character name): Remove yourself from the ping list of this character \n'\
-            + '~artping (character name): Ping users for art of this character \n'\
-            + '~checkping: See which characters you are being pinged for \n'
+            + '~checkping: See which characters you are being pinged for \n' \
+            + '~addcharacter (character name): Add a character to the list of pingable characters \n'\
+            + '~removecharacter (character name): remove a character from the list of pingable characters \n'\
+            + '~checkcharacter (character name): See which users are pinged for this character \n'
+                
         await message.channel.send(out)
         
     @tasks.loop(time=[COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME, COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME])
     async def taskColiseumBeforeClosingNotification(self):
         datetimeJst = datetime.now(tz=JST)
         if (datetimeJst.weekday() == 1):
-            channel_name =CONFIG.get('tasks', 'coliseum_notification_channel_name')
-            channel = discord.utils.get(self.get_all_channels(), name=channel_name)
+            channel = discord.utils.get(self.get_all_channels(), name=COLISEUM_NOTIFICATION_CHANNEL_NAME)
             if channel is None:
                 logging.error("Invalid channel. Task will be skipped")
             else:
