@@ -92,6 +92,17 @@ class ArtPingService():
         else:
             return f"Failed to remove ping for {character}"
         
+    async def checkPing(message: discord.Message):
+        userId = str(message.author.id)
+        
+        logging.info(f"Getting pings for user {userId}")
+        
+        pings = ArtPingRepository.getUserPings(userId)
+        
+        logging.info(f"Got pings for user {userId}")
+        
+        return "\n".join(pings)
+        
     async def getMissingCharacters(message: discord.Message, characters):
         logging.info("Checking for missing characters")
         

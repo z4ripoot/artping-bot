@@ -90,3 +90,28 @@ class ArtPingRepository():
         except:
             logging.error("Failed to remove ping")
             return False
+        
+    def getUserPings(userId):
+        try:
+            logging.info(f"Getting user pings for {userId}")
+            
+            CURSOR.execute("""
+            SELECT C.NAME
+            FROM PINGS P
+            LEFT JOIN CHARACTERS C ON
+            P.CHARACTER_ID = C.CHARACTER_ID
+            WHERE P.USER = ?
+            ORDER BY
+            C.NAME ASC
+            """, (userId,))
+            pings = getIds(CURSOR.fetchall())
+            
+            logging.info(f"Got art pings for user {userId}")
+            
+            return pings
+        except sqlite3.OperationalError as e:
+            logging.error("Failed to get users ping. %s", e)
+            return None
+        except:
+            logging.error("Failed to get users ping")
+            return None

@@ -61,7 +61,7 @@ class ArtPingClient(discord.Client):
             await discordMessage.channel.send(out)
         elif content.startswith(CHECK_PING):
             # Check user's pings 
-            out = ArtPingService.checkPing(discordMessage)
+            out = await ArtPingService.checkPing(discordMessage)
             await discordMessage.channel.send(out)
         elif content.startswith(ADD_CHARACTER):
             # Add character entry 
