@@ -1,8 +1,8 @@
 import configparser
 import sqlite3
 
-config = configparser.ConfigParser()
-config.read('config.ini')
+CONFIG = configparser.ConfigParser()
+CONFIG.read('config.ini')
 
 def getIds(data):
     result = []
@@ -11,4 +11,4 @@ def getIds(data):
     return result
 
 def getDatabaseConnection():
-    return sqlite3.connect(config.get('database', 'path'))
+    return sqlite3.connect(CONFIG.get('database', 'path'))
