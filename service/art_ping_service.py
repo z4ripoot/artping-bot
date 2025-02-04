@@ -26,7 +26,7 @@ class ArtPingService():
         content += ": "
         
         for user in users:
-            content += "<@" + user + ">"
+            content += f"<@{user}>"
             
         return content
     
