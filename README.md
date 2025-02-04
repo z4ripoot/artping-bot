@@ -23,7 +23,6 @@ You have to type these commands in the channel chat to perform them.
 
 # Configuration
 The bot is configurable by changing the properties in config.ini.
-You have to provide your token of Discord bot to the property "discord.token"
-You have to provide a path to your database to the property "database.path"
-
-Optionally, you can provide the channel name to property "coliseum_notification_channel_name". The FEH coliseum notifications are send to this channel, otherwise no notifications will be sent
+ * You have to provide your token of Discord bot to the property "discord.token"
+ * You have to provide a path to your database to the property "database.path"
+ * Optionally, you can provide the channel name to property "coliseum_notification_channel_name". The FEH coliseum notifications are send to this channel, otherwise no notifications will be sent
