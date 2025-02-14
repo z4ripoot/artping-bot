@@ -26,7 +26,7 @@ HELP = "~help"
 
 
 COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0)
-COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=19, minute=0, second=0)
+COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0)
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
