@@ -2,7 +2,6 @@ import configparser
 import datetime
 import logging
 import discord
-import pytz
 
 from datetime import time
 from datetime import datetime
@@ -25,10 +24,9 @@ REMOVE_ALIAS = "~removealias"
 
 HELP = "~help"
 
-JST = pytz.timezone("Asia/Tokyo")
 
-COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=7, minute=0, second=0, tzinfo=JST)
-COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=2, minute=0, second=0, tzinfo=JST)
+COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0)
+COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0)
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -82,7 +80,7 @@ class ArtPingClient(discord.Client):
             await discordMessage.channel.send(out)
         elif content.startswith(CHECK_CHARACTER):
             # Check character entry for aliases
-            out = CharacterService.checkCharacter(discordMessage)
+            out = await CharacterService.checkCharacter(self, discordMessage)
             await discordMessage.channel.send(out)
         elif content.startswith(ADD_ALIAS):
             # Add alias to character entry
@@ -110,14 +108,14 @@ class ArtPingClient(discord.Client):
         
     @tasks.loop(time=[COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME, COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME])
     async def taskColiseumBeforeClosingNotification(self):
-        datetimeJst = datetime.now(tz=JST)
-        if (datetimeJst.weekday() == 1):
+        now = datetime.now()
+        if (now.weekday() == 0):
             channel = discord.utils.get(self.get_all_channels(), name=COLISEUM_NOTIFICATION_CHANNEL_NAME)
             if channel is None:
                 logging.error("Invalid channel. Task will be skipped")
             else:
-                closingTime = datetimeJst.replace(hour=8, minute=0, second=0, microsecond=0).timestamp().__floor__()
+                closingTime = now.replace(hour=23, minute=0, second=0, microsecond=0).timestamp().__floor__()
                 message = f"Coliseum/Aether Raids closes <t:{closingTime}:R> at <t:{closingTime}:f>"
-                
+            
                 logging.info(message)
                 await channel.send(message)

@@ -17,7 +17,11 @@ def getCharacters(content):
     return characterList
 
 def getFirstCharacter(content):
-    return content.split(" ")[1]
+    splitContent = content.split(" ")
+    if len(splitContent) < 2 :
+        logging.info("No character found")
+        return None
+    return splitContent[1]
 
 def getCharacterIds(characterRows):
     characterIds = []
