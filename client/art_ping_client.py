@@ -80,7 +80,7 @@ class ArtPingClient(discord.Client):
             await discordMessage.channel.send(out)
         elif content.startswith(CHECK_CHARACTER):
             # Check character entry for aliases
-            out = CharacterService.checkCharacter(discordMessage)
+            out = await CharacterService.checkCharacter(self, discordMessage)
             await discordMessage.channel.send(out)
         elif content.startswith(ADD_ALIAS):
             # Add alias to character entry
