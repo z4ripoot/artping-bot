@@ -3,11 +3,11 @@ import discord
 
 from repository.art_ping_repository import ArtPingRepository
 from repository.character_repository import CharacterRepository
-from util.character_util import getFirstCharacter
+from util.message_util import getFirst
 
 class CharacterService():
     def addCharacterPing(message: discord.Message):
-        character = getFirstCharacter(message.content)
+        character = getFirst(message.content)
         
         if character is None:
             logging.info("Failed to add character")
@@ -27,7 +27,7 @@ class CharacterService():
             return f"Failed to add character {character}"
         
     def removeCharacter(message: discord.Message):
-        character = getFirstCharacter(message.content)
+        character = getFirst(message.content)
         
         if character is None:
             logging.info("Failed to remove character")
@@ -49,7 +49,7 @@ class CharacterService():
             return f"Failed to remove character {entry}"
         
     async def checkCharacter(self : discord.Client, message: discord.Message):
-        character = getFirstCharacter(message.content)
+        character = getFirst(message.content)
         
         if character is None:
             logging.info("Failed to check character")

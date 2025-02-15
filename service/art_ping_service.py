@@ -2,11 +2,12 @@ import logging
 import discord
 from repository.art_ping_repository import ArtPingRepository
 from repository.character_repository import CharacterRepository
-from util.character_util import getCharacterIds, getCharacterNames, getCharacters, getFirstCharacter
+from util.character_util import getCharacterIds, getCharacterNames
+from util.message_util import getEntries, getFirst
 
 class ArtPingService():
     async def doArtPing(message : discord.Message):
-        characters = getCharacters(message.content)
+        characters = getEntries(message.content)
         
         if not characters:
             return "Character is missing. Please add the character to your ping"
@@ -31,14 +32,14 @@ class ArtPingService():
         return content
     
     def addPing(message: discord.Message):
-        characters = getCharacters(message.content)
+        characters = getEntries(message.content)
         
         if not characters:
             return "Character is missing. Please add the character to be pinged for"
         elif len(characters) > 1:
             return "More than one character detected. Please add the characters separately"
         
-        character = getFirstCharacter(message.content)
+        character = getFirst(message.content)
         
         if not CharacterRepository.getCharacter(character):
             logging.info("Character %s doesn't exist", character)
@@ -62,14 +63,14 @@ class ArtPingService():
             return f"Failed to add ping for {character}"
     
     def removePing(message: discord.Message):
-        characters = getCharacters(message.content)
+        characters = getEntries(message.content)
         
         if not characters:
             return "Character is missing. Please add the character you would like to remove"
         elif len(characters) > 1:
             return "More than one character detected. Please remove the characters separately"
         
-        character = getFirstCharacter(message.content)
+        character = getFirst(message.content)
         
         if not CharacterRepository.getCharacter(character):
             logging.info("Character %s doesn't exist", character)
