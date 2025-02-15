@@ -11,6 +11,8 @@ from service.art_ping_service import ArtPingService
 from service.character_service import CharacterService
 from service.currency_service import CurrencyService
 
+MESSAGE_DENIED = "You do not have the permissions for this command"
+
 ART_PING = "~artping"
 ADD_PING = "~addping"
 REMOVE_PING = "~removeping"
@@ -31,7 +33,6 @@ CHECK_WALLET = "~checkwallet"
 SCOREBOARD = "~scoreboard"
 
 HELP = "~help"
-
 
 COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0)
 COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0)
@@ -61,6 +62,7 @@ class ArtPingClient(discord.Client):
         
         logging.info(f"Received message from {discordMessage.author}: {discordMessage.content}")
         
+        
         isAdministrator = discordMessage.author.guild_permissions.administrator
         content = discordMessage.content.lower()
         if content.startswith(ART_PING):
@@ -79,33 +81,45 @@ class ArtPingClient(discord.Client):
             # Check user's pings 
             out = await ArtPingService.checkPing(discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(ADD_CHARACTER) and isAdministrator:
+        elif content.startswith(ADD_CHARACTER):
             # Add character entry 
-            out = CharacterService.addCharacterPing(discordMessage)
+            out = MESSAGE_DENIED
+            if isAdministrator:
+                out = CharacterService.addCharacterPing(discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(REMOVE_CHARACTER) and isAdministrator:
+        elif content.startswith(REMOVE_CHARACTER):
             # Remove character entry
-            out = CharacterService.removeCharacter(discordMessage)
+            out = MESSAGE_DENIED
+            if isAdministrator:
+                out = CharacterService.removeCharacter(discordMessage)
             await discordMessage.channel.send(out)
         elif content.startswith(CHECK_CHARACTER):
             # Check character entry for aliases
             out = await CharacterService.checkCharacter(self, discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(ADD_ALIAS) and isAdministrator:
+        elif content.startswith(ADD_ALIAS):
             # Add alias to character entry
-            out = AliasService.addAlias(discordMessage)
+            out = MESSAGE_DENIED
+            if isAdministrator:
+                out = AliasService.addAlias(discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(REMOVE_ALIAS) and isAdministrator:
+        elif content.startswith(REMOVE_ALIAS):
             # Remove alias of character entry
-            out = AliasService.removeAlias(discordMessage)
+            out = MESSAGE_DENIED
+            if isAdministrator:
+                out = AliasService.removeAlias(discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(ADD_CURRENCY) and isAdministrator:
+        elif content.startswith(ADD_CURRENCY):
             # Add new gacha currency
-            out = CurrencyService.addCurrency(discordMessage)
+            out = MESSAGE_DENIED
+            if isAdministrator:
+                out = CurrencyService.addCurrency(discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(REMOVE_CURRENCY) and isAdministrator:
+        elif content.startswith(REMOVE_CURRENCY):
             # Remove remove currency
-            out = CurrencyService.removeCurrency(discordMessage)
+            out = MESSAGE_DENIED
+            if isAdministrator:
+                out = CurrencyService.removeCurrency(discordMessage)
             await discordMessage.channel.send(out)
         elif content.startswith(SET_CURRENCY):
             # Set amount of given gacha currency for user 
@@ -135,11 +149,11 @@ class ArtPingClient(discord.Client):
             + '~checkping: See which characters you are being pinged for \n' \
             + '~checkcharacter (character name): See which users are pinged for this character \n' \
             + '\n' \
-            + 'Gacha Currency Commands:' \
-            + '~setcurrency (currency name) (amount): Set the number of orbs, primos or any other currency that you have' \
-            + '~clearcurrency (currency name): Clears the number you have saved for that particular currency' \
-            + '~checkwallet: Shows a list of all currencies you have and their count' \
-            + '~scoreboard (currency name): Shows a leaderboard of the specified currency'
+            + 'Gacha Currency Commands:\n' \
+            + '~setcurrency (currency name) (amount): Set the number of orbs, primos or any other currency that you have\n' \
+            + '~clearcurrency (currency name): Clears the number you have saved for that particular currency\n' \
+            + '~checkwallet: Shows a list of all currencies you have and their count\n' \
+            + '~scoreboard (currency name): Shows a leaderboard of the specified currency\n'
                 
         await message.channel.send(out)
         

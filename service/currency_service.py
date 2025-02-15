@@ -180,7 +180,7 @@ class CurrencyService():
         
         for i, scoreboardRow in enumerate(scoreboardRows, start=1):
             user : discord.User = await self.fetch_user(scoreboardRow[0]) 
-            username = user.global_name
+            username = user.name
             out += f"{i}. {username} ({scoreboardRow[1]})"
         
         logging.info("Checked scoreboard for currency %s", name)
