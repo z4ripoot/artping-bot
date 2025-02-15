@@ -132,9 +132,13 @@ class ArtPingClient(discord.Client):
             + '~addping (character name): Call to add yourself to the ping list when this character is pinged \n'\
             + '~removeping (character name): Remove yourself from the ping list of this character \n'\
             + '~checkping: See which characters you are being pinged for \n' \
-            + '~addcharacter (character name): Add a character to the list of pingable characters \n'\
-            + '~removecharacter (character name): remove a character from the list of pingable characters \n'\
-            + '~checkcharacter (character name): See which users are pinged for this character \n'
+            + '~checkcharacter (character name): See which users are pinged for this character \n' \
+            + '\n' \
+            + 'Gacha Currency Commands:' \
+            + '~setcurrency (currency name) (amount): Set the number of orbs, primos or any other currency that you have' \
+            + '~clearcurrency (currency name): Clears the number you have saved for that particular currency' \
+            + '~checkwallet: Shows a list of all currencies you have and their count' \
+            + '~scoreboard (currency name): Shows a leaderboard of the specified currency'
                 
         await message.channel.send(out)
         
