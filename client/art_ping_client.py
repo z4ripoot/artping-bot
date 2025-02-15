@@ -149,11 +149,11 @@ class ArtPingClient(discord.Client):
             + '~checkping: See which characters you are being pinged for \n' \
             + '~checkcharacter (character name): See which users are pinged for this character \n' \
             + '\n' \
-            + 'Gacha Currency Commands:' \
-            + '~setcurrency (currency name) (amount): Set the number of orbs, primos or any other currency that you have' \
-            + '~clearcurrency (currency name): Clears the number you have saved for that particular currency' \
-            + '~checkwallet: Shows a list of all currencies you have and their count' \
-            + '~scoreboard (currency name): Shows a leaderboard of the specified currency'
+            + 'Gacha Currency Commands:\n' \
+            + '~setcurrency (currency name) (amount): Set the number of orbs, primos or any other currency that you have\n' \
+            + '~clearcurrency (currency name): Clears the number you have saved for that particular currency\n' \
+            + '~checkwallet: Shows a list of all currencies you have and their count\n' \
+            + '~scoreboard (currency name): Shows a leaderboard of the specified currency\n'
                 
         await message.channel.send(out)
         
