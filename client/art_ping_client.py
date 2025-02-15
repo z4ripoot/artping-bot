@@ -9,6 +9,7 @@ from discord.ext import tasks
 from service.alias_service import AliasService
 from service.art_ping_service import ArtPingService
 from service.character_service import CharacterService
+from service.currency_service import CurrencyService
 
 ART_PING = "~artping"
 ADD_PING = "~addping"
@@ -21,6 +22,13 @@ CHECK_CHARACTER = "~checkcharacter"
 
 ADD_ALIAS = "~addalias"
 REMOVE_ALIAS = "~removealias"
+
+ADD_CURRENCY = "~addcurrency"
+REMOVE_CURRENCY = "~removecurrency"
+SET_CURRENCY = "~setcurrency"
+CLEAR_CURRENCY = "~clearcurrency"
+CHECK_WALLET = "~checkwallet"
+SCOREBOARD = "~scoreboard"
 
 HELP = "~help"
 
@@ -89,6 +97,30 @@ class ArtPingClient(discord.Client):
         elif content.startswith(REMOVE_ALIAS):
             # Remove alias of character entry
             out = AliasService.removeAlias(discordMessage)
+            await discordMessage.channel.send(out)
+        elif content.startswith(ADD_CURRENCY):
+            # Add new gacha currency
+            out = CurrencyService.addCurrency(discordMessage)
+            await discordMessage.channel.send(out)
+        elif content.startswith(REMOVE_CURRENCY):
+            # Remove remove currency
+            out = CurrencyService.removeCurrency(discordMessage)
+            await discordMessage.channel.send(out)
+        elif content.startswith(SET_CURRENCY):
+            # Set amount of given gacha currency for user 
+            out = CurrencyService.setCurrency(discordMessage)
+            await discordMessage.channel.send(out)
+        elif content.startswith(CLEAR_CURRENCY):
+            # Clear user's gacha currency from their wallet 
+            out = CurrencyService.clearCurrency(discordMessage)
+            await discordMessage.channel.send(out)
+        elif content.startswith(CHECK_WALLET):
+            # Check user's wallet of gacha currencies
+            out = CurrencyService.checkWallet(discordMessage)
+            await discordMessage.channel.send(out)
+        elif content.startswith(SCOREBOARD):
+            # Show scoreboard of given gacha currency
+            out = await CurrencyService.getScoreboard(self ,discordMessage)
             await discordMessage.channel.send(out)
         elif content.startswith(HELP):
             # Help function to detail all the commands
