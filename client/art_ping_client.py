@@ -61,6 +61,7 @@ class ArtPingClient(discord.Client):
         
         logging.info(f"Received message from {discordMessage.author}: {discordMessage.content}")
         
+        isAdministrator = discordMessage.author.guild_permissions.administrator
         content = discordMessage.content.lower()
         if content.startswith(ART_PING):
             # Ping all users for corresponding characters
@@ -78,11 +79,11 @@ class ArtPingClient(discord.Client):
             # Check user's pings 
             out = await ArtPingService.checkPing(discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(ADD_CHARACTER):
+        elif content.startswith(ADD_CHARACTER) and isAdministrator:
             # Add character entry 
             out = CharacterService.addCharacterPing(discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(REMOVE_CHARACTER):
+        elif content.startswith(REMOVE_CHARACTER) and isAdministrator:
             # Remove character entry
             out = CharacterService.removeCharacter(discordMessage)
             await discordMessage.channel.send(out)
@@ -90,19 +91,19 @@ class ArtPingClient(discord.Client):
             # Check character entry for aliases
             out = await CharacterService.checkCharacter(self, discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(ADD_ALIAS):
+        elif content.startswith(ADD_ALIAS) and isAdministrator:
             # Add alias to character entry
             out = AliasService.addAlias(discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(REMOVE_ALIAS):
+        elif content.startswith(REMOVE_ALIAS) and isAdministrator:
             # Remove alias of character entry
             out = AliasService.removeAlias(discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(ADD_CURRENCY):
+        elif content.startswith(ADD_CURRENCY) and isAdministrator:
             # Add new gacha currency
             out = CurrencyService.addCurrency(discordMessage)
             await discordMessage.channel.send(out)
-        elif content.startswith(REMOVE_CURRENCY):
+        elif content.startswith(REMOVE_CURRENCY) and isAdministrator:
             # Remove remove currency
             out = CurrencyService.removeCurrency(discordMessage)
             await discordMessage.channel.send(out)
