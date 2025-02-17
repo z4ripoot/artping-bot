@@ -126,7 +126,7 @@ class CurrencyService():
             logging.warning(out)
             return out
         
-        logging.info("Clearing user %s's currency %s", message.author.name, currencyName)
+        logging.info("Clearing user %s's currency %s", message.author.global_name, currencyName)
         
         isCleared = CurrencyRepository.clearCurrency(userId, currencyId)
         
@@ -142,7 +142,7 @@ class CurrencyService():
     def checkWallet(message : discord.Message):
         userId = str(message.author.id)
         rows = CurrencyRepository.getWalletRows(userId)
-        out = f"User {message.author.name}'s wallet:\n"
+        out = f"User {message.author.global_name}'s wallet:\n"
         
         if rows is None:
             return out
@@ -180,7 +180,7 @@ class CurrencyService():
         
         for i, scoreboardRow in enumerate(scoreboardRows, start=1):
             user : discord.User = await self.fetch_user(scoreboardRow[0]) 
-            username = user.name
+            username = user.global_name
             out += f"{i}. {username} ({scoreboardRow[1]})\n"
         
         logging.info("Checked scoreboard for currency %s", name)

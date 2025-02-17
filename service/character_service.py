@@ -72,7 +72,7 @@ class CharacterService():
         
         for userId in userIds:
             user : discord.User = await self.fetch_user(userId) 
-            usernames.append(user.name)
+            usernames.append(user.global_name)
         
         if characterId:
             userList = ", ".join(usernames)
