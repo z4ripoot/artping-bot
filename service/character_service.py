@@ -1,5 +1,4 @@
 import logging
-from attr import Out
 import discord
 
 from repository.art_ping_repository import ArtPingRepository
