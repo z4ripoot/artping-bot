@@ -21,15 +21,18 @@ class ArtPingService():
             return "Character is missing. Please add the character to your ping"
         
         characterRows = CharacterRepository.getCharacterRows(characters)
-        users = ArtPingRepository.getArtPings(getCharacterIds(characterRows))
+        userRows = ArtPingRepository.getArtPings(getCharacterIds(characterRows))
         
-        content = ", ".join(getCharacterNames(characterRows))
-        content += ": "
+        out = ", ".join(getCharacterNames(characterRows))
+        out += ": "
         
-        for user in users:
-            content += f"<@{user}>"
+        users = []
+        for row in userRows:
+            users.append(f"<@{row}>")
             
-        return content
+        out += " ".join(users)
+            
+        return out
     
     def addPing(message: discord.Message):
         characters = getEntries(message.content)
