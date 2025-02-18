@@ -41,6 +41,7 @@ CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 
 COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name')
+LORENZ_SMILE = CONFIG.get('emoji', 'lorenz_smile')
 
 class ArtPingClient(discord.Client):
     async def on_ready(self):
@@ -57,14 +58,16 @@ class ArtPingClient(discord.Client):
     async def on_message(self, message):
         discordMessage : discord.Message = message
         
+        content = discordMessage.content.lower()
+        if content == "thank you lorenz" or content == "thanks lorenz":
+            await discordMessage.channel.send(LORENZ_SMILE)
+        
         if (discordMessage.content[0] != '~'):
             return
         
-        logging.info(f"Received message from {discordMessage.author}: {discordMessage.content}")
-        
+        logging.info(f"Received message from {discordMessage.author.global_name}: {discordMessage.content}")
         
         isAdministrator = discordMessage.author.guild_permissions.administrator
-        content = discordMessage.content.lower()
         if content.startswith(ART_PING):
             # Ping all users for corresponding characters
             out = await ArtPingService.doArtPing(discordMessage)
