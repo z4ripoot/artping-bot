@@ -58,12 +58,13 @@ class CharacterService():
         logging.info("Checking for character %s", character)
 
         characterRow = CharacterRepository.getCharacterRow(character)
-        characterId = characterRow[0]
-        characterName = characterRow[1]
         
-        if characterId is None:
+        if characterRow is None:
             logging.info("Failed to check character %s", character)
             return f"Failed to check character {character}"
+        
+        characterId = characterRow[0]
+        characterName = characterRow[1]
         
         logging.info("Character %s has been found", characterName)
         
