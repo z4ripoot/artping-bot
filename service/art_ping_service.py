@@ -7,21 +7,25 @@ from util.message_util import getEntries, getFirst
 
 class ArtPingService():
     async def doArtPing(message : discord.Message):
-        characters = getEntries(message.content)
+        entries = getEntries(message.content)
         
         if not characters:
-            return "Character is missing. Please add the character to your ping"
+            out = "Character is missing. Please add the character to your ping"
+            logging.warning(out)
+            return out
         
-        missingCharacters = await ArtPingService.getMissingCharacters(message, characters)        
-        characters = list(filter(lambda character: character not in missingCharacters, characters))
+        missingCharacters = await ArtPingService.getMissingCharacters(message, entries)        
+        characters = list(filter(lambda character: character not in missingCharacters, entries))
         
         logging.info("Pinging characters %s", characters)
         
         if not characters:
-            return "Character is missing. Please add the character to your ping"
+            out = "Character is missing. Please add the character to your ping"
+            logging.warning(out)
+            return out
         
         characterRows = CharacterRepository.getCharacterRows(characters)
-        userRows = ArtPingRepository.getArtPings(getCharacterIds(characterRows))
+        userRows = ArtPingRepository.getArtPingUsers(getCharacterIds(characterRows))
         
         out = ", ".join(getCharacterNames(characterRows))
         out += ": "
@@ -32,76 +36,93 @@ class ArtPingService():
             
         out += " ".join(users)
             
+        logging.info("Pinged %s users for %s", len(users), characters)
         return out
     
     def addPing(message: discord.Message):
-        characters = getEntries(message.content)
+        entries = getEntries(message.content)
         
-        if not characters:
-            return "Character is missing. Please add the character to be pinged for"
-        elif len(characters) > 1:
-            return "More than one character detected. Please add the characters separately"
+        if not entries:
+            out = "Character is missing. Please add the character to be pinged for"
+            logging.warning(out)
+            return out
+        elif len(entries) > 1:
+            out = "More than one character detected. Please add the characters separately"
+            logging.warning(out)
+            return out
         
-        character = getFirst(message.content)
+        entry = getFirst(message.content)
         
-        if not CharacterRepository.getCharacter(character):
-            logging.info("Character %s doesn't exist", character)
-            return f"Character {character} doesn't exist"
+        if not CharacterRepository.getCharacterName(entry):
+            out = f"Character {entry} doesn't exist"
+            logging.warning(out)
+            return out
         
         userId = str(message.author.id)
-        characterRow = CharacterRepository.getCharacterRow(character)
-        characterId = characterRow[0]
-        character = characterRow[1]
+        character = CharacterRepository.getCharacterRow(entry)
+        characterId = character[0]
+        characterName = character[1]
         
-        if ArtPingRepository.getArtPing(characterId, userId):
-            logging.info("Ping for %s already exists", character)
-            return f"Ping for {character} already exists"
+        if ArtPingRepository.getArtPingRow(characterId, userId):
+            out = f"Ping for {characterName} already exists"
+            logging.info(out)
+            return out
         
-        logging.info("Adding ping for %s", character)
+        logging.info("Adding ping for %s", characterName)
         isAdded = ArtPingRepository.addPing(characterId, userId)
         
         if isAdded:
-            return f"A ping for {character} has been added"
+            out = f"A ping for {characterName} has been added"
+            logging.info(out)
+            return out
         else: 
-            return f"Failed to add ping for {character}"
+            out = f"Failed to add ping for {entry}"
+            logging.warning(out)
+            return out
     
     def removePing(message: discord.Message):
-        characters = getEntries(message.content)
+        entries = getEntries(message.content)
         
-        if not characters:
+        if not entries:
             return "Character is missing. Please add the character you would like to remove"
-        elif len(characters) > 1:
+        elif len(entries) > 1:
             return "More than one character detected. Please remove the characters separately"
         
-        character = getFirst(message.content)
+        entry = getFirst(message.content)
         
-        if not CharacterRepository.getCharacter(character):
-            logging.info("Character %s doesn't exist", character)
-            return f"Character {character} doesn't exist"
+        if not CharacterRepository.getCharacterName(entry):
+            out = f"Character {entry} doesn't exist"
+            logging.warning(out)
+            return out
         
         userId = str(message.author.id)
-        characterRow = CharacterRepository.getCharacterRow(character)
-        characterId = characterRow[0]
-        character = characterRow[1]
+        character = CharacterRepository.getCharacterRow(entry)
+        characterId = character[0]
+        characterName = character[1]
         
-        if not ArtPingRepository.getArtPing(characterId, userId):
-            logging.info("Ping for %s doesn't exist", character)
-            return f"Ping for {character} doesn't exist"
+        if not ArtPingRepository.getArtPingRow(characterId, userId):
+            out = f"Ping for {characterName} doesn't exist"
+            logging.warning(out)
+            return out
         
-        logging.info("Removing ping for %s", character)
+        logging.info("Removing ping for %s", characterName)
         isRemoved = ArtPingRepository.removePing(characterId, userId)
         
         if isRemoved:
-            return f"Ping for {character} has been removed"
+            out = f"Ping for {characterName} has been removed"
+            logging.info(out)
+            return out
         else:
-            return f"Failed to remove ping for {character}"
+            out = f"Failed to remove ping for {characterName}"
+            logging.warning(out)
+            return out
         
     async def checkPing(message: discord.Message):
         userId = str(message.author.id)
         
         logging.info(f"Getting pings for user {userId}")
         
-        pings = ArtPingRepository.getUserPings(userId)
+        pings = ArtPingRepository.getPingsFromUser(userId)
         
         logging.info(f"Got pings for user {userId}")
         

@@ -7,48 +7,48 @@ CONN = getDatabaseConnection()
 CURSOR = CONN.cursor()
 
 class CurrencyRepository():
-    def getCurrency(currency):
+    def getCurrencyRow(currencyName):
         try:
-            logging.info("Getting currency %s", currency)
+            logging.info("Getting currency %s", currencyName)
             
             CURSOR.execute(f"""
             SELECT C.GACHA_CURRENCY_ID, C.NAME
             FROM GACHA_CURRENCY C
             WHERE LOWER(C.NAME) = ?
-            """, (str(currency).lower(),))
+            """, (str(currencyName).lower(),))
             
             result = CURSOR.fetchone()
             if result is None:
                 raise Exception
             
-            logging.info("Got currency %s", currency)
+            logging.info("Got currency %s", currencyName)
             
             return result
         except sqlite3.OperationalError as e:
-            logging.error("Failed to get currency %s. %s", currency, e)
+            logging.error("Failed to get currency %s. %s", currencyName, e)
             return None
         except:
-            logging.error("Failed to get currency %s", currency)
+            logging.error("Failed to get currency %s", currencyName)
             return None
         
-    def addCurrency(currency):
+    def addCurrency(currencyName):
         try:
-            logging.info("Adding currency %s", currency)
+            logging.info("Adding currency %s", currencyName)
             
             CURSOR.execute("""
             INSERT INTO GACHA_CURRENCY (NAME)
             VALUES (?)
-            """, (currency,))
+            """, (currencyName,))
             CONN.commit()
             
-            logging.info("Added currency %s", currency)
+            logging.info("Added currency %s", currencyName)
             
             return True
         except sqlite3.OperationalError as e:
-            logging.error("Failed to add currency %s. %s", currency, e)
+            logging.error("Failed to add currency %s. %s", currencyName, e)
             return False
         except:
-            logging.error("Failed to add currency %s", currency)
+            logging.error("Failed to add currency %s", currencyName)
             return False
         
     def removeCurrency(currencyId):
@@ -182,7 +182,7 @@ class CurrencyRepository():
             logging.error("Failed to create user %s's wallet for currency %s with %s amount", userId, currencyId, amount)
             return False
         
-    def getScoreboard(currencyId):
+    def getScoreboardRows(currencyId):
         try:
             logging.info("Getting scoreboard for %s", currencyId)
             

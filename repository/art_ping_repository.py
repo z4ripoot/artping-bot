@@ -7,7 +7,7 @@ CONN = getDatabaseConnection()
 CURSOR = CONN.cursor()
 
 class ArtPingRepository():
-    def getArtPing(characterId, userId):
+    def getArtPingRow(characterId, userId):
         try:
             logging.info("Getting art ping")
             
@@ -28,7 +28,7 @@ class ArtPingRepository():
             logging.error("Failed to get art ping")
             return None
         
-    def getArtPings(characterIds):
+    def getArtPingUsers(characterIds):
         try:
             logging.info("Getting pings")
             
@@ -91,7 +91,7 @@ class ArtPingRepository():
             logging.error("Failed to remove ping")
             return False
         
-    def getUserPings(userId):
+    def getPingsFromUser(userId):
         try:
             logging.info(f"Getting user pings for {userId}")
             
