@@ -1,4 +1,3 @@
-import configparser
 import datetime
 import logging
 import discord
@@ -6,6 +5,7 @@ import discord
 from datetime import time
 from datetime import datetime
 from discord.ext import tasks
+from config import art_ping_config
 from service.alias_service import AliasService
 from service.art_ping_service import ArtPingService
 from service.character_service import CharacterService
@@ -37,8 +37,7 @@ HELP = "~help"
 COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0)
 COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0)
 
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
+CONFIG = art_ping_config.readConfig()
 
 COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name')
 LORENZ_SMILE = CONFIG.get('emoji', 'lorenz_smile')
