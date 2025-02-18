@@ -71,7 +71,14 @@ class CurrencyService():
             return out
         
         entry = entries[0]
-        amount = entries[1]
+        
+        try:
+            amount = int(entries[1])
+        except:
+            out = f"Failed to set currency. Please enter a valid amount for your {entry}."
+            logging.warning(out)
+            return out
+        
         currencyRow = CurrencyRepository.getCurrency(entry)
         
         if currencyRow is None:
