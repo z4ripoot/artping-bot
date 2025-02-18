@@ -13,7 +13,7 @@ class CurrencyService():
             logging.warning(out)
             return out
         
-        if CurrencyRepository.getCurrency(entry):
+        if CurrencyRepository.getCurrencyRow(entry):
             out = f"Failed to add currency {entry}. Currency {entry} already exists"
             logging.warning(out)
             return out
@@ -39,15 +39,15 @@ class CurrencyService():
             logging.warning(out)
             return out
         
-        row = CurrencyRepository.getCurrency(entry)
+        currency = CurrencyRepository.getCurrencyRow(entry)
         
-        if row is None:
+        if currency is None:
             out = f"Failed to remove currency {entry}. Currency {entry} doesn't exist"
             logging.warning(out)
             return out
         
-        id = row[0]
-        name = row[1]
+        id = currency[0]
+        name = currency[1]
         
         logging.info("Removing currency %s", name)
         
@@ -71,21 +71,28 @@ class CurrencyService():
             return out
         
         entry = entries[0]
-        amount = entries[1]
-        currencyRow = CurrencyRepository.getCurrency(entry)
         
-        if currencyRow is None:
+        try:
+            amount = int(entries[1])
+        except:
+            out = f"Failed to set currency. Please enter a valid amount for your {entry}."
+            logging.warning(out)
+            return out
+        
+        currency = CurrencyRepository.getCurrencyRow(entry)
+        
+        if currency is None:
             out = f"Failed to set currency {entry} for user. Currency {entry} doesn't exist"
             logging.warning(out)
             return out
         
-        currencyId = currencyRow[0]
-        currencyName = currencyRow[1]
+        currencyId = currency[0]
+        currencyName = currency[1]
         userId = str(message.author.id)
-        walletRow = CurrencyRepository.getWalletRow(userId, currencyId)
+        wallet = CurrencyRepository.getWalletRow(userId, currencyId)
         
         isSet = None
-        if walletRow:
+        if wallet:
             logging.info("Set user %s's currency %s to %s", message.author.global_name, currencyName, amount)
             isSet = CurrencyRepository.setCurrency(userId, currencyId, amount)
         else:
@@ -109,19 +116,19 @@ class CurrencyService():
             logging.warning(out)
             return out
         
-        currencyRow = CurrencyRepository.getCurrency(entry)
+        currency = CurrencyRepository.getCurrencyRow(entry)
         
-        if currencyRow is None:
+        if currency is None:
             out = f"Failed to clear currency {entry} for user. Currency {entry} doesn't exist"
             logging.warning(out)
             return out
         
-        currencyId = currencyRow[0]
-        currencyName = currencyRow[1]
+        currencyId = currency[0]
+        currencyName = currency[1]
         userId = str(message.author.id)
-        walletRow = CurrencyRepository.getWalletRow(userId, currencyId)
+        wallet = CurrencyRepository.getWalletRow(userId, currencyId)
         
-        if walletRow is None:
+        if wallet is None:
             out = f"Failed to clear currency {currencyName} for user. Currency {currencyName} for user doesn't exist"
             logging.warning(out)
             return out
@@ -141,14 +148,14 @@ class CurrencyService():
     
     def checkWallet(message : discord.Message):
         userId = str(message.author.id)
-        rows = CurrencyRepository.getWalletRows(userId)
+        wallets = CurrencyRepository.getWalletRows(userId)
         out = f"User {message.author.global_name}'s wallet:\n"
         
-        if rows is None:
+        if wallets is None:
             return out
         
-        for row in rows:
-            out += f"{row[0]}: {row[1]}\n"
+        for wallet in wallets:
+            out += f"{wallet[0]}: {wallet[1]}\n"
         
         return out
     
@@ -160,28 +167,28 @@ class CurrencyService():
             logging.warning(out)
             return out
         
-        currencyRow = CurrencyRepository.getCurrency(entry)
+        currency = CurrencyRepository.getCurrencyRow(entry)
         
-        if currencyRow is None:
+        if currency is None:
             out = f"Failed to check scoreboard for {entry}. Currency {entry} doesn't exist"
             logging.warning(out)
             return out
         
-        id = currencyRow[0]
-        name = currencyRow[1]
+        id = currency[0]
+        name = currency[1]
         
         logging.info("Check scoreboard for currency %s", name)
         
-        scoreboardRows = CurrencyRepository.getScoreboard(id)
+        scoreboardRows = CurrencyRepository.getScoreboardRows(id)
         out = f"Scoreboard for {name}:\n" 
         
         if scoreboardRows is None:
             return out
         
-        for i, scoreboardRow in enumerate(scoreboardRows, start=1):
-            user : discord.User = await self.fetch_user(scoreboardRow[0]) 
+        for i, row in enumerate(scoreboardRows, start=1):
+            user : discord.User = await self.fetch_user(row[0]) 
             username = user.global_name
-            out += f"{i}. {username} ({scoreboardRow[1]})\n"
+            out += f"{i}. {username} ({row[1]})\n"
         
         logging.info("Checked scoreboard for currency %s", name)
         return out

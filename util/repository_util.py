@@ -1,8 +1,8 @@
-import configparser
 import sqlite3
 
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
+from config import art_ping_config
+
+CONFIG = art_ping_config.readConfig()
 
 def getIds(data):
     result = []

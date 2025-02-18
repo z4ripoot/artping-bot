@@ -1,10 +1,10 @@
-import configparser
 import client.art_ping_client
 import discord
 import logging
 
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
+from config import art_ping_config
+
+CONFIG = art_ping_config.readConfig()
 
 logging.basicConfig(
     level = logging.INFO,

@@ -1,4 +1,5 @@
 import logging
+from attr import Out
 import discord
 
 from repository.art_ping_repository import ArtPingRepository
@@ -7,67 +8,82 @@ from util.message_util import getFirst
 
 class CharacterService():
     def addCharacterPing(message: discord.Message):
-        character = getFirst(message.content)
-        
-        if character is None:
-            logging.info("Failed to add character")
-            return "Failed to add character"
-        
-        if CharacterRepository.getCharacter(character):
-            logging.info("Character %s already exists", character)
-            return f"Failed to add character {character}. Character {character} already exists"
-        
-        logging.info("Adding character %s", character)
-        
-        isAdded = CharacterRepository.addCharacter(character)
-        
-        if isAdded:
-            return f"{character} has been added"
-        else:
-            return f"Failed to add character {character}"
-        
-    def removeCharacter(message: discord.Message):
-        character = getFirst(message.content)
-        
-        if character is None:
-            logging.info("Failed to remove character")
-            return "Failed to remove character"
-        
-        entry = CharacterRepository.getCharacter(character)
+        entry = getFirst(message.content)
         
         if entry is None:
-            logging.info("Character %s doesn't exist", character)
-            return f"Character {character} doesn't exist"
+            out = "Failed to add character"
+            logging.warning(out)
+            return out
+        
+        if CharacterRepository.getCharacterName(entry):
+            out = f"Failed to add character {entry}. Character {entry} already exists"
+            logging.warning(out)
+            return out
+        
+        logging.info("Adding character %s", entry)
+        
+        isAdded = CharacterRepository.addCharacter(entry)
+        
+        if isAdded:
+            out = f"{entry} has been added"
+            logging.warning(out)
+            return out
+        else:
+            out = f"Failed to add character {entry}"
+            logging.warning(out)
+            return out
+        
+    def removeCharacter(message: discord.Message):
+        entry = getFirst(message.content)
+        
+        if entry is None:
+            out = f"Failed to remove character"
+            logging.warning(out)
+            return out
+        
+        character = CharacterRepository.getCharacterName(entry)
+        
+        if character is None:
+            out = f"Character {entry} doesn't exist"
+            logging.warning(out)
+            return out
         
         logging.info("Removing character %s", character)
         
         isRemoved = CharacterRepository.removeCharacter(character)
         
         if isRemoved:
-            return f"{entry} has been removed"
+            out = f"{character} has been removed"
+            logging.info(out)
+            return out
         else:
-            return f"Failed to remove character {entry}"
+            out = f"Failed to remove character {character}"
+            logging.warning(out)
+            return out
         
     async def checkCharacter(self : discord.Client, message: discord.Message):
-        character = getFirst(message.content)
+        entry = getFirst(message.content)
         
-        if character is None:
-            logging.info("Failed to check character")
-            return "Failed to check character"
+        if entry is None:
+            out = "Failed to check character"
+            logging.warning(out)
+            return out
         
-        logging.info("Checking for character %s", character)
+        logging.info("Checking for character %s", entry)
 
-        characterRow = CharacterRepository.getCharacterRow(character)
-        characterId = characterRow[0]
-        characterName = characterRow[1]
+        characters = CharacterRepository.getCharacterRow(entry)
         
-        if characterId is None:
-            logging.info("Failed to check character %s", character)
-            return f"Failed to check character {character}"
+        if characters is None:
+            out = f"Failed to check character {entry}"
+            logging.warning(out)
+            return out
+        
+        characterId = characters[0]
+        characterName = characters[1]
         
         logging.info("Character %s has been found", characterName)
         
-        userIds = ArtPingRepository.getArtPings((characterId,))
+        userIds = ArtPingRepository.getArtPingUsers((characterId,))
         usernames = []
         
         for userId in userIds:
@@ -79,4 +95,4 @@ class CharacterService():
             return f"Character entry found for {characterName}\n" \
             + f"Users: {userList}"
         else:
-            return f"Failed to check character {character}"
+            return f"Failed to check character {entry}"
