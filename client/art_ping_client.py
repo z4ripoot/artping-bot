@@ -57,6 +57,10 @@ class ArtPingClient(discord.Client):
     async def on_message(self, message):
         discordMessage : discord.Message = message
         
+        content = discordMessage.content
+        if content is None or len(content) < 1:
+            return
+        
         content = discordMessage.content.lower()
         if content == "thank you lorenz" or content == "thanks lorenz":
             await discordMessage.channel.send(LORENZ_SMILE)
