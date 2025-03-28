@@ -1,117 +1,104 @@
 import logging
-import sqlite3
+from sqlite3 import OperationalError
 
-from util.repository_util import getDatabaseConnection, getIds
+from util.repository_util import get_database_connection, get_ids
 
-CONN = getDatabaseConnection()
+CONN = get_database_connection()
 CURSOR = CONN.cursor()
 
-class ArtPingRepository():
-    def getArtPingRow(characterId, userId):
-        try:
-            logging.info("Getting art ping")
-            
-            CURSOR.execute("""
+
+def get_art_ping_row(character_id, user_id):
+    try:
+        logging.info("Getting art ping")
+
+        CURSOR.execute("""
             SELECT P.CHARACTER_ID, P.USER
             FROM PINGS P
             WHERE P.CHARACTER_ID = ? AND P.USER = ?
-            """, (characterId, userId,))
-            userIds = CURSOR.fetchone()[0]
-            
-            logging.info("Got art ping")
-            
-            return userIds
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to get art ping. %s", e)
-            return None
-        except:
-            logging.error("Failed to get art ping")
-            return None
-        
-    def getArtPingUsers(characterIds):
-        try:
-            logging.info("Getting pings")
-            
-            sql = """
+            """, (character_id, user_id,))
+        user_ids = CURSOR.fetchone()[0]
+
+        logging.info("Got art ping")
+
+        return user_ids
+    except (OperationalError, Exception,) as e:
+        logging.error("Failed to get art ping. %s", e)
+        return None
+
+
+def get_art_ping_users(character_ids):
+    try:
+        logging.info("Getting pings")
+
+        sql = """
             SELECT DISTINCT P.USER
             FROM PINGS P
             WHERE P.CHARACTER_ID IN ({})
-            """.format(','.join("?" * len(characterIds)))
-            CURSOR.execute(sql, characterIds)
-            userIds = getIds(CURSOR.fetchall())
-            
-            logging.info("Got pings")
-            
-            return userIds
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to ping characters. %s", e)
-            return None
-        except:
-            logging.error("Failed to ping characters")
-            return None
-        
-    def addPing(characterId, userId):
-        try:
-            logging.info("Adding ping")
-            
-            CURSOR.execute("""
+            """.format(','.join("?" * len(character_ids)))
+        CURSOR.execute(sql, character_ids)
+        user_ids = get_ids(CURSOR.fetchall())
+
+        logging.info("Got pings")
+
+        return user_ids
+    except (OperationalError, Exception,) as e:
+        logging.error("Failed to ping characters. %s", e)
+        return None
+
+
+def add_ping(character_id, user_id):
+    try:
+        logging.info("Adding ping")
+
+        CURSOR.execute("""
             INSERT INTO PINGS (CHARACTER_ID, USER)
             VALUES (?, ?)
-            """, (characterId, userId,))
-            CONN.commit()
-            
-            logging.info("Added ping")
-            
-            return True
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to add ping. %s", e)
-            return False
-        except:
-            logging.error("Failed to add ping")
-            return False
+            """, (character_id, user_id,))
+        CONN.commit()
 
-    def removePing(characterId, userId):
-        try:
-            logging.info("Removing ping")
-            
-            CURSOR.execute("""
+        logging.info("Added ping")
+
+        return True
+    except (OperationalError, Exception,) as e:
+        logging.error("Failed to add ping. %s", e)
+        return False
+
+
+def remove_ping(character_id, user_id):
+    try:
+        logging.info("Removing ping")
+
+        CURSOR.execute("""
             DELETE FROM PINGS AS P
             WHERE P.CHARACTER_ID = ?
             AND P.USER = ?
-            """, (characterId, userId,))
-            CONN.commit()
-            
-            logging.info("Removed ping")
-            
-            return True
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to remove ping. %s", e)
-            return False
-        except:
-            logging.error("Failed to remove ping")
-            return False
-        
-    def getPingsFromUser(userId):
-        try:
-            logging.info(f"Getting user pings for {userId}")
-            
-            CURSOR.execute("""
+            """, (character_id, user_id,))
+        CONN.commit()
+
+        logging.info("Removed ping")
+
+        return True
+    except (OperationalError, Exception,) as e:
+        logging.error("Failed to remove ping. %s", e)
+        return False
+
+
+def get_pings_from_user(user_id):
+    try:
+        logging.info(f"Getting user pings for {user_id}")
+
+        CURSOR.execute("""
             SELECT C.NAME
             FROM PINGS P
             LEFT JOIN CHARACTERS C ON
             P.CHARACTER_ID = C.CHARACTER_ID
             WHERE P.USER = ?
-            ORDER BY
-            C.NAME ASC
-            """, (userId,))
-            pings = getIds(CURSOR.fetchall())
-            
-            logging.info(f"Got art pings for user {userId}")
-            
-            return pings
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to get users ping. %s", e)
-            return None
-        except:
-            logging.error("Failed to get users ping")
-            return None
+            """, (user_id,))
+        pings = get_ids(CURSOR.fetchall())
+
+        logging.info(f"Got art pings for user {user_id}")
+
+        return pings
+    except (OperationalError, Exception,) as e:
+        logging.error("Failed to get users ping. %s", e)
+        return None

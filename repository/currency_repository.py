@@ -1,208 +1,190 @@
 import logging
-import sqlite3
+from sqlite3 import OperationalError
 
-from util.repository_util import getDatabaseConnection
+from util.repository_util import get_database_connection
 
-CONN = getDatabaseConnection()
+CONN = get_database_connection()
 CURSOR = CONN.cursor()
 
-class CurrencyRepository():
-    def getCurrencyRow(currencyName):
-        try:
-            logging.info("Getting currency %s", currencyName)
-            
-            CURSOR.execute(f"""
+
+def get_currency_row(currency_name):
+    try:
+        logging.info("Getting currency %s", currency_name)
+
+        CURSOR.execute(f"""
             SELECT C.GACHA_CURRENCY_ID, C.NAME
             FROM GACHA_CURRENCY C
             WHERE LOWER(C.NAME) = ?
-            """, (str(currencyName).lower(),))
-            
-            result = CURSOR.fetchone()
-            if result is None:
-                raise Exception
-            
-            logging.info("Got currency %s", currencyName)
-            
-            return result
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to get currency %s. %s", currencyName, e)
-            return None
-        except:
-            logging.error("Failed to get currency %s", currencyName)
-            return None
-        
-    def addCurrency(currencyName):
-        try:
-            logging.info("Adding currency %s", currencyName)
-            
-            CURSOR.execute("""
+            """, (str(currency_name).lower(),))
+
+        result = CURSOR.fetchone()
+        if result is None:
+            raise Exception
+
+        logging.info("Got currency %s", currency_name)
+
+        return result
+    except (OperationalError, Exception) as e:
+        logging.error("Failed to get currency %s. %s", currency_name, e)
+        return None
+
+
+def add_currency(currency_name):
+    try:
+        logging.info("Adding currency %s", currency_name)
+
+        CURSOR.execute("""
             INSERT INTO GACHA_CURRENCY (NAME)
             VALUES (?)
-            """, (currencyName,))
-            CONN.commit()
-            
-            logging.info("Added currency %s", currencyName)
-            
-            return True
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to add currency %s. %s", currencyName, e)
-            return False
-        except:
-            logging.error("Failed to add currency %s", currencyName)
-            return False
-        
-    def removeCurrency(currencyId):
-        try:
-            logging.info("Removing currency %s", currencyId)
-            
-            CURSOR.execute("""
+            """, (currency_name,))
+        CONN.commit()
+
+        logging.info("Added currency %s", currency_name)
+
+        return True
+    except (OperationalError, Exception) as e:
+        logging.error("Failed to add currency %s. %s", currency_name, e)
+        return False
+
+
+def remove_currency(currency_id):
+    try:
+        logging.info("Removing currency %s", currency_id)
+
+        CURSOR.execute("""
             DELETE FROM GACHA_CURRENCY AS C
             WHERE C.GACHA_CURRENCY_ID = ?
-            """, (currencyId,))
-            CONN.commit()
-            
-            logging.info("Removed currency %s", currencyId)
-            
-            return True
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to remove currency %s. %s", currencyId, e)
-            return False
-        except:
-            logging.error("Failed to remove currency %s", currencyId)
-            return False
-        
-    def setCurrency(userId, currencyId, amount):
-        try:
-            logging.info("Setting user %s's currency %s to %s", userId, currencyId, amount)
-            
-            CURSOR.execute("""
+            """, (currency_id,))
+        CONN.commit()
+
+        logging.info("Removed currency %s", currency_id)
+
+        return True
+    except (OperationalError, Exception) as e:
+        logging.error("Failed to remove currency %s. %s", currency_id, e)
+        return False
+
+
+def set_currency(user_id, currency_id, amount):
+    try:
+        logging.info("Setting user %s's currency %s to %s", user_id, currency_id, amount)
+
+        CURSOR.execute("""
             UPDATE GACHA_CURRENCY_WALLET AS W
             SET AMOUNT = ?
             WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
-            """, (amount, currencyId, userId,))
-            CONN.commit()
-            
-            logging.info("Set user %s's currency %s to %s", userId, currencyId, amount)
-            
-            return True
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to set user %s's currency %s to %s. %s", userId, currencyId, amount, e)
-            return False
-        except:
-            logging.error("Failed to set user %s's currency %s to %s", userId, currencyId, amount)
-            return False
-        
-    def clearCurrency(userId, currencyId):
-        try:
-            logging.info("Clearing user %s's currency %s", userId, currencyId)
-            
-            CURSOR.execute("""
+            """, (amount, currency_id, user_id,))
+        CONN.commit()
+
+        logging.info("Set user %s's currency %s to %s", user_id, currency_id, amount)
+
+        return True
+    except (OperationalError, Exception) as e:
+        logging.error("Failed to set user %s's currency %s to %s. %s", user_id, currency_id, amount, e)
+        return False
+
+
+def clear_currency(user_id, currency_id):
+    try:
+        logging.info("Clearing user %s's currency %s", user_id, currency_id)
+
+        CURSOR.execute("""
             DELETE FROM GACHA_CURRENCY_WALLET AS W
             WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
-            """, (currencyId, str(userId),))
-            CONN.commit()
-            
-            logging.info("Cleared user %s's currency %s", userId, currencyId)
-            
-            return True
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to clear user %s's currency %s. %s", userId, currencyId, e)
-            return False
-        except:
-            logging.error("Failed to clear user %s's currency %s", userId, currencyId)
-            return False
-        
-    def getWalletRow(userId, currencyId):
-        try:
-            logging.info("Getting user %s's wallet for currency %s", userId, currencyId)
-            
-            CURSOR.execute("""
+            """, (currency_id, str(user_id),))
+        CONN.commit()
+
+        logging.info("Cleared user %s's currency %s", user_id, currency_id)
+
+        return True
+    except (OperationalError, Exception) as e:
+        logging.error("Failed to clear user %s's currency %s. %s", user_id, currency_id, e)
+        return False
+
+
+def get_wallet_row(user_id, currency_id):
+    try:
+        logging.info("Getting user %s's wallet for currency %s", user_id, currency_id)
+
+        CURSOR.execute("""
             SELECT *
             FROM GACHA_CURRENCY_WALLET W
             WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
-            """, (currencyId, userId,))
-            result = CURSOR.fetchone()
-            
-            if result is None:
-                raise Exception
-            
-            logging.info("Got user %s's wallet for currency %s", userId, currencyId)
-            
-            return result
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to get user %s's wallet for currency %s. %s", userId, currencyId, e)
-            return None
-        except:
-            logging.error("Failed to get user %s's wallet for currency %s", userId, currencyId)
-            return None
-        
-    def getWalletRows(userId):
-        try:
-            logging.info("Getting user %s's wallet", userId)
-            
-            CURSOR.execute("""
+            """, (currency_id, user_id,))
+        result = CURSOR.fetchone()
+
+        if result is None:
+            raise Exception
+
+        logging.info("Got user %s's wallet for currency %s", user_id, currency_id)
+
+        return result
+    except (OperationalError, Exception) as e:
+        logging.error("Failed to get user %s's wallet for currency %s. %s", user_id, currency_id, e)
+        return None
+
+
+def get_wallet_rows(user_id):
+    try:
+        logging.info("Getting user %s's wallet", user_id)
+
+        CURSOR.execute("""
             SELECT C.NAME, W.AMOUNT
             FROM GACHA_CURRENCY_WALLET W
             LEFT JOIN GACHA_CURRENCY C ON
             W.GACHA_CURRENCY_ID = C.GACHA_CURRENCY_ID
             WHERE W.USER = ?
-            """, (userId,))
-            result = CURSOR.fetchall()
-            
-            if result is None:
-                raise Exception
-            
-            logging.info("Got user %s's wallet", userId)
-            
-            return result
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to get user %s's wallet. %s", userId, e)
-            return None
-        except:
-            logging.error("Failed to get user %s's wallet", userId)
-            return None
-        
-    def createWallet(userId, currencyId, amount):
-        try:
-            logging.info("Creating user %s's wallet for currency %s with %s amount", userId, currencyId, amount)
-            
-            CURSOR.execute("""
+            """, (user_id,))
+        result = CURSOR.fetchall()
+
+        if result is None:
+            raise Exception
+
+        logging.info("Got user %s's wallet", user_id)
+
+        return result
+    except (OperationalError, Exception) as e:
+        logging.error("Failed to get user %s's wallet. %s", user_id, e)
+        return None
+
+
+def create_wallet(user_id, currency_id, amount):
+    try:
+        logging.info("Creating user %s's wallet for currency %s with %s amount", user_id, currency_id, amount)
+
+        CURSOR.execute("""
             INSERT INTO GACHA_CURRENCY_WALLET (GACHA_CURRENCY_ID, USER, AMOUNT)
             VALUES (?, ?, ?)
-            """, (currencyId, str(userId), amount))
-            CONN.commit()
-            
-            logging.info("Created user %s's wallet for currency %s with %s amount", userId, currencyId, amount)
-            
-            return True
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to create user %s's wallet for currency %s with %s amount. %s", userId, currencyId, amount, e)
-            return False
-        except:
-            logging.error("Failed to create user %s's wallet for currency %s with %s amount", userId, currencyId, amount)
-            return False
-        
-    def getScoreboardRows(currencyId):
-        try:
-            logging.info("Getting scoreboard for %s", currencyId)
-            
-            CURSOR.execute("""
+            """, (currency_id, str(user_id), amount))
+        CONN.commit()
+
+        logging.info("Created user %s's wallet for currency %s with %s amount", user_id, currency_id, amount)
+
+        return True
+    except (OperationalError, Exception) as e:
+        logging.error("Failed to create user %s's wallet for currency %s with %s amount. %s", user_id, currency_id,
+                      amount, e)
+        return False
+
+
+def get_scoreboard_rows(currency_id):
+    try:
+        logging.info("Getting scoreboard for %s", currency_id)
+
+        CURSOR.execute("""
             SELECT W.USER, W.AMOUNT
             FROM GACHA_CURRENCY_WALLET W
             WHERE W.GACHA_CURRENCY_ID = ?
             ORDER BY W.AMOUNT DESC
-            """, (currencyId,))
-            result = CURSOR.fetchall()
-            
-            if result is None:
-                raise Exception
-            
-            logging.info("Got scoreboard for %s", currencyId)
-            
-            return result
-        except sqlite3.OperationalError as e:
-            logging.error("Failed to get scoreboard for %s. %s", currencyId, e)
-            return None
-        except:
-            logging.error("Failed to get scoreboard for %s", currencyId)
-            return None
+            """, (currency_id,))
+        result = CURSOR.fetchall()
+
+        if result is None:
+            raise Exception
+
+        logging.info("Got scoreboard for %s", currency_id)
+
+        return result
+    except (OperationalError, Exception) as e:
+        logging.error("Failed to get scoreboard for %s. %s", currency_id, e)
+        return None
