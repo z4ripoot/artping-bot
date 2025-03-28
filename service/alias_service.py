@@ -1,8 +1,9 @@
 import discord
 
-class AliasService():
-    def addAlias(message : discord.Message):
-        return
-        
-    def removeAlias(message : discord.Message):
-        return
+
+def add_alias(message: discord.Message):
+    return
+
+
+def remove_alias(message: discord.Message):
+    return

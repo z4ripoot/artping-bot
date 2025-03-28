@@ -1,32 +1,33 @@
 import logging
 
 
-def getEntries(content):
-    splitEntries = content.split(" ")
-    
-    if len(splitEntries) < 2:
-        logging.warning("No entries found")
-        return None
-    
-    entryList = []
-    
-    logging.info("Getting entries")
-    
-    # Get all entries
-    for entry in splitEntries[1:]:
-        entryList.append(entry)
-    
-    logging.info("Found %d entries", len(entryList))
-    
-    return entryList
+def get_entries(content):
+    split_entries = content.split(" ")
 
-def getFirst(content):
-    splitEntries = content.split(" ")
-    
-    if len(splitEntries) < 2 :
+    if len(split_entries) < 2:
         logging.warning("No entries found")
         return None
-    
+
+    entry_list = []
+
+    logging.info("Getting entries")
+
+    # Get all entries
+    for entry in split_entries[1:]:
+        entry_list.append(entry)
+
+    logging.info("Found %d entries", len(entry_list))
+
+    return entry_list
+
+
+def get_first(content):
+    split_entries = content.split(" ")
+
+    if len(split_entries) < 2:
+        logging.warning("No entries found")
+        return None
+
     logging.info("Getting first entry")
-    
-    return splitEntries[1]
+
+    return split_entries[1]

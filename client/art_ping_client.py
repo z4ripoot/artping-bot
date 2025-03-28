@@ -6,10 +6,11 @@ from datetime import time
 from datetime import datetime
 from discord.ext import tasks
 from config import art_ping_config
-from service.alias_service import AliasService
-from service.art_ping_service import ArtPingService
-from service.character_service import CharacterService
-from service.currency_service import CurrencyService
+from service.alias_service import add_alias, remove_alias
+from service.art_ping_service import do_art_ping, add_ping, remove_ping, check_ping
+from service.character_service import add_character_ping, remove_character, check_character
+from service.currency_service import add_currency, remove_currency, set_currency, clear_currency, check_wallet, \
+    get_scoreboard
 
 MESSAGE_DENIED = "You do not have the permissions for this command"
 
@@ -37,7 +38,7 @@ HELP = "~help"
 COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0)
 COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0)
 
-CONFIG = art_ping_config.readConfig()
+CONFIG = art_ping_config.read_config()
 
 COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name')
 LORENZ_SMILE = CONFIG.get('emoji', 'lorenz_smile')
@@ -57,6 +58,23 @@ CHROMK_12 = CONFIG.get('emoji', 'chromk_12')
 CHROMK = f'{CHROMK_1}{CHROMK_2}{CHROMK_3}{CHROMK_4}\n{CHROMK_5}{CHROMK_6}{CHROMK_7}{CHROMK_8}\n{CHROMK_9}{CHROMK_10}{CHROMK_11}{CHROMK_12}'
 
 
+async def show_help(message: discord.Message):
+    out = 'Commands (content in brackets is what to add when using command):\n' \
+          + '~artping (character name): Ping users for art of this character \n' \
+          + '~addping (character name): Call to add yourself to the ping list when this character is pinged \n' \
+          + '~removeping (character name): Remove yourself from the ping list of this character \n' \
+          + '~checkping: See which characters you are being pinged for \n' \
+          + '~checkcharacter (character name): See which users are pinged for this character \n' \
+          + '\n' \
+          + 'Gacha Currency Commands:\n' \
+          + '~setcurrency (currency name) (amount): Set the number of orbs, primos or any other currency that you have\n' \
+          + '~clearcurrency (currency name): Clears the number you have saved for that particular currency\n' \
+          + '~checkwallet: Shows a list of all currencies you have and their count\n' \
+          + '~scoreboard (currency name): Shows a leaderboard of the specified currency\n'
+
+    await message.channel.send(out)
+
+
 class ArtPingClient(discord.Client):
     async def on_ready(self):
         logging.info("Initiating tasks")
@@ -70,117 +88,99 @@ class ArtPingClient(discord.Client):
 
         logging.info("Tasks are initiated")
 
-    async def on_message(self, message):
-        discord_message: discord.Message = message
-
-        content = discord_message.content
+    async def on_message(self, message: discord.Message):
+        content = message.content
         if content is None or len(content) < 1:
             return
 
-        content = discord_message.content.lower()
+        content = message.content.lower()
         if content == "thank you lorenz" or content == "thanks lorenz":
-            await discord_message.channel.send(LORENZ_SMILE)
+            await message.channel.send(LORENZ_SMILE)
 
         if content == "chromk":
-            await discord_message.channel.send(CHROMK)
+            await message.channel.send(CHROMK)
 
-        if discord_message.content[0] != '~':
+        if message.content[0] != '~':
             return
 
-        logging.info(f"Received message from {discord_message.author.global_name}: {discord_message.content}")
+        logging.info(f"Received message from {message.author.global_name}: {message.content}")
 
-        is_administrator = discord_message.author.guild_permissions.administrator
+        is_administrator = message.author.guild_permissions.administrator
         if content.startswith(ART_PING):
             # Ping all users for corresponding characters
-            out = await ArtPingService.doArtPing(discord_message)
-            await discord_message.channel.send(out)
+            out = await do_art_ping(message)
+            await message.channel.send(out)
         elif content.startswith(ADD_PING):
             # Add ping from user
-            out = ArtPingService.addPing(discord_message)
-            await discord_message.channel.send(out)
+            out = add_ping(message)
+            await message.channel.send(out)
         elif content.startswith(REMOVE_PING):
             # Remove ping from user
-            out = ArtPingService.removePing(discord_message)
-            await discord_message.channel.send(out)
+            out = remove_ping(message)
+            await message.channel.send(out)
         elif content.startswith(CHECK_PING):
             # Check user's pings 
-            out = await ArtPingService.checkPing(discord_message)
-            await discord_message.channel.send(out)
+            out = await check_ping(message)
+            await message.channel.send(out)
         elif content.startswith(ADD_CHARACTER):
             # Add character entry 
             out = MESSAGE_DENIED
             if is_administrator:
-                out = CharacterService.addCharacterPing(discord_message)
-            await discord_message.channel.send(out)
+                out = add_character_ping(message)
+            await message.channel.send(out)
         elif content.startswith(REMOVE_CHARACTER):
             # Remove character entry
             out = MESSAGE_DENIED
             if is_administrator:
-                out = CharacterService.removeCharacter(discord_message)
-            await discord_message.channel.send(out)
+                out = remove_character(message)
+            await message.channel.send(out)
         elif content.startswith(CHECK_CHARACTER):
             # Check character entry for aliases
-            out = await CharacterService.checkCharacter(self, discord_message)
-            await discord_message.channel.send(out)
+            out = await check_character(self, message)
+            await message.channel.send(out)
         elif content.startswith(ADD_ALIAS):
             # Add alias to character entry
             out = MESSAGE_DENIED
             if is_administrator:
-                out = AliasService.addAlias(discord_message)
-            await discord_message.channel.send(out)
+                out = add_alias(message)
+            await message.channel.send(out)
         elif content.startswith(REMOVE_ALIAS):
             # Remove alias of character entry
             out = MESSAGE_DENIED
             if is_administrator:
-                out = AliasService.removeAlias(discord_message)
-            await discord_message.channel.send(out)
+                out = remove_alias(message)
+            await message.channel.send(out)
         elif content.startswith(ADD_CURRENCY):
             # Add new gacha currency
             out = MESSAGE_DENIED
             if is_administrator:
-                out = CurrencyService.addCurrency(discord_message)
-            await discord_message.channel.send(out)
+                out = add_currency(message)
+            await message.channel.send(out)
         elif content.startswith(REMOVE_CURRENCY):
             # Remove currency
             out = MESSAGE_DENIED
             if is_administrator:
-                out = CurrencyService.removeCurrency(discord_message)
-            await discord_message.channel.send(out)
+                out = remove_currency(message)
+            await message.channel.send(out)
         elif content.startswith(SET_CURRENCY):
             # Set amount of given gacha currency for user 
-            out = CurrencyService.setCurrency(discord_message)
-            await discord_message.channel.send(out)
+            out = set_currency(message)
+            await message.channel.send(out)
         elif content.startswith(CLEAR_CURRENCY):
             # Clear user's gacha currency from their wallet 
-            out = CurrencyService.clearCurrency(discord_message)
-            await discord_message.channel.send(out)
+            out = clear_currency(message)
+            await message.channel.send(out)
         elif content.startswith(CHECK_WALLET):
             # Check user's wallet of gacha currencies
-            out = CurrencyService.checkWallet(discord_message)
-            await discord_message.channel.send(out)
+            out = check_wallet(message)
+            await message.channel.send(out)
         elif content.startswith(SCOREBOARD):
             # Show scoreboard of given gacha currency
-            out = await CurrencyService.getScoreboard(self, discord_message)
-            await discord_message.channel.send(out)
+            out = await get_scoreboard(self, message)
+            await message.channel.send(out)
         elif content.startswith(HELP):
             # Help function to detail all the commands
-            await ArtPingClient.show_help(discord_message)
-
-    async def show_help(self: discord.Message):
-        out = 'Commands (content in brackets is what to add when using command):\n' \
-              + '~artping (character name): Ping users for art of this character \n' \
-              + '~addping (character name): Call to add yourself to the ping list when this character is pinged \n' \
-              + '~removeping (character name): Remove yourself from the ping list of this character \n' \
-              + '~checkping: See which characters you are being pinged for \n' \
-              + '~checkcharacter (character name): See which users are pinged for this character \n' \
-              + '\n' \
-              + 'Gacha Currency Commands:\n' \
-              + '~setcurrency (currency name) (amount): Set the number of orbs, primos or any other currency that you have\n' \
-              + '~clearcurrency (currency name): Clears the number you have saved for that particular currency\n' \
-              + '~checkwallet: Shows a list of all currencies you have and their count\n' \
-              + '~scoreboard (currency name): Shows a leaderboard of the specified currency\n'
-
-        await self.channel.send(out)
+            await show_help(message)
 
     @tasks.loop(time=[COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME, COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME])
     async def task_coliseum_before_closing_notification(self):

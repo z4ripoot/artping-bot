@@ -4,13 +4,13 @@ import logging
 
 from config import art_ping_config
 
-CONFIG = art_ping_config.readConfig()
+CONFIG = art_ping_config.read_config()
 
 logging.basicConfig(
-    level = logging.INFO,
-    format = "%(asctime)s [%(levelname)s] %(filename)s %(funcName)s %(message)s",
-    handlers = [logging.StreamHandler()]
-    )
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(filename)s %(funcName)s %(message)s",
+    handlers=[logging.StreamHandler()]
+)
 
 INTENTS = discord.Intents.default()
 INTENTS.message_content = True
