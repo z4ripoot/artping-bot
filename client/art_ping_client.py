@@ -41,7 +41,20 @@ CONFIG = art_ping_config.readConfig()
 
 COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name')
 LORENZ_SMILE = CONFIG.get('emoji', 'lorenz_smile')
-CHROMK = '<:chromk1:1355118135094673480><:chromk2:1355118163809009675><:chromk3:1355118201880707082><:chromk4:1355118288832696400>\n<:chromk5:1355118309321740352><:chromk6:1355118330742177902><:chromk7:1355118348433625168><:chromk8:1355118370948911247>\n<:chromk9:1355118388925436028><:chromk10:1355118412136976504><:chromk11:1355118432818958367><:chromk12:1355118452175540315>'
+
+CHROMK_1 = CONFIG.get('emoji', 'chromk_1')
+CHROMK_2 = CONFIG.get('emoji', 'chromk_2')
+CHROMK_3 = CONFIG.get('emoji', 'chromk_3')
+CHROMK_4 = CONFIG.get('emoji', 'chromk_4')
+CHROMK_5 = CONFIG.get('emoji', 'chromk_5')
+CHROMK_6 = CONFIG.get('emoji', 'chromk_6')
+CHROMK_7 = CONFIG.get('emoji', 'chromk_7')
+CHROMK_8 = CONFIG.get('emoji', 'chromk_8')
+CHROMK_9 = CONFIG.get('emoji', 'chromk_9')
+CHROMK_10 = CONFIG.get('emoji', 'chromk_10')
+CHROMK_11 = CONFIG.get('emoji', 'chromk_11')
+CHROMK_12 = CONFIG.get('emoji', 'chromk_11')
+CHROMK = f'{CHROMK_1}{CHROMK_2}{CHROMK_3}{CHROMK_4}\n{CHROMK_5}{CHROMK_6}{CHROMK_7}{CHROMK_8}\n{CHROMK_9}{CHROMK_10}{CHROMK_11}{CHROMK_12}'
 
 
 class ArtPingClient(discord.Client):
