@@ -9,7 +9,7 @@ class ArtPingService():
     async def doArtPing(message : discord.Message):
         entries = getEntries(message.content)
         
-        if not characters:
+        if not entries:
             out = "Character is missing. Please add the character to your ping"
             logging.warning(out)
             return out
