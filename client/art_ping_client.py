@@ -53,7 +53,7 @@ CHROMK_8 = CONFIG.get('emoji', 'chromk_8')
 CHROMK_9 = CONFIG.get('emoji', 'chromk_9')
 CHROMK_10 = CONFIG.get('emoji', 'chromk_10')
 CHROMK_11 = CONFIG.get('emoji', 'chromk_11')
-CHROMK_12 = CONFIG.get('emoji', 'chromk_11')
+CHROMK_12 = CONFIG.get('emoji', 'chromk_12')
 CHROMK = f'{CHROMK_1}{CHROMK_2}{CHROMK_3}{CHROMK_4}\n{CHROMK_5}{CHROMK_6}{CHROMK_7}{CHROMK_8}\n{CHROMK_9}{CHROMK_10}{CHROMK_11}{CHROMK_12}'
 
 
