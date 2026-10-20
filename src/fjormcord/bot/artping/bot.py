@@ -69,9 +69,13 @@ class ArtPingClient(discord.Client):
             await message.channel.send(MESSAGE_DENIED)
             return
 
-        out = command.handler(self, message)
-        if inspect.isawaitable(out):
-            out = await out
+        try:
+            out = command.handler(self, message)
+            if inspect.isawaitable(out):
+                out = await out
+        except Exception:
+            logging.exception("Command %s failed", command.name)
+            out = f"Something went wrong while running {command.name}"
 
         await message.channel.send(out)
 
