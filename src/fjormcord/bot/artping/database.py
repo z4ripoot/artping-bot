@@ -13,4 +13,4 @@ def get_ids(data):
 
 
 def get_database_connection():
-    return sqlite3.connect(CONFIG.get('database', 'path'))
+    return sqlite3.connect(config.resolve_path(CONFIG.get('database', 'path')))
