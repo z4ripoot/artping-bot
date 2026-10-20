@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "artping-bot"
+version = "0.1.0"
+description = "Discord community bot tailored to the Fjormcord community"
+requires-python = ">=3.10"
+dependencies = [
+    "discord.py==2.7.1",
+]
+
+[project.scripts]
+artping-bot = "fjormcord.bot.artping.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["fjormcord*"]
+namespaces = true
