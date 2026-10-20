@@ -5,11 +5,11 @@ import discord
 from datetime import time
 from datetime import datetime
 from discord.ext import tasks
-from config import art_ping_config
-from service.alias_service import add_alias, remove_alias
-from service.art_ping_service import do_art_ping, add_ping, remove_ping, check_ping
-from service.character_service import add_character_ping, remove_character, check_character
-from service.currency_service import add_currency, remove_currency, set_currency, clear_currency, check_wallet, \
+from fjormcord.bot.artping import config
+from fjormcord.bot.artping.service.alias_service import add_alias, remove_alias
+from fjormcord.bot.artping.service.art_ping_service import do_art_ping, add_ping, remove_ping, check_ping
+from fjormcord.bot.artping.service.character_service import add_character_ping, remove_character, check_character
+from fjormcord.bot.artping.service.currency_service import add_currency, remove_currency, set_currency, clear_currency, check_wallet, \
     get_scoreboard
 
 MESSAGE_DENIED = "You do not have the permissions for this command"
@@ -38,7 +38,7 @@ HELP = "~help"
 COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0)
 COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0)
 
-CONFIG = art_ping_config.read_config()
+CONFIG = config.read_config()
 
 COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name')
 LORENZ_SMILE = CONFIG.get('emoji', 'lorenz_smile')

@@ -1,7 +1,7 @@
 import logging
 from sqlite3 import OperationalError
 
-from util.repository_util import get_database_connection
+from fjormcord.bot.artping.database import get_database_connection
 
 CONN = get_database_connection()
 CURSOR = CONN.cursor()

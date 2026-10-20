@@ -1,9 +1,9 @@
 import discord
 import logging
 
-from repository import currency_repository
-from repository.currency_repository import get_currency_row, get_wallet_row, get_wallet_rows, get_scoreboard_rows
-from util.message_util import get_first, get_entries
+from fjormcord.bot.artping.repository import currency_repository
+from fjormcord.bot.artping.repository.currency_repository import get_currency_row, get_wallet_row, get_wallet_rows, get_scoreboard_rows
+from fjormcord.bot.artping.util.message_util import get_first, get_entries
 
 
 def add_currency(message: discord.Message):

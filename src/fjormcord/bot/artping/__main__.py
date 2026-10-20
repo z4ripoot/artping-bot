@@ -1,10 +1,10 @@
-import client.art_ping_client
+from fjormcord.bot.artping import bot
 import discord
 import logging
 
-from config import art_ping_config
+from fjormcord.bot.artping import config
 
-CONFIG = art_ping_config.read_config()
+CONFIG = config.read_config()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,6 +15,6 @@ logging.basicConfig(
 INTENTS = discord.Intents.default()
 INTENTS.message_content = True
 
-CLIENT = client.art_ping_client.ArtPingClient(intents=INTENTS)
+CLIENT = bot.ArtPingClient(intents=INTENTS)
 logging.info("Bot is running")
 CLIENT.run(CONFIG.get('discord', 'token'))

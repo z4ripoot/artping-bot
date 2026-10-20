@@ -1,8 +1,8 @@
 import sqlite3
 
-from config import art_ping_config
+from fjormcord.bot.artping import config
 
-CONFIG = art_ping_config.read_config()
+CONFIG = config.read_config()
 
 
 def get_ids(data):

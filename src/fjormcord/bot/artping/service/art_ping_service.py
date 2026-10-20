@@ -2,12 +2,12 @@ import logging
 
 import discord
 
-from repository import art_ping_repository
-from repository.art_ping_repository import get_art_ping_users, get_art_ping_row, get_pings_from_user
-from repository.character_repository import get_character_rows, get_character_name, get_character_row, \
+from fjormcord.bot.artping.repository import art_ping_repository
+from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users, get_art_ping_row, get_pings_from_user
+from fjormcord.bot.artping.repository.character_repository import get_character_rows, get_character_name, get_character_row, \
     get_missing_character_rows
-from util.character_util import get_character_ids, get_character_names
-from util.message_util import get_entries, get_first
+from fjormcord.bot.artping.util.character_util import get_character_ids, get_character_names
+from fjormcord.bot.artping.util.message_util import get_entries, get_first
 
 
 async def do_art_ping(message: discord.Message):

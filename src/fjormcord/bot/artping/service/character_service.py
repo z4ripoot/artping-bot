@@ -1,10 +1,10 @@
 import logging
 import discord
 
-from repository import character_repository
-from repository.art_ping_repository import get_art_ping_users
-from repository.character_repository import get_character_name, add_character, get_character_row
-from util.message_util import get_first
+from fjormcord.bot.artping.repository import character_repository
+from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users
+from fjormcord.bot.artping.repository.character_repository import get_character_name, add_character, get_character_row
+from fjormcord.bot.artping.util.message_util import get_first
 
 
 def add_character_ping(message: discord.Message):
