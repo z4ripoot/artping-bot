@@ -1,5 +1,6 @@
-import discord
 import logging
+
+import discord
 
 from fjormcord.bot.artping.repository import currency_repository
 from fjormcord.bot.artping.repository.currency_repository import get_currency_row, get_wallet_row, get_wallet_rows, get_scoreboard_rows
@@ -41,12 +42,9 @@ def remove_currency(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    currency_id = currency['GACHA_CURRENCY_ID']
-    currency_name = currency['NAME']
+    currency_repository.remove_currency(currency['GACHA_CURRENCY_ID'])
 
-    currency_repository.remove_currency(currency_id)
-
-    out = f"Currency {currency_name} has been removed"
+    out = f"Currency {currency['NAME']} has been removed"
     logging.info(out)
     return out
 
@@ -63,7 +61,7 @@ def set_currency(client: discord.Client, message: discord.Message):
 
     try:
         amount = int(entries[1])
-    except (Exception,):
+    except ValueError:
         out = f"Failed to set currency. Please enter a valid amount for your {entry}."
         logging.warning(out)
         return out
@@ -100,9 +98,8 @@ def clear_currency(client: discord.Client, message: discord.Message):
     currency_id = currency['GACHA_CURRENCY_ID']
     currency_name = currency['NAME']
     user_id = str(message.author.id)
-    wallet = get_wallet_row(user_id, currency_id)
 
-    if wallet is None:
+    if get_wallet_row(user_id, currency_id) is None:
         out = f"Failed to clear currency {currency_name} for user. Currency {currency_name} for user doesn't exist"
         logging.warning(out)
         return out
@@ -115,11 +112,9 @@ def clear_currency(client: discord.Client, message: discord.Message):
 
 
 def check_wallet(client: discord.Client, message: discord.Message):
-    user_id = str(message.author.id)
-    wallets = get_wallet_rows(user_id)
     out = f"User {message.author.global_name}'s wallet:\n"
 
-    for wallet in wallets:
+    for wallet in get_wallet_rows(str(message.author.id)):
         out += f"{wallet['NAME']}: {wallet['AMOUNT']}\n"
 
     return out
@@ -129,7 +124,7 @@ async def get_scoreboard(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:
-        out = f"Failed to check scoreboard"
+        out = "Failed to check scoreboard"
         logging.warning(out)
         return out
 
@@ -140,18 +135,10 @@ async def get_scoreboard(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    currency_id = currency['GACHA_CURRENCY_ID']
-    currency_name = currency['NAME']
+    out = f"Scoreboard for {currency['NAME']}:\n"
 
-    logging.info("Check scoreboard for currency %s", currency_name)
-
-    scoreboard_rows = get_scoreboard_rows(currency_id)
-    out = f"Scoreboard for {currency_name}:\n"
-
-    for i, row in enumerate(scoreboard_rows, start=1):
+    for i, row in enumerate(get_scoreboard_rows(currency['GACHA_CURRENCY_ID']), start=1):
         user: discord.User = await client.fetch_user(row['USER'])
-        username = user.global_name
-        out += f"{i}. {username} ({row['AMOUNT']})\n"
+        out += f"{i}. {user.global_name} ({row['AMOUNT']})\n"
 
-    logging.info("Checked scoreboard for currency %s", currency_name)
     return out

@@ -5,7 +5,7 @@ import discord
 
 from fjormcord.bot.artping.service.alias_service import add_alias, remove_alias
 from fjormcord.bot.artping.service.art_ping_service import do_art_ping, add_ping, remove_ping, check_ping
-from fjormcord.bot.artping.service.character_service import add_character_ping, remove_character, check_character
+from fjormcord.bot.artping.service.character_service import add_character, remove_character, check_character
 from fjormcord.bot.artping.service.currency_service import add_currency, remove_currency, set_currency, clear_currency, \
     check_wallet, get_scoreboard
 
@@ -76,7 +76,7 @@ COMMANDS = [
     Command("~scoreboard", get_scoreboard, "Shows a leaderboard of the specified currency", "currency name",
             SECTION_CURRENCY),
 
-    Command("~addcharacter", add_character_ping, "Add a character that users can be pinged for", "character name",
+    Command("~addcharacter", add_character, "Add a character that users can be pinged for", "character name",
             admin_only=True),
     Command("~removecharacter", remove_character, "Remove a character and unsubscribe all its users",
             "character name", admin_only=True),

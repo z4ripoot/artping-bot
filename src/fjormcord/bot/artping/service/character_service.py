@@ -1,13 +1,14 @@
 import logging
+
 import discord
 
 from fjormcord.bot.artping.repository import character_repository
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users
-from fjormcord.bot.artping.repository.character_repository import get_character_name, add_character, get_character_row
+from fjormcord.bot.artping.repository.character_repository import get_character_row
 from fjormcord.bot.artping.util.message_util import get_first
 
 
-def add_character_ping(client: discord.Client, message: discord.Message):
+def add_character(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:
@@ -15,12 +16,12 @@ def add_character_ping(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    if get_character_name(entry):
+    if get_character_row(entry):
         out = f"Failed to add character {entry}. Character {entry} already exists"
         logging.warning(out)
         return out
 
-    add_character(entry)
+    character_repository.add_character(entry)
 
     out = f"{entry} has been added"
     logging.info(out)
@@ -31,20 +32,20 @@ def remove_character(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:
-        out = f"Failed to remove character"
+        out = "Failed to remove character"
         logging.warning(out)
         return out
 
-    character = get_character_name(entry)
+    character = get_character_row(entry)
 
     if character is None:
         out = f"Character {entry} doesn't exist"
         logging.warning(out)
         return out
 
-    character_repository.remove_character(character)
+    character_repository.remove_character(character['CHARACTER_ID'])
 
-    out = f"{character} has been removed"
+    out = f"{character['NAME']} has been removed"
     logging.info(out)
     return out
 
@@ -57,33 +58,20 @@ async def check_character(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    logging.info("Checking for character %s", entry)
+    character = get_character_row(entry)
 
-    characters = get_character_row(entry)
-
-    if characters is None:
+    if character is None:
         out = f"Failed to check character {entry}"
         logging.warning(out)
         return out
 
-    character_id = characters['CHARACTER_ID']
-    character_name = characters['NAME']
-
-    logging.info("Character %s has been found", character_name)
-
-    user_ids = get_art_ping_users((character_id,))
     usernames = []
-
-    for userId in user_ids:
+    for user_id in get_art_ping_users((character['CHARACTER_ID'],)):
         try:
-            user: discord.User = await client.fetch_user(userId)
+            user: discord.User = await client.fetch_user(user_id)
             usernames.append(user.global_name)
         except (Exception,):
             continue
 
-    if character_id:
-        user_list = ", ".join(usernames)
-        return f"Character entry found for {character_name}\n" \
-            + f"Users: {user_list}"
-    else:
-        return f"Failed to check character {entry}"
+    return f"Character entry found for {character['NAME']}\n" \
+        + f"Users: {', '.join(usernames)}"

@@ -37,16 +37,6 @@ def get_missing_character_rows(character_names):
     return get_database_connection().execute(sql, [name.lower() for name in character_names]).fetchall()
 
 
-def get_character_name(character_name):
-    row = get_database_connection().execute("""
-        SELECT C.NAME
-        FROM CHARACTERS C
-        WHERE LOWER(C.NAME) = ?
-        """, (character_name.lower(),)).fetchone()
-
-    return row['NAME'] if row else None
-
-
 def add_character(character_name):
     logging.info("Adding character %s", character_name)
 
@@ -57,11 +47,11 @@ def add_character(character_name):
             """, (character_name,))
 
 
-def remove_character(character_name):
-    logging.info("Removing character %s", character_name)
+def remove_character(character_id):
+    logging.info("Removing character %s", character_id)
 
     with get_database_connection() as conn:
         conn.execute("""
             DELETE FROM CHARACTERS
-            WHERE LOWER(NAME) = ?
-            """, (character_name.lower(),))
+            WHERE CHARACTER_ID = ?
+            """, (character_id,))
