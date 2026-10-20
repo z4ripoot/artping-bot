@@ -10,7 +10,7 @@ from fjormcord.bot.artping.util.character_util import get_character_ids, get_cha
 from fjormcord.bot.artping.util.message_util import get_entries, get_first
 
 
-async def do_art_ping(message: discord.Message):
+async def do_art_ping(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
 
     if not entries:
@@ -44,7 +44,7 @@ async def do_art_ping(message: discord.Message):
     return out
 
 
-def add_ping(message: discord.Message):
+def add_ping(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
 
     if not entries:
@@ -86,7 +86,7 @@ def add_ping(message: discord.Message):
         return out
 
 
-def remove_ping(message: discord.Message):
+def remove_ping(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
 
     if not entries:
@@ -124,7 +124,7 @@ def remove_ping(message: discord.Message):
         return out
 
 
-async def check_ping(message: discord.Message):
+async def check_ping(client: discord.Client, message: discord.Message):
     user_id = str(message.author.id)
 
     logging.info(f"Getting pings for user {user_id}")

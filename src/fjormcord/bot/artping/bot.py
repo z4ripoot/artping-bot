@@ -108,31 +108,31 @@ class ArtPingClient(discord.Client):
         is_administrator = message.author.guild_permissions.administrator
         if content.startswith(ART_PING):
             # Ping all users for corresponding characters
-            out = await do_art_ping(message)
+            out = await do_art_ping(self, message)
             await message.channel.send(out)
         elif content.startswith(ADD_PING):
             # Add ping from user
-            out = add_ping(message)
+            out = add_ping(self, message)
             await message.channel.send(out)
         elif content.startswith(REMOVE_PING):
             # Remove ping from user
-            out = remove_ping(message)
+            out = remove_ping(self, message)
             await message.channel.send(out)
         elif content.startswith(CHECK_PING):
             # Check user's pings 
-            out = await check_ping(message)
+            out = await check_ping(self, message)
             await message.channel.send(out)
         elif content.startswith(ADD_CHARACTER):
             # Add character entry 
             out = MESSAGE_DENIED
             if is_administrator:
-                out = add_character_ping(message)
+                out = add_character_ping(self, message)
             await message.channel.send(out)
         elif content.startswith(REMOVE_CHARACTER):
             # Remove character entry
             out = MESSAGE_DENIED
             if is_administrator:
-                out = remove_character(message)
+                out = remove_character(self, message)
             await message.channel.send(out)
         elif content.startswith(CHECK_CHARACTER):
             # Check character entry for aliases
@@ -142,37 +142,37 @@ class ArtPingClient(discord.Client):
             # Add alias to character entry
             out = MESSAGE_DENIED
             if is_administrator:
-                out = add_alias(message)
+                out = add_alias(self, message)
             await message.channel.send(out)
         elif content.startswith(REMOVE_ALIAS):
             # Remove alias of character entry
             out = MESSAGE_DENIED
             if is_administrator:
-                out = remove_alias(message)
+                out = remove_alias(self, message)
             await message.channel.send(out)
         elif content.startswith(ADD_CURRENCY):
             # Add new gacha currency
             out = MESSAGE_DENIED
             if is_administrator:
-                out = add_currency(message)
+                out = add_currency(self, message)
             await message.channel.send(out)
         elif content.startswith(REMOVE_CURRENCY):
             # Remove currency
             out = MESSAGE_DENIED
             if is_administrator:
-                out = remove_currency(message)
+                out = remove_currency(self, message)
             await message.channel.send(out)
         elif content.startswith(SET_CURRENCY):
             # Set amount of given gacha currency for user 
-            out = set_currency(message)
+            out = set_currency(self, message)
             await message.channel.send(out)
         elif content.startswith(CLEAR_CURRENCY):
             # Clear user's gacha currency from their wallet 
-            out = clear_currency(message)
+            out = clear_currency(self, message)
             await message.channel.send(out)
         elif content.startswith(CHECK_WALLET):
             # Check user's wallet of gacha currencies
-            out = check_wallet(message)
+            out = check_wallet(self, message)
             await message.channel.send(out)
         elif content.startswith(SCOREBOARD):
             # Show scoreboard of given gacha currency

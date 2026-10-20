@@ -7,7 +7,7 @@ from fjormcord.bot.artping.repository.character_repository import get_character_
 from fjormcord.bot.artping.util.message_util import get_first
 
 
-def add_character_ping(message: discord.Message):
+def add_character_ping(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:
@@ -34,7 +34,7 @@ def add_character_ping(message: discord.Message):
         return out
 
 
-def remove_character(message: discord.Message):
+def remove_character(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:

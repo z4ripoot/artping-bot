@@ -1,9 +1,9 @@
 import discord
 
 
-def add_alias(message: discord.Message):
+def add_alias(client: discord.Client, message: discord.Message):
     return
 
 
-def remove_alias(message: discord.Message):
+def remove_alias(client: discord.Client, message: discord.Message):
     return

@@ -6,7 +6,7 @@ from fjormcord.bot.artping.repository.currency_repository import get_currency_ro
 from fjormcord.bot.artping.util.message_util import get_first, get_entries
 
 
-def add_currency(message: discord.Message):
+def add_currency(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:
@@ -33,7 +33,7 @@ def add_currency(message: discord.Message):
         return out
 
 
-def remove_currency(message: discord.Message):
+def remove_currency(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:
@@ -65,7 +65,7 @@ def remove_currency(message: discord.Message):
         return out
 
 
-def set_currency(message: discord.Message):
+def set_currency(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
 
     if entries is None or len(entries) != 2:
@@ -112,7 +112,7 @@ def set_currency(message: discord.Message):
         return out
 
 
-def clear_currency(message: discord.Message):
+def clear_currency(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:
@@ -151,7 +151,7 @@ def clear_currency(message: discord.Message):
         return out
 
 
-def check_wallet(message: discord.Message):
+def check_wallet(client: discord.Client, message: discord.Message):
     user_id = str(message.author.id)
     wallets = get_wallet_rows(user_id)
     out = f"User {message.author.global_name}'s wallet:\n"
@@ -165,7 +165,7 @@ def check_wallet(message: discord.Message):
     return out
 
 
-async def get_scoreboard(self: discord.Client, message: discord.Message):
+async def get_scoreboard(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:
@@ -192,7 +192,7 @@ async def get_scoreboard(self: discord.Client, message: discord.Message):
         return out
 
     for i, row in enumerate(scoreboard_rows, start=1):
-        user: discord.User = await self.fetch_user(row[0])
+        user: discord.User = await client.fetch_user(row[0])
         username = user.global_name
         out += f"{i}. {username} ({row[1]})\n"
 
