@@ -80,8 +80,8 @@ async def check_character(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    character_id = characters[0]
-    character_name = characters[1]
+    character_id = characters['CHARACTER_ID']
+    character_name = characters['NAME']
 
     logging.info("Character %s has been found", character_name)
 

@@ -5,13 +5,6 @@ from fjormcord.bot.artping import config
 _connection = None
 
 
-def get_ids(data):
-    result = []
-    for row in data:
-        result.append(row[0])
-    return result
-
-
 def get_database_connection():
     if _connection is None:
         path = config.read_config().get('database', 'path')
@@ -21,4 +14,5 @@ def get_database_connection():
 
 def set_database_connection(connection):
     global _connection
+    connection.row_factory = sqlite3.Row
     _connection = connection

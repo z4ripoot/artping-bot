@@ -1,7 +1,7 @@
 import logging
 from sqlite3 import OperationalError
 
-from fjormcord.bot.artping.database import get_database_connection, get_ids
+from fjormcord.bot.artping.database import get_database_connection
 
 
 def get_art_ping_row(character_id, user_id):
@@ -37,7 +37,7 @@ def get_art_ping_users(character_ids):
             WHERE P.CHARACTER_ID IN ({})
             """.format(','.join("?" * len(character_ids)))
         cursor.execute(sql, character_ids)
-        user_ids = get_ids(cursor.fetchall())
+        user_ids = [row['USER'] for row in cursor.fetchall()]
 
         logging.info("Got pings")
 
@@ -101,7 +101,7 @@ def get_pings_from_user(user_id):
             P.CHARACTER_ID = C.CHARACTER_ID
             WHERE P.USER = ?
             """, (user_id,))
-        pings = get_ids(cursor.fetchall())
+        pings = [row['NAME'] for row in cursor.fetchall()]
 
         logging.info(f"Got art pings for user {user_id}")
 

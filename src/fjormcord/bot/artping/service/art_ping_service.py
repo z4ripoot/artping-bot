@@ -6,7 +6,6 @@ from fjormcord.bot.artping.repository import art_ping_repository
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users, get_art_ping_row, get_pings_from_user
 from fjormcord.bot.artping.repository.character_repository import get_character_rows, get_character_name, get_character_row, \
     get_missing_character_rows
-from fjormcord.bot.artping.util.character_util import get_character_ids, get_character_names
 from fjormcord.bot.artping.util.message_util import get_entries, get_first
 
 
@@ -29,9 +28,9 @@ async def do_art_ping(client: discord.Client, message: discord.Message):
         return out
 
     character_rows = get_character_rows(characters)
-    user_rows = get_art_ping_users(get_character_ids(character_rows))
+    user_rows = get_art_ping_users([row['CHARACTER_ID'] for row in character_rows])
 
-    out = ", ".join(get_character_names(character_rows))
+    out = ", ".join(row['NAME'] for row in character_rows)
     out += ": "
 
     users = []
@@ -65,8 +64,8 @@ def add_ping(client: discord.Client, message: discord.Message):
 
     user_id = str(message.author.id)
     character = get_character_row(entry)
-    character_id = character[0]
-    character_name = character[1]
+    character_id = character['CHARACTER_ID']
+    character_name = character['NAME']
 
     if get_art_ping_row(character_id, user_id):
         out = f"Ping for {character_name} already exists"
@@ -103,8 +102,8 @@ def remove_ping(client: discord.Client, message: discord.Message):
 
     user_id = str(message.author.id)
     character = get_character_row(entry)
-    character_id = character[0]
-    character_name = character[1]
+    character_id = character['CHARACTER_ID']
+    character_name = character['NAME']
 
     if not get_art_ping_row(character_id, user_id):
         out = f"Ping for {character_name} doesn't exist"
@@ -146,7 +145,7 @@ async def get_missing_characters(message: discord.Message, characters):
         logging.info("Missing characters found")
 
         for row in missing_character_rows:
-            missing_characters.append(row[0])
+            missing_characters.append(row['NAME'])
         await message.channel.send(f"No character entry for {', '.join(missing_characters)}")
 
     return missing_characters

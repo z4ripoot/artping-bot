@@ -48,8 +48,8 @@ def remove_currency(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    currency_id = currency[0]
-    currency_name = currency[1]
+    currency_id = currency['GACHA_CURRENCY_ID']
+    currency_name = currency['NAME']
 
     logging.info("Removing currency %s", currency_name)
 
@@ -89,8 +89,8 @@ def set_currency(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    currency_id = currency[0]
-    currency_name = currency[1]
+    currency_id = currency['GACHA_CURRENCY_ID']
+    currency_name = currency['NAME']
     user_id = str(message.author.id)
     wallet = get_wallet_row(user_id, currency_id)
 
@@ -127,8 +127,8 @@ def clear_currency(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    currency_id = currency[0]
-    currency_name = currency[1]
+    currency_id = currency['GACHA_CURRENCY_ID']
+    currency_name = currency['NAME']
     user_id = str(message.author.id)
     wallet = get_wallet_row(user_id, currency_id)
 
@@ -160,7 +160,7 @@ def check_wallet(client: discord.Client, message: discord.Message):
         return out
 
     for wallet in wallets:
-        out += f"{wallet[0]}: {wallet[1]}\n"
+        out += f"{wallet['NAME']}: {wallet['AMOUNT']}\n"
 
     return out
 
@@ -180,8 +180,8 @@ async def get_scoreboard(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    currency_id = currency[0]
-    currency_name = currency[1]
+    currency_id = currency['GACHA_CURRENCY_ID']
+    currency_name = currency['NAME']
 
     logging.info("Check scoreboard for currency %s", currency_name)
 
@@ -192,9 +192,9 @@ async def get_scoreboard(client: discord.Client, message: discord.Message):
         return out
 
     for i, row in enumerate(scoreboard_rows, start=1):
-        user: discord.User = await client.fetch_user(row[0])
+        user: discord.User = await client.fetch_user(row['USER'])
         username = user.global_name
-        out += f"{i}. {username} ({row[1]})\n"
+        out += f"{i}. {username} ({row['AMOUNT']})\n"
 
     logging.info("Checked scoreboard for currency %s", currency_name)
     return out
