@@ -20,18 +20,11 @@ def add_character_ping(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    logging.info("Adding character %s", entry)
+    add_character(entry)
 
-    is_added = add_character(entry)
-
-    if is_added:
-        out = f"{entry} has been added"
-        logging.warning(out)
-        return out
-    else:
-        out = f"Failed to add character {entry}"
-        logging.warning(out)
-        return out
+    out = f"{entry} has been added"
+    logging.info(out)
+    return out
 
 
 def remove_character(client: discord.Client, message: discord.Message):
@@ -49,18 +42,11 @@ def remove_character(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    logging.info("Removing character %s", character)
+    character_repository.remove_character(character)
 
-    is_removed = character_repository.remove_character(character)
-
-    if is_removed:
-        out = f"{character} has been removed"
-        logging.info(out)
-        return out
-    else:
-        out = f"Failed to remove character {character}"
-        logging.warning(out)
-        return out
+    out = f"{character} has been removed"
+    logging.info(out)
+    return out
 
 
 async def check_character(client: discord.Client, message: discord.Message):

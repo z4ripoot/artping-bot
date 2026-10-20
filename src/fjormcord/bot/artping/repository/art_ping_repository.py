@@ -1,111 +1,52 @@
 import logging
-from sqlite3 import OperationalError
 
 from fjormcord.bot.artping.database import get_database_connection
 
 
 def get_art_ping_row(character_id, user_id):
-    cursor = get_database_connection().cursor()
-
-    try:
-        logging.info("Getting art ping")
-
-        cursor.execute("""
-            SELECT P.CHARACTER_ID, P.USER
-            FROM PINGS P
-            WHERE P.CHARACTER_ID = ? AND P.USER = ?
-            """, (character_id, user_id,))
-        user_ids = cursor.fetchone()[0]
-
-        logging.info("Got art ping")
-
-        return user_ids
-    except (OperationalError, Exception,) as e:
-        logging.error("Failed to get art ping. %s", e)
-        return None
+    return get_database_connection().execute("""
+        SELECT P.CHARACTER_ID, P.USER
+        FROM PINGS P
+        WHERE P.CHARACTER_ID = ? AND P.USER = ?
+        """, (character_id, user_id,)).fetchone()
 
 
 def get_art_ping_users(character_ids):
-    cursor = get_database_connection().cursor()
+    sql = """
+        SELECT DISTINCT P.USER
+        FROM PINGS P
+        WHERE P.CHARACTER_ID IN ({})
+        """.format(','.join("?" * len(character_ids)))
 
-    try:
-        logging.info("Getting pings")
-
-        sql = """
-            SELECT DISTINCT P.USER
-            FROM PINGS P
-            WHERE P.CHARACTER_ID IN ({})
-            """.format(','.join("?" * len(character_ids)))
-        cursor.execute(sql, character_ids)
-        user_ids = [row['USER'] for row in cursor.fetchall()]
-
-        logging.info("Got pings")
-
-        return user_ids
-    except (OperationalError, Exception,) as e:
-        logging.error("Failed to ping characters. %s", e)
-        return None
+    return [row['USER'] for row in get_database_connection().execute(sql, list(character_ids))]
 
 
 def add_ping(character_id, user_id):
-    cursor = get_database_connection().cursor()
+    logging.info("Adding ping for character %s and user %s", character_id, user_id)
 
-    try:
-        logging.info("Adding ping")
-
-        cursor.execute("""
+    with get_database_connection() as conn:
+        conn.execute("""
             INSERT INTO PINGS (CHARACTER_ID, USER)
             VALUES (?, ?)
             """, (character_id, user_id,))
-        cursor.connection.commit()
-
-        logging.info("Added ping")
-
-        return True
-    except (OperationalError, Exception,) as e:
-        logging.error("Failed to add ping. %s", e)
-        return False
 
 
 def remove_ping(character_id, user_id):
-    cursor = get_database_connection().cursor()
+    logging.info("Removing ping for character %s and user %s", character_id, user_id)
 
-    try:
-        logging.info("Removing ping")
-
-        cursor.execute("""
-            DELETE FROM PINGS AS P
-            WHERE P.CHARACTER_ID = ?
-            AND P.USER = ?
+    with get_database_connection() as conn:
+        conn.execute("""
+            DELETE FROM PINGS
+            WHERE CHARACTER_ID = ? AND USER = ?
             """, (character_id, user_id,))
-        cursor.connection.commit()
-
-        logging.info("Removed ping")
-
-        return True
-    except (OperationalError, Exception,) as e:
-        logging.error("Failed to remove ping. %s", e)
-        return False
 
 
 def get_pings_from_user(user_id):
-    cursor = get_database_connection().cursor()
+    rows = get_database_connection().execute("""
+        SELECT C.NAME
+        FROM PINGS P
+        LEFT JOIN CHARACTERS C ON P.CHARACTER_ID = C.CHARACTER_ID
+        WHERE P.USER = ?
+        """, (user_id,))
 
-    try:
-        logging.info(f"Getting user pings for {user_id}")
-
-        cursor.execute("""
-            SELECT C.NAME
-            FROM PINGS P
-            LEFT JOIN CHARACTERS C ON
-            P.CHARACTER_ID = C.CHARACTER_ID
-            WHERE P.USER = ?
-            """, (user_id,))
-        pings = [row['NAME'] for row in cursor.fetchall()]
-
-        logging.info(f"Got art pings for user {user_id}")
-
-        return pings
-    except (OperationalError, Exception,) as e:
-        logging.error("Failed to get users ping. %s", e)
-        return None
+    return [row['NAME'] for row in rows]

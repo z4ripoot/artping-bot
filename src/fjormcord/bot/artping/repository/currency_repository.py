@@ -1,205 +1,88 @@
 import logging
-from sqlite3 import OperationalError
 
 from fjormcord.bot.artping.database import get_database_connection
 
 
 def get_currency_row(currency_name):
-    cursor = get_database_connection().cursor()
-
-    try:
-        logging.info("Getting currency %s", currency_name)
-
-        cursor.execute(f"""
-            SELECT C.GACHA_CURRENCY_ID, C.NAME
-            FROM GACHA_CURRENCY C
-            WHERE LOWER(C.NAME) = ?
-            """, (str(currency_name).lower(),))
-
-        result = cursor.fetchone()
-        if result is None:
-            raise Exception
-
-        logging.info("Got currency %s", currency_name)
-
-        return result
-    except (OperationalError, Exception) as e:
-        logging.error("Failed to get currency %s. %s", currency_name, e)
-        return None
+    return get_database_connection().execute("""
+        SELECT C.GACHA_CURRENCY_ID, C.NAME
+        FROM GACHA_CURRENCY C
+        WHERE LOWER(C.NAME) = ?
+        """, (currency_name.lower(),)).fetchone()
 
 
 def add_currency(currency_name):
-    cursor = get_database_connection().cursor()
+    logging.info("Adding currency %s", currency_name)
 
-    try:
-        logging.info("Adding currency %s", currency_name)
-
-        cursor.execute("""
+    with get_database_connection() as conn:
+        conn.execute("""
             INSERT INTO GACHA_CURRENCY (NAME)
             VALUES (?)
             """, (currency_name,))
-        cursor.connection.commit()
-
-        logging.info("Added currency %s", currency_name)
-
-        return True
-    except (OperationalError, Exception) as e:
-        logging.error("Failed to add currency %s. %s", currency_name, e)
-        return False
 
 
 def remove_currency(currency_id):
-    cursor = get_database_connection().cursor()
+    logging.info("Removing currency %s", currency_id)
 
-    try:
-        logging.info("Removing currency %s", currency_id)
-
-        cursor.execute("""
-            DELETE FROM GACHA_CURRENCY AS C
-            WHERE C.GACHA_CURRENCY_ID = ?
+    with get_database_connection() as conn:
+        conn.execute("""
+            DELETE FROM GACHA_CURRENCY
+            WHERE GACHA_CURRENCY_ID = ?
             """, (currency_id,))
-        cursor.connection.commit()
-
-        logging.info("Removed currency %s", currency_id)
-
-        return True
-    except (OperationalError, Exception) as e:
-        logging.error("Failed to remove currency %s. %s", currency_id, e)
-        return False
 
 
 def set_currency(user_id, currency_id, amount):
-    cursor = get_database_connection().cursor()
+    logging.info("Setting user %s's currency %s to %s", user_id, currency_id, amount)
 
-    try:
-        logging.info("Setting user %s's currency %s to %s", user_id, currency_id, amount)
-
-        cursor.execute("""
-            UPDATE GACHA_CURRENCY_WALLET AS W
+    with get_database_connection() as conn:
+        conn.execute("""
+            UPDATE GACHA_CURRENCY_WALLET
             SET AMOUNT = ?
-            WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
+            WHERE GACHA_CURRENCY_ID = ? AND USER = ?
             """, (amount, currency_id, user_id,))
-        cursor.connection.commit()
-
-        logging.info("Set user %s's currency %s to %s", user_id, currency_id, amount)
-
-        return True
-    except (OperationalError, Exception) as e:
-        logging.error("Failed to set user %s's currency %s to %s. %s", user_id, currency_id, amount, e)
-        return False
 
 
 def clear_currency(user_id, currency_id):
-    cursor = get_database_connection().cursor()
+    logging.info("Clearing user %s's currency %s", user_id, currency_id)
 
-    try:
-        logging.info("Clearing user %s's currency %s", user_id, currency_id)
-
-        cursor.execute("""
-            DELETE FROM GACHA_CURRENCY_WALLET AS W
-            WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
-            """, (currency_id, str(user_id),))
-        cursor.connection.commit()
-
-        logging.info("Cleared user %s's currency %s", user_id, currency_id)
-
-        return True
-    except (OperationalError, Exception) as e:
-        logging.error("Failed to clear user %s's currency %s. %s", user_id, currency_id, e)
-        return False
+    with get_database_connection() as conn:
+        conn.execute("""
+            DELETE FROM GACHA_CURRENCY_WALLET
+            WHERE GACHA_CURRENCY_ID = ? AND USER = ?
+            """, (currency_id, user_id,))
 
 
 def get_wallet_row(user_id, currency_id):
-    cursor = get_database_connection().cursor()
-
-    try:
-        logging.info("Getting user %s's wallet for currency %s", user_id, currency_id)
-
-        cursor.execute("""
-            SELECT *
-            FROM GACHA_CURRENCY_WALLET W
-            WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
-            """, (currency_id, user_id,))
-        result = cursor.fetchone()
-
-        if result is None:
-            raise Exception
-
-        logging.info("Got user %s's wallet for currency %s", user_id, currency_id)
-
-        return result
-    except (OperationalError, Exception) as e:
-        logging.error("Failed to get user %s's wallet for currency %s. %s", user_id, currency_id, e)
-        return None
+    return get_database_connection().execute("""
+        SELECT W.GACHA_CURRENCY_ID, W.USER, W.AMOUNT
+        FROM GACHA_CURRENCY_WALLET W
+        WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
+        """, (currency_id, user_id,)).fetchone()
 
 
 def get_wallet_rows(user_id):
-    cursor = get_database_connection().cursor()
-
-    try:
-        logging.info("Getting user %s's wallet", user_id)
-
-        cursor.execute("""
-            SELECT C.NAME, W.AMOUNT
-            FROM GACHA_CURRENCY_WALLET W
-            LEFT JOIN GACHA_CURRENCY C ON
-            W.GACHA_CURRENCY_ID = C.GACHA_CURRENCY_ID
-            WHERE W.USER = ?
-            """, (user_id,))
-        result = cursor.fetchall()
-
-        if result is None:
-            raise Exception
-
-        logging.info("Got user %s's wallet", user_id)
-
-        return result
-    except (OperationalError, Exception) as e:
-        logging.error("Failed to get user %s's wallet. %s", user_id, e)
-        return None
+    return get_database_connection().execute("""
+        SELECT C.NAME, W.AMOUNT
+        FROM GACHA_CURRENCY_WALLET W
+        LEFT JOIN GACHA_CURRENCY C ON W.GACHA_CURRENCY_ID = C.GACHA_CURRENCY_ID
+        WHERE W.USER = ?
+        """, (user_id,)).fetchall()
 
 
 def create_wallet(user_id, currency_id, amount):
-    cursor = get_database_connection().cursor()
+    logging.info("Creating user %s's wallet for currency %s with %s amount", user_id, currency_id, amount)
 
-    try:
-        logging.info("Creating user %s's wallet for currency %s with %s amount", user_id, currency_id, amount)
-
-        cursor.execute("""
+    with get_database_connection() as conn:
+        conn.execute("""
             INSERT INTO GACHA_CURRENCY_WALLET (GACHA_CURRENCY_ID, USER, AMOUNT)
             VALUES (?, ?, ?)
-            """, (currency_id, str(user_id), amount))
-        cursor.connection.commit()
-
-        logging.info("Created user %s's wallet for currency %s with %s amount", user_id, currency_id, amount)
-
-        return True
-    except (OperationalError, Exception) as e:
-        logging.error("Failed to create user %s's wallet for currency %s with %s amount. %s", user_id, currency_id,
-                      amount, e)
-        return False
+            """, (currency_id, user_id, amount,))
 
 
 def get_scoreboard_rows(currency_id):
-    cursor = get_database_connection().cursor()
-
-    try:
-        logging.info("Getting scoreboard for %s", currency_id)
-
-        cursor.execute("""
-            SELECT W.USER, W.AMOUNT
-            FROM GACHA_CURRENCY_WALLET W
-            WHERE W.GACHA_CURRENCY_ID = ?
-            ORDER BY W.AMOUNT DESC
-            """, (currency_id,))
-        result = cursor.fetchall()
-
-        if result is None:
-            raise Exception
-
-        logging.info("Got scoreboard for %s", currency_id)
-
-        return result
-    except (OperationalError, Exception) as e:
-        logging.error("Failed to get scoreboard for %s. %s", currency_id, e)
-        return None
+    return get_database_connection().execute("""
+        SELECT W.USER, W.AMOUNT
+        FROM GACHA_CURRENCY_WALLET W
+        WHERE W.GACHA_CURRENCY_ID = ?
+        ORDER BY W.AMOUNT DESC
+        """, (currency_id,)).fetchall()

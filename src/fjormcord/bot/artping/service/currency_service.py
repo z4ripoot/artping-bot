@@ -19,18 +19,11 @@ def add_currency(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    logging.info("Adding currency %s", entry)
+    currency_repository.add_currency(entry)
 
-    is_added = currency_repository.add_currency(entry)
-
-    if is_added:
-        out = f"Currency {entry} has been added"
-        logging.info(out)
-        return out
-    else:
-        out = f"Failed to add currency {entry}"
-        logging.warning(out)
-        return out
+    out = f"Currency {entry} has been added"
+    logging.info(out)
+    return out
 
 
 def remove_currency(client: discord.Client, message: discord.Message):
@@ -51,18 +44,11 @@ def remove_currency(client: discord.Client, message: discord.Message):
     currency_id = currency['GACHA_CURRENCY_ID']
     currency_name = currency['NAME']
 
-    logging.info("Removing currency %s", currency_name)
+    currency_repository.remove_currency(currency_id)
 
-    is_removed = currency_repository.remove_currency(currency_id)
-
-    if is_removed:
-        out = f"Currency {currency_name} has been removed"
-        logging.info(out)
-        return out
-    else:
-        out = f"Failed to remove currency {currency_name}"
-        logging.warning(out)
-        return out
+    out = f"Currency {currency_name} has been removed"
+    logging.info(out)
+    return out
 
 
 def set_currency(client: discord.Client, message: discord.Message):
@@ -95,21 +81,13 @@ def set_currency(client: discord.Client, message: discord.Message):
     wallet = get_wallet_row(user_id, currency_id)
 
     if wallet:
-        logging.info("Set user %s's currency %s to %s", message.author.global_name, currency_name, amount)
-        is_set = currency_repository.set_currency(user_id, currency_id, amount)
+        currency_repository.set_currency(user_id, currency_id, amount)
     else:
-        logging.info("No user currency row found. Creating user currency row for user %s's currency %s with %s",
-                     message.author.global_name, currency_name, amount)
-        is_set = currency_repository.create_wallet(user_id, currency_id, amount)
+        currency_repository.create_wallet(user_id, currency_id, amount)
 
-    if is_set:
-        out = f"Your {currency_name} has been set to {amount}"
-        logging.info(out)
-        return out
-    else:
-        out = f"Failed to set your {currency_name}"
-        logging.warning(out)
-        return out
+    out = f"Your {currency_name} has been set to {amount}"
+    logging.info(out)
+    return out
 
 
 def clear_currency(client: discord.Client, message: discord.Message):
@@ -137,27 +115,17 @@ def clear_currency(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    logging.info("Clearing user %s's currency %s", message.author.global_name, currency_name)
+    currency_repository.clear_currency(user_id, currency_id)
 
-    is_cleared = currency_repository.clear_currency(user_id, currency_id)
-
-    if is_cleared:
-        out = f"Your {currency_name} has been cleared"
-        logging.info(out)
-        return out
-    else:
-        out = f"Failed to clear {currency_name} for user"
-        logging.warning(out)
-        return out
+    out = f"Your {currency_name} has been cleared"
+    logging.info(out)
+    return out
 
 
 def check_wallet(client: discord.Client, message: discord.Message):
     user_id = str(message.author.id)
     wallets = get_wallet_rows(user_id)
     out = f"User {message.author.global_name}'s wallet:\n"
-
-    if wallets is None:
-        return out
 
     for wallet in wallets:
         out += f"{wallet['NAME']}: {wallet['AMOUNT']}\n"
@@ -187,9 +155,6 @@ async def get_scoreboard(client: discord.Client, message: discord.Message):
 
     scoreboard_rows = get_scoreboard_rows(currency_id)
     out = f"Scoreboard for {currency_name}:\n"
-
-    if scoreboard_rows is None:
-        return out
 
     for i, row in enumerate(scoreboard_rows, start=1):
         user: discord.User = await client.fetch_user(row['USER'])

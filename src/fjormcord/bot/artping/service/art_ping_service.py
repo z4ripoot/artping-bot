@@ -72,17 +72,11 @@ def add_ping(client: discord.Client, message: discord.Message):
         logging.info(out)
         return out
 
-    logging.info("Adding ping for %s", character_name)
-    is_added = art_ping_repository.add_ping(character_id, user_id)
+    art_ping_repository.add_ping(character_id, user_id)
 
-    if is_added:
-        out = f"A ping for {character_name} has been added"
-        logging.info(out)
-        return out
-    else:
-        out = f"Failed to add ping for {entry}"
-        logging.warning(out)
-        return out
+    out = f"A ping for {character_name} has been added"
+    logging.info(out)
+    return out
 
 
 def remove_ping(client: discord.Client, message: discord.Message):
@@ -110,17 +104,11 @@ def remove_ping(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    logging.info("Removing ping for %s", character_name)
-    is_removed = art_ping_repository.remove_ping(character_id, user_id)
+    art_ping_repository.remove_ping(character_id, user_id)
 
-    if is_removed:
-        out = f"Ping for {character_name} has been removed"
-        logging.info(out)
-        return out
-    else:
-        out = f"Failed to remove ping for {character_name}"
-        logging.warning(out)
-        return out
+    out = f"Ping for {character_name} has been removed"
+    logging.info(out)
+    return out
 
 
 async def check_ping(client: discord.Client, message: discord.Message):
