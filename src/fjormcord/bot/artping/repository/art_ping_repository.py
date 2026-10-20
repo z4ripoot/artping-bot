@@ -3,20 +3,19 @@ from sqlite3 import OperationalError
 
 from fjormcord.bot.artping.database import get_database_connection, get_ids
 
-CONN = get_database_connection()
-CURSOR = CONN.cursor()
-
 
 def get_art_ping_row(character_id, user_id):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Getting art ping")
 
-        CURSOR.execute("""
+        cursor.execute("""
             SELECT P.CHARACTER_ID, P.USER
             FROM PINGS P
             WHERE P.CHARACTER_ID = ? AND P.USER = ?
             """, (character_id, user_id,))
-        user_ids = CURSOR.fetchone()[0]
+        user_ids = cursor.fetchone()[0]
 
         logging.info("Got art ping")
 
@@ -27,6 +26,8 @@ def get_art_ping_row(character_id, user_id):
 
 
 def get_art_ping_users(character_ids):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Getting pings")
 
@@ -35,8 +36,8 @@ def get_art_ping_users(character_ids):
             FROM PINGS P
             WHERE P.CHARACTER_ID IN ({})
             """.format(','.join("?" * len(character_ids)))
-        CURSOR.execute(sql, character_ids)
-        user_ids = get_ids(CURSOR.fetchall())
+        cursor.execute(sql, character_ids)
+        user_ids = get_ids(cursor.fetchall())
 
         logging.info("Got pings")
 
@@ -47,14 +48,16 @@ def get_art_ping_users(character_ids):
 
 
 def add_ping(character_id, user_id):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Adding ping")
 
-        CURSOR.execute("""
+        cursor.execute("""
             INSERT INTO PINGS (CHARACTER_ID, USER)
             VALUES (?, ?)
             """, (character_id, user_id,))
-        CONN.commit()
+        cursor.connection.commit()
 
         logging.info("Added ping")
 
@@ -65,15 +68,17 @@ def add_ping(character_id, user_id):
 
 
 def remove_ping(character_id, user_id):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Removing ping")
 
-        CURSOR.execute("""
+        cursor.execute("""
             DELETE FROM PINGS AS P
             WHERE P.CHARACTER_ID = ?
             AND P.USER = ?
             """, (character_id, user_id,))
-        CONN.commit()
+        cursor.connection.commit()
 
         logging.info("Removed ping")
 
@@ -84,17 +89,19 @@ def remove_ping(character_id, user_id):
 
 
 def get_pings_from_user(user_id):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info(f"Getting user pings for {user_id}")
 
-        CURSOR.execute("""
+        cursor.execute("""
             SELECT C.NAME
             FROM PINGS P
             LEFT JOIN CHARACTERS C ON
             P.CHARACTER_ID = C.CHARACTER_ID
             WHERE P.USER = ?
             """, (user_id,))
-        pings = get_ids(CURSOR.fetchall())
+        pings = get_ids(cursor.fetchall())
 
         logging.info(f"Got art pings for user {user_id}")
 

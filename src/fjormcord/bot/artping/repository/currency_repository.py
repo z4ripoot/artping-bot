@@ -3,21 +3,20 @@ from sqlite3 import OperationalError
 
 from fjormcord.bot.artping.database import get_database_connection
 
-CONN = get_database_connection()
-CURSOR = CONN.cursor()
-
 
 def get_currency_row(currency_name):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Getting currency %s", currency_name)
 
-        CURSOR.execute(f"""
+        cursor.execute(f"""
             SELECT C.GACHA_CURRENCY_ID, C.NAME
             FROM GACHA_CURRENCY C
             WHERE LOWER(C.NAME) = ?
             """, (str(currency_name).lower(),))
 
-        result = CURSOR.fetchone()
+        result = cursor.fetchone()
         if result is None:
             raise Exception
 
@@ -30,14 +29,16 @@ def get_currency_row(currency_name):
 
 
 def add_currency(currency_name):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Adding currency %s", currency_name)
 
-        CURSOR.execute("""
+        cursor.execute("""
             INSERT INTO GACHA_CURRENCY (NAME)
             VALUES (?)
             """, (currency_name,))
-        CONN.commit()
+        cursor.connection.commit()
 
         logging.info("Added currency %s", currency_name)
 
@@ -48,14 +49,16 @@ def add_currency(currency_name):
 
 
 def remove_currency(currency_id):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Removing currency %s", currency_id)
 
-        CURSOR.execute("""
+        cursor.execute("""
             DELETE FROM GACHA_CURRENCY AS C
             WHERE C.GACHA_CURRENCY_ID = ?
             """, (currency_id,))
-        CONN.commit()
+        cursor.connection.commit()
 
         logging.info("Removed currency %s", currency_id)
 
@@ -66,15 +69,17 @@ def remove_currency(currency_id):
 
 
 def set_currency(user_id, currency_id, amount):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Setting user %s's currency %s to %s", user_id, currency_id, amount)
 
-        CURSOR.execute("""
+        cursor.execute("""
             UPDATE GACHA_CURRENCY_WALLET AS W
             SET AMOUNT = ?
             WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
             """, (amount, currency_id, user_id,))
-        CONN.commit()
+        cursor.connection.commit()
 
         logging.info("Set user %s's currency %s to %s", user_id, currency_id, amount)
 
@@ -85,14 +90,16 @@ def set_currency(user_id, currency_id, amount):
 
 
 def clear_currency(user_id, currency_id):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Clearing user %s's currency %s", user_id, currency_id)
 
-        CURSOR.execute("""
+        cursor.execute("""
             DELETE FROM GACHA_CURRENCY_WALLET AS W
             WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
             """, (currency_id, str(user_id),))
-        CONN.commit()
+        cursor.connection.commit()
 
         logging.info("Cleared user %s's currency %s", user_id, currency_id)
 
@@ -103,15 +110,17 @@ def clear_currency(user_id, currency_id):
 
 
 def get_wallet_row(user_id, currency_id):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Getting user %s's wallet for currency %s", user_id, currency_id)
 
-        CURSOR.execute("""
+        cursor.execute("""
             SELECT *
             FROM GACHA_CURRENCY_WALLET W
             WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
             """, (currency_id, user_id,))
-        result = CURSOR.fetchone()
+        result = cursor.fetchone()
 
         if result is None:
             raise Exception
@@ -125,17 +134,19 @@ def get_wallet_row(user_id, currency_id):
 
 
 def get_wallet_rows(user_id):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Getting user %s's wallet", user_id)
 
-        CURSOR.execute("""
+        cursor.execute("""
             SELECT C.NAME, W.AMOUNT
             FROM GACHA_CURRENCY_WALLET W
             LEFT JOIN GACHA_CURRENCY C ON
             W.GACHA_CURRENCY_ID = C.GACHA_CURRENCY_ID
             WHERE W.USER = ?
             """, (user_id,))
-        result = CURSOR.fetchall()
+        result = cursor.fetchall()
 
         if result is None:
             raise Exception
@@ -149,14 +160,16 @@ def get_wallet_rows(user_id):
 
 
 def create_wallet(user_id, currency_id, amount):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Creating user %s's wallet for currency %s with %s amount", user_id, currency_id, amount)
 
-        CURSOR.execute("""
+        cursor.execute("""
             INSERT INTO GACHA_CURRENCY_WALLET (GACHA_CURRENCY_ID, USER, AMOUNT)
             VALUES (?, ?, ?)
             """, (currency_id, str(user_id), amount))
-        CONN.commit()
+        cursor.connection.commit()
 
         logging.info("Created user %s's wallet for currency %s with %s amount", user_id, currency_id, amount)
 
@@ -168,16 +181,18 @@ def create_wallet(user_id, currency_id, amount):
 
 
 def get_scoreboard_rows(currency_id):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Getting scoreboard for %s", currency_id)
 
-        CURSOR.execute("""
+        cursor.execute("""
             SELECT W.USER, W.AMOUNT
             FROM GACHA_CURRENCY_WALLET W
             WHERE W.GACHA_CURRENCY_ID = ?
             ORDER BY W.AMOUNT DESC
             """, (currency_id,))
-        result = CURSOR.fetchall()
+        result = cursor.fetchall()
 
         if result is None:
             raise Exception

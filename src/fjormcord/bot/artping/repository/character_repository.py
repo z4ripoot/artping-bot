@@ -3,20 +3,19 @@ from sqlite3 import OperationalError
 
 from fjormcord.bot.artping.database import get_database_connection
 
-CONN = get_database_connection()
-CURSOR = CONN.cursor()
-
 
 def get_character_row(character_name):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Getting character %s", character_name)
 
-        CURSOR.execute(f"""
+        cursor.execute(f"""
             SELECT C.CHARACTER_ID, C.NAME
             FROM CHARACTERS C
             WHERE LOWER(C.NAME) = ?
             """, (str(character_name).lower(),))
-        result = CURSOR.fetchone()
+        result = cursor.fetchone()
 
         if result is None:
             raise Exception
@@ -30,6 +29,8 @@ def get_character_row(character_name):
 
 
 def get_character_rows(character_names):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Getting characters %s", character_names)
 
@@ -40,8 +41,8 @@ def get_character_rows(character_names):
             """.format(','.join("?" * len(character_names)))
 
         parameters = (list(map(str.lower, character_names)))
-        CURSOR.execute(sql, parameters)
-        result = CURSOR.fetchall()
+        cursor.execute(sql, parameters)
+        result = cursor.fetchall()
 
         if result is None:
             raise Exception
@@ -55,6 +56,8 @@ def get_character_rows(character_names):
 
 
 def get_missing_character_rows(character_names):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Getting missing characters %s", character_names)
 
@@ -71,8 +74,8 @@ def get_missing_character_rows(character_names):
             """.format(','.join(("(?)",) * len(character_names)))
 
         parameters = (list(map(str.lower, character_names)))
-        CURSOR.execute(sql, parameters)
-        result = CURSOR.fetchall()
+        cursor.execute(sql, parameters)
+        result = cursor.fetchall()
 
         if result is None:
             raise Exception
@@ -86,15 +89,17 @@ def get_missing_character_rows(character_names):
 
 
 def get_character_name(character_name):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Getting character %s", character_name)
 
-        CURSOR.execute(f"""
+        cursor.execute(f"""
             SELECT C.NAME 
             FROM CHARACTERS C
             WHERE LOWER(C.NAME) IS ?
             """, (str(character_name).lower(),))
-        result = CURSOR.fetchone()[0]
+        result = cursor.fetchone()[0]
 
         if result is None:
             raise Exception
@@ -108,14 +113,16 @@ def get_character_name(character_name):
 
 
 def add_character(character_name):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Adding character %s", character_name)
 
-        CURSOR.execute("""
+        cursor.execute("""
             INSERT INTO CHARACTERS (NAME)
             VALUES (?)
             """, (character_name,))
-        CONN.commit()
+        cursor.connection.commit()
 
         logging.info("Added character %s", character_name)
 
@@ -126,14 +133,16 @@ def add_character(character_name):
 
 
 def remove_character(character_name):
+    cursor = get_database_connection().cursor()
+
     try:
         logging.info("Removing character %s", character_name)
 
-        CURSOR.execute("""
+        cursor.execute("""
             DELETE FROM CHARACTERS AS C
             WHERE LOWER(C.NAME) = ?
             """, (str(character_name).lower(),))
-        CONN.commit()
+        cursor.connection.commit()
 
         logging.info("Removed character %s", character_name)
 

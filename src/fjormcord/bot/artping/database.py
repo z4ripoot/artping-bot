@@ -2,7 +2,7 @@ import sqlite3
 
 from fjormcord.bot.artping import config
 
-CONFIG = config.read_config()
+_connection = None
 
 
 def get_ids(data):
@@ -13,4 +13,12 @@ def get_ids(data):
 
 
 def get_database_connection():
-    return sqlite3.connect(config.resolve_path(CONFIG.get('database', 'path')))
+    if _connection is None:
+        path = config.read_config().get('database', 'path')
+        set_database_connection(sqlite3.connect(config.resolve_path(path)))
+    return _connection
+
+
+def set_database_connection(connection):
+    global _connection
+    _connection = connection
