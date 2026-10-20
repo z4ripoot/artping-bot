@@ -2,8 +2,8 @@ import logging
 
 
 def get_entries(content):
-    # Everything after the command
-    entries = content.split(" ")[1:]
+    # Everything after the command; split() also ignores repeated whitespace
+    entries = content.split()[1:]
 
     if not entries:
         logging.warning("No entries found")
