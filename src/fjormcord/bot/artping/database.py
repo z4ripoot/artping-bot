@@ -15,4 +15,6 @@ def get_database_connection():
 def set_database_connection(connection):
     global _connection
     connection.row_factory = sqlite3.Row
+    # SQLite only enforces foreign keys (and their ON DELETE CASCADE) when enabled per connection
+    connection.execute("PRAGMA foreign_keys = ON")
     _connection = connection
