@@ -13,7 +13,7 @@ COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0)
 
 CONFIG = config.read_config()
 
-COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name')
+COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name', fallback=None)
 LORENZ_SMILE = CONFIG.get('emoji', 'lorenz_smile')
 
 CHROMK_1 = CONFIG.get('emoji', 'chromk_1')
@@ -35,10 +35,11 @@ class ArtPingClient(discord.Client):
     async def on_ready(self):
         logging.info("Initiating tasks")
 
-        if COLISEUM_NOTIFICATION_CHANNEL_NAME is None:
+        if not COLISEUM_NOTIFICATION_CHANNEL_NAME:
             logging.warning(
                 "No channel name is configured for Coliseum notifications. Coliseum notification task will not be initiated")
-        else:
+        elif not self.task_coliseum_before_closing_notification.is_running():
+            # on_ready fires again after reconnects; starting a running loop raises
             logging.info("Initiating Coliseum notification task")
             self.task_coliseum_before_closing_notification.start()
 
