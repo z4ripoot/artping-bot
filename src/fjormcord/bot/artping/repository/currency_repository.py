@@ -64,8 +64,9 @@ def get_wallet_rows(user_id):
     return get_database_connection().execute("""
         SELECT C.NAME, W.AMOUNT
         FROM GACHA_CURRENCY_WALLET W
-        LEFT JOIN GACHA_CURRENCY C ON W.GACHA_CURRENCY_ID = C.GACHA_CURRENCY_ID
+        JOIN GACHA_CURRENCY C ON W.GACHA_CURRENCY_ID = C.GACHA_CURRENCY_ID
         WHERE W.USER = ?
+        ORDER BY C.NAME
         """, (user_id,)).fetchall()
 
 

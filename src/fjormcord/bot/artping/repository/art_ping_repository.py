@@ -45,8 +45,9 @@ def get_pings_from_user(user_id):
     rows = get_database_connection().execute("""
         SELECT C.NAME
         FROM PINGS P
-        LEFT JOIN CHARACTERS C ON P.CHARACTER_ID = C.CHARACTER_ID
+        JOIN CHARACTERS C ON P.CHARACTER_ID = C.CHARACTER_ID
         WHERE P.USER = ?
+        ORDER BY C.NAME
         """, (user_id,))
 
     return [row['NAME'] for row in rows]
