@@ -4,12 +4,11 @@ import discord
 
 from fjormcord.bot.artping.repository import art_ping_repository
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users, get_art_ping_row, get_pings_from_user
-from fjormcord.bot.artping.repository.character_repository import get_character_rows, get_character_row, \
-    get_missing_character_rows
+from fjormcord.bot.artping.repository.character_repository import get_character_rows, get_character_row
 from fjormcord.bot.artping.util.message_util import get_entries
 
 
-async def do_art_ping(client: discord.Client, message: discord.Message):
+def do_art_ping(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
 
     if not entries:
@@ -17,30 +16,29 @@ async def do_art_ping(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    missing_characters = await get_missing_characters(message, entries)
-    characters = list(filter(lambda character: character not in missing_characters, entries))
+    character_rows = get_character_rows(entries)
+    found_names = {row['NAME'].lower() for row in character_rows}
+    missing_characters = [entry for entry in entries if entry.lower() not in found_names]
 
-    logging.info("Pinging characters %s", characters)
+    lines = []
+    if missing_characters:
+        lines.append(f"No character entry for {', '.join(missing_characters)}")
 
-    if not characters:
-        out = "Character is missing. Please add the character to your ping"
+    if not character_rows:
+        out = "\n".join(lines)
         logging.warning(out)
         return out
 
-    character_rows = get_character_rows(characters)
-    user_rows = get_art_ping_users([row['CHARACTER_ID'] for row in character_rows])
+    character_names = ", ".join(row['NAME'] for row in character_rows)
+    user_ids = get_art_ping_users([row['CHARACTER_ID'] for row in character_rows])
 
-    out = ", ".join(row['NAME'] for row in character_rows)
-    out += ": "
+    if user_ids:
+        lines.append(f"{character_names}: " + " ".join(f"<@{user_id}>" for user_id in user_ids))
+    else:
+        lines.append(f"Nobody is subscribed to {character_names}")
 
-    users = []
-    for row in user_rows:
-        users.append(f"<@{row}>")
-
-    out += " ".join(users)
-
-    logging.info("Pinged %s users for %s", len(users), characters)
-    return out
+    logging.info("Pinged %s users for %s", len(user_ids), character_names)
+    return "\n".join(lines)
 
 
 def add_ping(client: discord.Client, message: discord.Message):
@@ -116,19 +114,3 @@ def check_ping(client: discord.Client, message: discord.Message):
         return "You are not subscribed to any characters"
 
     return ", ".join(pings)
-
-
-async def get_missing_characters(message: discord.Message, characters):
-    logging.info("Checking for missing characters")
-
-    missing_characters = []
-    missing_character_rows = get_missing_character_rows(characters)
-
-    if missing_character_rows:
-        logging.info("Missing characters found")
-
-        for row in missing_character_rows:
-            missing_characters.append(row['NAME'])
-        await message.channel.send(f"No character entry for {', '.join(missing_characters)}")
-
-    return missing_characters

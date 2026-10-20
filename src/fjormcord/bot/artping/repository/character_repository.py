@@ -21,22 +21,6 @@ def get_character_rows(character_names):
     return get_database_connection().execute(sql, [name.lower() for name in character_names]).fetchall()
 
 
-def get_missing_character_rows(character_names):
-    sql = """
-        WITH INPUT(NAME) AS (
-            VALUES {}
-        )
-        SELECT I.NAME
-        FROM INPUT I
-        WHERE I.NAME NOT IN (
-            SELECT LOWER(C.NAME)
-            FROM CHARACTERS C
-        )
-        """.format(','.join(("(?)",) * len(character_names)))
-
-    return get_database_connection().execute(sql, [name.lower() for name in character_names]).fetchall()
-
-
 def add_character(character_name):
     logging.info("Adding character %s", character_name)
 
