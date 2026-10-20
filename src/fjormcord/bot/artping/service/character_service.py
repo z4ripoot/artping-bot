@@ -6,6 +6,7 @@ from fjormcord.bot.artping.repository import character_repository
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users
 from fjormcord.bot.artping.repository.character_repository import get_character_row
 from fjormcord.bot.artping.util.message_util import get_first
+from fjormcord.bot.artping.util.user_util import get_username
 
 
 def add_character(client: discord.Client, message: discord.Message):
@@ -65,13 +66,7 @@ async def check_character(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    usernames = []
-    for user_id in get_art_ping_users((character['CHARACTER_ID'],)):
-        try:
-            user: discord.User = await client.fetch_user(user_id)
-            usernames.append(user.global_name)
-        except (Exception,):
-            continue
+    usernames = [await get_username(client, user_id) for user_id in get_art_ping_users((character['CHARACTER_ID'],))]
 
     return f"Character entry found for {character['NAME']}\n" \
         + f"Users: {', '.join(usernames)}"

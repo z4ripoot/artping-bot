@@ -5,6 +5,7 @@ import discord
 from fjormcord.bot.artping.repository import currency_repository
 from fjormcord.bot.artping.repository.currency_repository import get_currency_row, get_wallet_row, get_wallet_rows, get_scoreboard_rows
 from fjormcord.bot.artping.util.message_util import get_first, get_entries
+from fjormcord.bot.artping.util.user_util import get_username
 
 
 def add_currency(client: discord.Client, message: discord.Message):
@@ -112,7 +113,7 @@ def clear_currency(client: discord.Client, message: discord.Message):
 
 
 def check_wallet(client: discord.Client, message: discord.Message):
-    out = f"User {message.author.global_name}'s wallet:\n"
+    out = f"User {message.author.display_name}'s wallet:\n"
 
     for wallet in get_wallet_rows(str(message.author.id)):
         out += f"{wallet['NAME']}: {wallet['AMOUNT']}\n"
@@ -138,7 +139,6 @@ async def get_scoreboard(client: discord.Client, message: discord.Message):
     out = f"Scoreboard for {currency['NAME']}:\n"
 
     for i, row in enumerate(get_scoreboard_rows(currency['GACHA_CURRENCY_ID']), start=1):
-        user: discord.User = await client.fetch_user(row['USER'])
-        out += f"{i}. {user.global_name} ({row['AMOUNT']})\n"
+        out += f"{i}. {await get_username(client, row['USER'])} ({row['AMOUNT']})\n"
 
     return out

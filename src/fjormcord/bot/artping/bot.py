@@ -67,7 +67,7 @@ class ArtPingClient(discord.Client):
         if command is None:
             return
 
-        logging.info(f"Received message from {message.author.global_name}: {content}")
+        logging.info(f"Received message from {message.author.display_name}: {content}")
 
         if command.admin_only and not is_administrator(message.author):
             await message.channel.send(MESSAGE_DENIED)
