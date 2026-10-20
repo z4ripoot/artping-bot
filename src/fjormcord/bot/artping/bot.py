@@ -46,6 +46,9 @@ class ArtPingClient(discord.Client):
         logging.info("Tasks are initiated")
 
     async def on_message(self, message: discord.Message):
+        if message.author == self.user:
+            return
+
         content = message.content
         if not content:
             return
