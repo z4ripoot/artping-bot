@@ -75,17 +75,9 @@ def set_currency(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    currency_id = currency['GACHA_CURRENCY_ID']
-    currency_name = currency['NAME']
-    user_id = str(message.author.id)
-    wallet = get_wallet_row(user_id, currency_id)
+    currency_repository.set_currency(str(message.author.id), currency['GACHA_CURRENCY_ID'], amount)
 
-    if wallet:
-        currency_repository.set_currency(user_id, currency_id, amount)
-    else:
-        currency_repository.create_wallet(user_id, currency_id, amount)
-
-    out = f"Your {currency_name} has been set to {amount}"
+    out = f"Your {currency['NAME']} has been set to {amount}"
     logging.info(out)
     return out
 

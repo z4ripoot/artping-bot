@@ -36,10 +36,10 @@ def set_currency(user_id, currency_id, amount):
 
     with get_database_connection() as conn:
         conn.execute("""
-            UPDATE GACHA_CURRENCY_WALLET
-            SET AMOUNT = ?
-            WHERE GACHA_CURRENCY_ID = ? AND USER = ?
-            """, (amount, currency_id, user_id,))
+            INSERT INTO GACHA_CURRENCY_WALLET (GACHA_CURRENCY_ID, USER, AMOUNT)
+            VALUES (?, ?, ?)
+            ON CONFLICT (GACHA_CURRENCY_ID, USER) DO UPDATE SET AMOUNT = excluded.AMOUNT
+            """, (currency_id, user_id, amount,))
 
 
 def clear_currency(user_id, currency_id):
@@ -68,16 +68,6 @@ def get_wallet_rows(user_id):
         WHERE W.USER = ?
         ORDER BY C.NAME
         """, (user_id,)).fetchall()
-
-
-def create_wallet(user_id, currency_id, amount):
-    logging.info("Creating user %s's wallet for currency %s with %s amount", user_id, currency_id, amount)
-
-    with get_database_connection() as conn:
-        conn.execute("""
-            INSERT INTO GACHA_CURRENCY_WALLET (GACHA_CURRENCY_ID, USER, AMOUNT)
-            VALUES (?, ?, ?)
-            """, (currency_id, user_id, amount,))
 
 
 def get_scoreboard_rows(currency_id):
