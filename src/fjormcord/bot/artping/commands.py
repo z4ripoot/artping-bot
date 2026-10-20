@@ -30,7 +30,9 @@ class Command:
 
 
 def is_administrator(author):
-    return author.guild_permissions.administrator
+    # Users in DMs have no guild permissions
+    permissions = getattr(author, 'guild_permissions', None)
+    return permissions is not None and permissions.administrator
 
 
 def show_help(client: discord.Client, message: discord.Message):
