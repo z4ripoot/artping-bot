@@ -109,14 +109,11 @@ def remove_ping(client: discord.Client, message: discord.Message):
     return out
 
 
-async def check_ping(client: discord.Client, message: discord.Message):
-    user_id = str(message.author.id)
+def check_ping(client: discord.Client, message: discord.Message):
+    pings = get_pings_from_user(str(message.author.id))
 
-    logging.info(f"Getting pings for user {user_id}")
-
-    pings = get_pings_from_user(user_id)
-
-    logging.info(f"Got pings for user {user_id}")
+    if not pings:
+        return "You are not subscribed to any characters"
 
     return ", ".join(pings)
 
