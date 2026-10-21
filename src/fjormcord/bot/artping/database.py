@@ -1,9 +1,10 @@
+import logging
 import sqlite3
-from pathlib import Path
 
 from fjormcord.bot.artping import config
 
-SCHEMA_PATH = config.PROJECT_ROOT / 'db' / 'schema.sql'
+# Numbered scripts (001_initial_schema.sql, ...); a database's user_version is the number of the last one applied to it
+MIGRATIONS_PATH = config.PROJECT_ROOT / 'db' / 'migrations'
 
 _connection = None
 
@@ -16,12 +17,33 @@ def get_database_connection():
 
 
 def connect(path):
-    # A database that doesn't exist yet is created with the schema, so a fresh checkout needs no manual setup
-    is_new = not Path(path).exists()
     connection = sqlite3.connect(path)
-    if is_new:
-        connection.executescript(SCHEMA_PATH.read_text())
+    # Runs before foreign keys are enabled: rebuilding a table would otherwise cascade-delete the rows referencing it
+    migrate(connection)
     return connection
+
+
+def migrate(connection):
+    # A new database and one created before versioning are both at 0; 001 only creates tables that don't exist yet
+    version = connection.execute("PRAGMA user_version").fetchone()[0]
+
+    for path in sorted(MIGRATIONS_PATH.glob('*.sql')):
+        number = int(path.name.split('_')[0])
+        if number <= version:
+            continue
+
+        logging.info("Applying database migration %s", path.name)
+        try:
+            # Each migration and its version bump are applied together or not at all
+            connection.executescript(f"BEGIN;\n{path.read_text(encoding='utf-8')}\nPRAGMA user_version = {number};")
+            violations = connection.execute("PRAGMA foreign_key_check").fetchall()
+            if violations:
+                raise sqlite3.IntegrityError(f"Migration {path.name} leaves broken foreign keys: {violations}")
+            connection.commit()
+        except Exception:
+            logging.exception("Database migration %s failed and was rolled back", path.name)
+            connection.rollback()
+            raise
 
 
 def set_database_connection(connection):

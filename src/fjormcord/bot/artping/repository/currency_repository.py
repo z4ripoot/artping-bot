@@ -7,8 +7,8 @@ def get_currency_row(currency_name):
     return get_database_connection().execute("""
         SELECT C.GACHA_CURRENCY_ID, C.NAME
         FROM GACHA_CURRENCY C
-        WHERE LOWER(C.NAME) = ?
-        """, (currency_name.lower(),)).fetchone()
+        WHERE C.NAME = ?
+        """, (currency_name,)).fetchone()
 
 
 def add_currency(currency_name):

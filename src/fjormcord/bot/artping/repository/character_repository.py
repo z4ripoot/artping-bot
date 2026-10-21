@@ -7,18 +7,18 @@ def get_character_row(character_name):
     return get_database_connection().execute("""
         SELECT C.CHARACTER_ID, C.NAME
         FROM CHARACTERS C
-        WHERE LOWER(C.NAME) = ?
-        """, (character_name.lower(),)).fetchone()
+        WHERE C.NAME = ?
+        """, (character_name,)).fetchone()
 
 
 def get_character_rows(character_names):
     sql = """
         SELECT C.CHARACTER_ID, C.NAME
         FROM CHARACTERS C
-        WHERE LOWER(C.NAME) IN ({})
+        WHERE C.NAME IN ({})
         """.format(','.join("?" * len(character_names)))
 
-    return get_database_connection().execute(sql, [name.lower() for name in character_names]).fetchall()
+    return get_database_connection().execute(sql, list(character_names)).fetchall()
 
 
 def add_character(character_name):
