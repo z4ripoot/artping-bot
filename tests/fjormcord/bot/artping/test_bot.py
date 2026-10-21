@@ -95,3 +95,16 @@ def test_coliseum_notification_uses_utc_regardless_of_host_timezone(bot, monkeyp
 def test_coliseum_notification_skipped_outside_monday(bot, monkeypatch):
     # Sunday 22:00 UTC is already Monday 00:00 on a UTC+2 host
     assert run_coliseum_task(bot, monkeypatch, datetime(2026, 10, 18, 22, 0, tzinfo=timezone.utc)) == []
+
+
+def test_long_reply_is_split_into_messages_within_discord_limit(bot):
+    dispatch(bot, make_message("~addcharacter Lucina", administrator=True))
+    user_ids = range(10**17, 10**17 + 200)
+    for user_id in user_ids:
+        dispatch(bot, make_message("~addping Lucina", user_id=user_id))
+
+    sent = dispatch(bot, make_message("~artping Lucina"))
+
+    assert len(sent) > 1
+    assert all(len(chunk) <= 2000 for chunk in sent)
+    assert all(f"<@{user_id}>" in " ".join(sent) for user_id in user_ids)

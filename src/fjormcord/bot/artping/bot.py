@@ -7,6 +7,7 @@ from discord.ext import tasks
 
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, MESSAGE_DENIED, is_administrator
+from fjormcord.bot.artping.util.message_util import split_message
 
 # Coliseum closes on Monday at 23:00 UTC; all scheduling is done in UTC, independent of the host's timezone
 COLISEUM_CLOSING_TIME = time(hour=23, minute=0, second=0, tzinfo=timezone.utc)
@@ -90,7 +91,8 @@ class ArtPingClient(discord.Client):
             logging.exception("Command %s failed", command.name)
             out = f"Something went wrong while running {command.name}"
 
-        await message.channel.send(out)
+        for chunk in split_message(out):
+            await message.channel.send(chunk)
 
     @tasks.loop(time=[COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME, COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME])
     async def task_coliseum_before_closing_notification(self):
