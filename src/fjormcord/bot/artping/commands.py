@@ -8,6 +8,7 @@ from fjormcord.bot.artping.service.art_ping_service import do_art_ping, add_ping
 from fjormcord.bot.artping.service.character_service import add_character, remove_character, check_character
 from fjormcord.bot.artping.service.currency_service import add_currency, remove_currency, set_currency, clear_currency, \
     check_wallet, get_scoreboard
+from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT
 
 COMMAND_PREFIX = "~"
 
@@ -38,6 +39,7 @@ def is_administrator(author):
 def show_help(client: discord.Client, message: discord.Message):
     show_admin = is_administrator(message.author)
     out = 'Commands (content in brackets is what to add when using command):\n'
+    out += f'{MULTI_WORD_HINT}\n'
 
     current_section = SECTION_ART_PING
     for command in COMMANDS:

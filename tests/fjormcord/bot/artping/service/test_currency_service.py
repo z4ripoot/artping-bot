@@ -2,6 +2,7 @@ import asyncio
 
 from fjormcord.bot.artping.service.currency_service import add_currency, remove_currency, set_currency, clear_currency, check_wallet, \
     get_scoreboard
+from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
 from tests.fakes import make_message
 
 
@@ -45,3 +46,15 @@ def test_scoreboard_orders_by_amount(client):
     out = asyncio.run(get_scoreboard(client, make_message("~scoreboard orbs")))
 
     assert out == "Scoreboard for Orbs:\n1. Bob (30)\n2. Alice (10)\n"
+
+
+def test_currency_commands_reject_spaces_in_names(client):
+    add_currency(client, make_message("~addcurrency Fire"))
+    set_currency(client, make_message("~setcurrency Fire 10"))
+
+    assert add_currency(client, make_message("~addcurrency Fire Orbs")) == MESSAGE_ONE_NAME_ONLY
+    assert set_currency(client, make_message("~setcurrency Fire Orbs 50")) == MESSAGE_ONE_NAME_ONLY
+    assert clear_currency(client, make_message("~clearcurrency Fire Orbs")) == MESSAGE_ONE_NAME_ONLY
+    assert asyncio.run(get_scoreboard(client, make_message("~scoreboard Fire Orbs"))) == MESSAGE_ONE_NAME_ONLY
+    assert remove_currency(client, make_message("~removecurrency Fire Orbs")) == MESSAGE_ONE_NAME_ONLY
+    assert check_wallet(client, make_message("~checkwallet")) == "User user1's wallet:\nFire: 10\n"

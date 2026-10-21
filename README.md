@@ -10,6 +10,8 @@ A Discord bot that provides various features to your community:
 
 # Commands
 You have to type these commands in the channel chat to perform them.
+Arguments are separated by spaces, so character and currency names cannot contain spaces. Use underscores for multi-word names, e.g. `Black_Knight`.
+
 | Command                           | Description                                                                                                                                                       |
 |-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | ~artping <characters...>          | This will ping all users who are subscribed to the one or more provided characters. Multiple characters have to be separated with spaces                          |

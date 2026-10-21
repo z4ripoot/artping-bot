@@ -1,5 +1,9 @@
 import logging
 
+# Arguments are split on whitespace, so names of several words are written with underscores
+MULTI_WORD_HINT = "Use underscores for multi-word names, e.g. Black_Knight"
+MESSAGE_ONE_NAME_ONLY = f"Only one name is allowed. {MULTI_WORD_HINT}"
+
 
 def get_entries(content):
     # Everything after the command; split() also ignores repeated whitespace
@@ -15,6 +19,11 @@ def get_entries(content):
 def get_first(content):
     entries = get_entries(content)
     return entries[0] if entries else None
+
+
+def has_extra_entries(content):
+    entries = get_entries(content)
+    return entries is not None and len(entries) > 1
 
 
 # Discord rejects messages longer than this

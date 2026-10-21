@@ -5,7 +5,7 @@ import discord
 from fjormcord.bot.artping.repository import character_repository
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users
 from fjormcord.bot.artping.repository.character_repository import get_character_row
-from fjormcord.bot.artping.util.message_util import get_first
+from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, get_first, has_extra_entries
 from fjormcord.bot.artping.util.user_util import get_username
 
 
@@ -16,6 +16,10 @@ def add_character(client: discord.Client, message: discord.Message):
         out = "Failed to add character"
         logging.warning(out)
         return out
+
+    if has_extra_entries(message.content):
+        logging.warning(MESSAGE_ONE_NAME_ONLY)
+        return MESSAGE_ONE_NAME_ONLY
 
     if get_character_row(entry):
         out = f"Failed to add character {entry}. Character {entry} already exists"
@@ -36,6 +40,10 @@ def remove_character(client: discord.Client, message: discord.Message):
         out = "Failed to remove character"
         logging.warning(out)
         return out
+
+    if has_extra_entries(message.content):
+        logging.warning(MESSAGE_ONE_NAME_ONLY)
+        return MESSAGE_ONE_NAME_ONLY
 
     character = get_character_row(entry)
 
@@ -58,6 +66,10 @@ async def check_character(client: discord.Client, message: discord.Message):
         out = "Failed to check character"
         logging.warning(out)
         return out
+
+    if has_extra_entries(message.content):
+        logging.warning(MESSAGE_ONE_NAME_ONLY)
+        return MESSAGE_ONE_NAME_ONLY
 
     character = get_character_row(entry)
 

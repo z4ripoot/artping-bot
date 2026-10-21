@@ -5,7 +5,7 @@ import discord
 from fjormcord.bot.artping.repository import art_ping_repository
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users, get_art_ping_row, get_pings_from_user
 from fjormcord.bot.artping.repository.character_repository import get_character_rows, get_character_row
-from fjormcord.bot.artping.util.message_util import get_entries
+from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT, get_entries
 
 
 def do_art_ping(client: discord.Client, message: discord.Message):
@@ -49,7 +49,7 @@ def add_ping(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
     elif len(entries) > 1:
-        out = "More than one character detected. Please add the characters separately"
+        out = f"More than one character detected. Please add the characters separately. {MULTI_WORD_HINT}"
         logging.warning(out)
         return out
 
@@ -82,7 +82,7 @@ def remove_ping(client: discord.Client, message: discord.Message):
     if not entries:
         return "Character is missing. Please add the character you would like to remove"
     elif len(entries) > 1:
-        return "More than one character detected. Please remove the characters separately"
+        return f"More than one character detected. Please remove the characters separately. {MULTI_WORD_HINT}"
 
     entry = entries[0]
     character = get_character_row(entry)

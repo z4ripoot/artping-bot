@@ -58,3 +58,12 @@ def test_add_ping_for_unknown_character(client):
 
 def test_check_ping_without_pings_is_not_empty(client):
     assert check_ping(client, make_message("~checkping")) == "You are not subscribed to any characters"
+
+
+def test_add_and_remove_ping_hint_at_underscores_for_several_words(client):
+    assert add_ping(client, make_message("~addping Black Knight")) == \
+        "More than one character detected. Please add the characters separately. " \
+        "Use underscores for multi-word names, e.g. Black_Knight"
+    assert remove_ping(client, make_message("~removeping Black Knight")) == \
+        "More than one character detected. Please remove the characters separately. " \
+        "Use underscores for multi-word names, e.g. Black_Knight"

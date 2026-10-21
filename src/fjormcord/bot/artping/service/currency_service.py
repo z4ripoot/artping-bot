@@ -4,7 +4,7 @@ import discord
 
 from fjormcord.bot.artping.repository import currency_repository
 from fjormcord.bot.artping.repository.currency_repository import get_currency_row, get_wallet_row, get_wallet_rows, get_scoreboard_rows
-from fjormcord.bot.artping.util.message_util import get_first, get_entries
+from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, get_first, get_entries, has_extra_entries
 from fjormcord.bot.artping.util.user_util import get_username
 
 
@@ -15,6 +15,10 @@ def add_currency(client: discord.Client, message: discord.Message):
         out = "Failed to add currency"
         logging.warning(out)
         return out
+
+    if has_extra_entries(message.content):
+        logging.warning(MESSAGE_ONE_NAME_ONLY)
+        return MESSAGE_ONE_NAME_ONLY
 
     if get_currency_row(entry):
         out = f"Failed to add currency {entry}. Currency {entry} already exists"
@@ -36,6 +40,10 @@ def remove_currency(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
+    if has_extra_entries(message.content):
+        logging.warning(MESSAGE_ONE_NAME_ONLY)
+        return MESSAGE_ONE_NAME_ONLY
+
     currency = get_currency_row(entry)
 
     if currency is None:
@@ -52,6 +60,10 @@ def remove_currency(client: discord.Client, message: discord.Message):
 
 def set_currency(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
+
+    if entries is not None and len(entries) > 2:
+        logging.warning(MESSAGE_ONE_NAME_ONLY)
+        return MESSAGE_ONE_NAME_ONLY
 
     if entries is None or len(entries) != 2:
         out = "Failed to set currency"
@@ -88,6 +100,10 @@ def clear_currency(client: discord.Client, message: discord.Message):
         out = "Failed to clear currency"
         logging.warning(out)
         return out
+
+    if has_extra_entries(message.content):
+        logging.warning(MESSAGE_ONE_NAME_ONLY)
+        return MESSAGE_ONE_NAME_ONLY
 
     currency = get_currency_row(entry)
 
@@ -128,6 +144,10 @@ async def get_scoreboard(client: discord.Client, message: discord.Message):
         out = "Failed to check scoreboard"
         logging.warning(out)
         return out
+
+    if has_extra_entries(message.content):
+        logging.warning(MESSAGE_ONE_NAME_ONLY)
+        return MESSAGE_ONE_NAME_ONLY
 
     currency = get_currency_row(entry)
 

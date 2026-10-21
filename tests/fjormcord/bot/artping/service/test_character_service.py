@@ -3,6 +3,7 @@ import asyncio
 from fjormcord.bot.artping.repository.art_ping_repository import add_ping
 from fjormcord.bot.artping.repository.character_repository import get_character_row
 from fjormcord.bot.artping.service.character_service import add_character, remove_character, check_character
+from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
 from tests.fakes import make_message
 
 
@@ -29,3 +30,16 @@ def test_check_character_lists_usernames_and_survives_unknown_users(client):
     out = asyncio.run(check_character(client, make_message("~checkcharacter lucina")))
 
     assert out == "Character entry found for Lucina\nUsers: Alice, Unknown user (99)"
+
+
+def test_add_character_rejects_spaces_with_underscore_hint(client):
+    assert add_character(client, make_message("~addcharacter Black Knight")) == MESSAGE_ONE_NAME_ONLY
+    assert get_character_row("Black") is None
+
+
+def test_remove_and_check_character_reject_spaces(client):
+    add_character(client, make_message("~addcharacter Black"))
+
+    assert remove_character(client, make_message("~removecharacter Black Knight")) == MESSAGE_ONE_NAME_ONLY
+    assert asyncio.run(check_character(client, make_message("~checkcharacter Black Knight"))) == MESSAGE_ONE_NAME_ONLY
+    assert get_character_row("Black") is not None

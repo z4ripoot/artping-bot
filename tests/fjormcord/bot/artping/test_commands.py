@@ -16,3 +16,7 @@ def test_help_lists_every_command_for_admins():
     assert "Admin Commands:" in out
     for command in COMMANDS:
         assert command.name in out
+
+
+def test_help_explains_underscores_for_multi_word_names():
+    assert "Use underscores for multi-word names, e.g. Black_Knight" in show_help(None, make_message("~help"))
