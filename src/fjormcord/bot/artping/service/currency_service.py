@@ -7,6 +7,8 @@ from fjormcord.bot.artping.repository.currency_repository import get_currency_ro
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, get_first, get_entries, has_extra_entries
 from fjormcord.bot.artping.util.user_util import get_username
 
+SCOREBOARD_PAGE_SIZE = 10
+
 
 def add_currency(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
@@ -138,17 +140,25 @@ def check_wallet(client: discord.Client, message: discord.Message):
 
 
 async def get_scoreboard(client: discord.Client, message: discord.Message):
-    entry = get_first(message.content)
+    entries = get_entries(message.content)
 
-    if entry is None:
+    if entries is None:
         out = "Failed to check scoreboard"
         logging.warning(out)
         return out
 
-    if has_extra_entries(message.content):
+    if len(entries) > 2:
         logging.warning(MESSAGE_ONE_NAME_ONLY)
         return MESSAGE_ONE_NAME_ONLY
 
+    try:
+        page = int(entries[1]) if len(entries) == 2 else 1
+    except ValueError:
+        # The optional second argument is the page; anything else is most likely a name with spaces
+        logging.warning(MESSAGE_ONE_NAME_ONLY)
+        return MESSAGE_ONE_NAME_ONLY
+
+    entry = entries[0]
     currency = get_currency_row(entry)
 
     if currency is None:
@@ -156,9 +166,30 @@ async def get_scoreboard(client: discord.Client, message: discord.Message):
         logging.warning(out)
         return out
 
-    out = f"Scoreboard for {currency['NAME']}:\n"
+    currency_name = currency['NAME']
+    rows = get_scoreboard_rows(currency['GACHA_CURRENCY_ID'])
 
-    for i, row in enumerate(get_scoreboard_rows(currency['GACHA_CURRENCY_ID']), start=1):
+    if not rows:
+        return f"Nobody has set their {currency_name} yet"
+
+    page_count = (len(rows) + SCOREBOARD_PAGE_SIZE - 1) // SCOREBOARD_PAGE_SIZE
+
+    if not 1 <= page <= page_count:
+        out = f"Page {page} doesn't exist. The scoreboard for {currency_name} has {page_count} pages"
+        logging.warning(out)
+        return out
+
+    if page_count == 1:
+        out = f"Scoreboard for {currency_name}:\n"
+    else:
+        out = f"Scoreboard for {currency_name} (page {page}/{page_count}):\n"
+
+    # Only the users on this page are looked up
+    start = (page - 1) * SCOREBOARD_PAGE_SIZE
+    for i, row in enumerate(rows[start:start + SCOREBOARD_PAGE_SIZE], start=start + 1):
         out += f"{i}. {await get_username(client, row['USER'])} ({row['AMOUNT']})\n"
+
+    if page < page_count:
+        out += f"Use ~scoreboard {currency_name} {page + 1} for the next page"
 
     return out

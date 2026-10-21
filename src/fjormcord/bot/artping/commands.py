@@ -77,7 +77,8 @@ COMMANDS = [
             "currency name", SECTION_CURRENCY),
     Command("~checkwallet", check_wallet, "Shows a list of all currencies you have and their count",
             section=SECTION_CURRENCY),
-    Command("~scoreboard", get_scoreboard, "Shows a leaderboard of the specified currency", "currency name",
+    Command("~scoreboard", get_scoreboard, "Shows a leaderboard of the specified currency, 10 users per page",
+            "currency name) (optional page number",
             SECTION_CURRENCY),
 
     Command("~addcharacter", add_character, "Add a character that users can be pinged for", "character name",

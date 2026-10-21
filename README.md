@@ -26,7 +26,7 @@ Arguments are separated by spaces, so character and currency names cannot contai
 | ~setcurrency <currency> <amount>  | This will set user's provided currency to provided amount                                                                                                         |
 | ~clearcurrency <currency>         | This will clear user's provided currency from their wallet                                                                                                        |
 | ~checkwallet                      | This will display all the user's currencies and their amount in their wallet                                                                                      |
-| ~scoreboard <currency>            | This will display a leaderboard of the provided currency. It will display the ranking of users with their amount of the provided currency                         |
+| ~scoreboard <currency> [page]     | This will display a leaderboard of the provided currency, 10 users per page. Without a page number the first page is shown                                        |
 | ~help                             | This will display an overview of all the available commands                                                                                                       |
 
 # Local setup
