@@ -1,5 +1,8 @@
+import pytest
+
 from fjormcord.bot.artping.repository.art_ping_repository import add_ping as insert_ping
 from fjormcord.bot.artping.repository.character_repository import add_character, get_character_row
+from fjormcord.bot.artping.service import art_ping_service
 from fjormcord.bot.artping.service.art_ping_service import do_art_ping, add_ping, remove_ping, check_ping
 from tests.fakes import make_message
 
@@ -67,3 +70,52 @@ def test_add_and_remove_ping_hint_at_underscores_for_several_words(client):
     assert remove_ping(client, make_message("~removeping Black Knight")) == \
         "More than one character detected. Please remove the characters separately. " \
         "Use underscores for multi-word names, e.g. Black_Knight"
+
+
+@pytest.fixture
+def clock(monkeypatch):
+    # A clock the test moves forward by hand, in seconds
+    clock = {"now": 1000.0}
+    monkeypatch.setattr(art_ping_service, "monotonic", lambda: clock["now"])
+    return clock
+
+
+def test_art_ping_is_blocked_during_cooldown(client, clock):
+    add_character("Lucina")
+    subscribe("Lucina", 1)
+    do_art_ping(client, make_message("~artping Lucina", user_id=2))
+
+    clock["now"] += 0.5
+
+    assert do_art_ping(client, make_message("~artping Lucina", user_id=3)) == \
+        "Lucina was pinged recently. Try again in 1 second"
+
+
+def test_art_ping_is_allowed_after_cooldown(client, clock):
+    add_character("Lucina")
+    subscribe("Lucina", 1)
+    do_art_ping(client, make_message("~artping Lucina"))
+
+    clock["now"] += 1
+
+    assert do_art_ping(client, make_message("~artping Lucina")) == "Lucina: <@1>"
+
+
+def test_art_ping_cooldown_only_holds_back_that_character(client, clock):
+    add_character("Lucina")
+    add_character("Marth")
+    subscribe("Lucina", 1)
+    subscribe("Marth", 2)
+    do_art_ping(client, make_message("~artping Lucina"))
+
+    out = do_art_ping(client, make_message("~artping Lucina Marth"))
+
+    assert out == "Lucina was pinged recently. Try again in 1 second\nMarth: <@2>"
+
+
+def test_admins_are_not_held_back_by_cooldown(client, clock):
+    add_character("Lucina")
+    subscribe("Lucina", 1)
+    do_art_ping(client, make_message("~artping Lucina"))
+
+    assert do_art_ping(client, make_message("~artping Lucina", administrator=True)) == "Lucina: <@1>"

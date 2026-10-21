@@ -9,6 +9,7 @@ from fjormcord.bot.artping.service.character_service import add_character, remov
 from fjormcord.bot.artping.service.currency_service import add_currency, remove_currency, set_currency, clear_currency, \
     check_wallet, get_scoreboard
 from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT
+from fjormcord.bot.artping.util.user_util import is_administrator
 
 COMMAND_PREFIX = "~"
 
@@ -28,12 +29,6 @@ class Command:
     usage: str = ""
     section: str = SECTION_ART_PING
     admin_only: bool = False
-
-
-def is_administrator(author):
-    # Users in DMs have no guild permissions
-    permissions = getattr(author, 'guild_permissions', None)
-    return permissions is not None and permissions.administrator
 
 
 def show_help(client: discord.Client, message: discord.Message):

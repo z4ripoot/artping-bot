@@ -1,4 +1,6 @@
 import logging
+import math
+from time import monotonic
 
 import discord
 
@@ -6,6 +8,13 @@ from fjormcord.bot.artping.repository import art_ping_repository
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users, get_art_ping_row, get_pings_from_user
 from fjormcord.bot.artping.repository.character_repository import get_character_rows, get_character_row
 from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT, get_entries
+from fjormcord.bot.artping.util.user_util import is_administrator
+
+# A character can't be pinged again within this many seconds, except by admins
+ART_PING_COOLDOWN_SECONDS = 1
+
+# Character ID -> monotonic() time of its last ping; kept in memory, so it resets when the bot restarts
+_last_pinged = {}
 
 
 def do_art_ping(client: discord.Client, message: discord.Message):
@@ -24,6 +33,17 @@ def do_art_ping(client: discord.Client, message: discord.Message):
     if missing_characters:
         lines.append(f"No character entry for {', '.join(missing_characters)}")
 
+    now = monotonic()
+    if not is_administrator(message.author):
+        cooling_down = {row['CHARACTER_ID']: ART_PING_COOLDOWN_SECONDS - (now - _last_pinged[row['CHARACTER_ID']])
+                        for row in character_rows
+                        if now - _last_pinged.get(row['CHARACTER_ID'], -math.inf) < ART_PING_COOLDOWN_SECONDS}
+        if cooling_down:
+            names = ", ".join(row['NAME'] for row in character_rows if row['CHARACTER_ID'] in cooling_down)
+            seconds = math.ceil(max(cooling_down.values()))
+            lines.append(f"{names} was pinged recently. Try again in {seconds} second{'' if seconds == 1 else 's'}")
+            character_rows = [row for row in character_rows if row['CHARACTER_ID'] not in cooling_down]
+
     if not character_rows:
         out = "\n".join(lines)
         logging.warning(out)
@@ -31,6 +51,8 @@ def do_art_ping(client: discord.Client, message: discord.Message):
 
     character_names = ", ".join(row['NAME'] for row in character_rows)
     user_ids = get_art_ping_users([row['CHARACTER_ID'] for row in character_rows])
+    for row in character_rows:
+        _last_pinged[row['CHARACTER_ID']] = now
 
     if user_ids:
         lines.append(f"{character_names}: " + " ".join(f"<@{user_id}>" for user_id in user_ids))

@@ -3,6 +3,12 @@ import logging
 import discord
 
 
+def is_administrator(author):
+    # Users in DMs have no guild permissions
+    permissions = getattr(author, 'guild_permissions', None)
+    return permissions is not None and permissions.administrator
+
+
 async def get_username(client: discord.Client, user_id):
     # The cache costs no request to Discord, but only holds users the bot has seen since it started
     user = client.get_user(int(user_id))

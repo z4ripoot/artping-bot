@@ -117,3 +117,20 @@ def test_scoreboard_page_must_be_a_number(client):
 
     for page in ("--1", "²", "two"):
         assert asyncio.run(get_scoreboard(client, make_message(f"~scoreboard orbs {page}"))) == MESSAGE_ONE_NAME_ONLY
+
+
+def test_set_currency_rejects_negative_amount(client):
+    add_currency(client, make_message("~addcurrency Orbs"))
+
+    assert set_currency(client, make_message("~setcurrency orbs -500")) == \
+        "Failed to set currency. The amount can't be negative"
+    assert set_currency(client, make_message("~setcurrency orbs 0")) == "Your Orbs has been set to 0"
+
+
+def test_set_currency_rejects_amount_too_large_for_database(client):
+    add_currency(client, make_message("~addcurrency Orbs"))
+
+    assert set_currency(client, make_message(f"~setcurrency orbs {2 ** 63 - 1}")) == \
+        f"Your Orbs has been set to {2 ** 63 - 1}"
+    assert set_currency(client, make_message(f"~setcurrency orbs {2 ** 63}")) == \
+        "Failed to set currency. The amount is too large"

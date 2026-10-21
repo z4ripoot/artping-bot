@@ -9,6 +9,9 @@ from fjormcord.bot.artping.util.user_util import get_username
 
 SCOREBOARD_PAGE_SIZE = 10
 
+# The largest number SQLite can store in an INTEGER column
+MAX_AMOUNT = 2 ** 63 - 1
+
 
 def add_currency(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
@@ -78,6 +81,16 @@ def set_currency(client: discord.Client, message: discord.Message):
         amount = int(entries[1])
     except ValueError:
         out = f"Failed to set currency. Please enter a valid amount for your {entry}."
+        logging.warning(out)
+        return out
+
+    if amount < 0:
+        out = "Failed to set currency. The amount can't be negative"
+        logging.warning(out)
+        return out
+
+    if amount > MAX_AMOUNT:
+        out = "Failed to set currency. The amount is too large"
         logging.warning(out)
         return out
 
