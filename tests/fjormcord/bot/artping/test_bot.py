@@ -51,3 +51,10 @@ def test_failing_command_still_replies(bot, monkeypatch):
     monkeypatch.setitem(commands.COMMANDS_BY_NAME, "~checkping", Command(command.name, broken, command.description))
 
     assert dispatch(bot, make_message("~checkping")) == ["Something went wrong while running ~checkping"]
+
+
+def test_replies_cannot_mention_everyone_or_roles(bot):
+    assert dispatch(bot, make_message("~artping @everyone")) == ["No character entry for @everyone"]
+    assert bot.allowed_mentions.everyone is False
+    assert bot.allowed_mentions.roles is False
+    assert bot.allowed_mentions.users is True

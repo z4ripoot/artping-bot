@@ -11,6 +11,9 @@ from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, MES
 COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0)
 COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0)
 
+# Replies echo user input, so never let a message trigger @everyone/@here or role pings
+ALLOWED_MENTIONS = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=True)
+
 CONFIG = config.read_config()
 
 COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name', fallback=None)
@@ -32,6 +35,10 @@ CHROMK = f'{CHROMK_1}{CHROMK_2}{CHROMK_3}{CHROMK_4}\n{CHROMK_5}{CHROMK_6}{CHROMK
 
 
 class ArtPingClient(discord.Client):
+    def __init__(self, **options):
+        options.setdefault('allowed_mentions', ALLOWED_MENTIONS)
+        super().__init__(**options)
+
     async def on_ready(self):
         logging.info("Initiating tasks")
 
