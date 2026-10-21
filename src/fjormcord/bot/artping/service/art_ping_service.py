@@ -7,7 +7,7 @@ import discord
 from fjormcord.bot.artping.repository import art_ping_repository
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users, get_art_ping_row, get_pings_from_user
 from fjormcord.bot.artping.repository.character_repository import get_character_rows, get_character_row
-from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT, get_entries
+from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT, MissingArgument, get_entries
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 # A character can't be pinged again within this many seconds, except by admins
@@ -21,9 +21,7 @@ def do_art_ping(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
 
     if not entries:
-        out = "Character is missing. Please add the character to your ping"
-        logging.warning(out)
-        return out
+        raise MissingArgument("character name")
 
     character_rows = get_character_rows(entries)
     found_names = {row['NAME'].lower() for row in character_rows}
@@ -67,9 +65,7 @@ def add_ping(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
 
     if not entries:
-        out = "Character is missing. Please add the character to be pinged for"
-        logging.warning(out)
-        return out
+        raise MissingArgument("character name")
     elif len(entries) > 1:
         out = f"More than one character detected. Please add the characters separately. {MULTI_WORD_HINT}"
         logging.warning(out)
@@ -93,7 +89,7 @@ def add_ping(client: discord.Client, message: discord.Message):
 
     art_ping_repository.add_ping(character['CHARACTER_ID'], user_id)
 
-    out = f"A ping for {character_name} has been added"
+    out = f"Ping for {character_name} has been added"
     logging.info(out)
     return out
 
@@ -102,7 +98,7 @@ def remove_ping(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
 
     if not entries:
-        return "Character is missing. Please add the character you would like to remove"
+        raise MissingArgument("character name")
     elif len(entries) > 1:
         return f"More than one character detected. Please remove the characters separately. {MULTI_WORD_HINT}"
 

@@ -48,7 +48,7 @@ def test_art_ping_ignores_repeated_spaces(client):
 def test_add_and_remove_ping(client):
     add_character("Lucina")
 
-    assert add_ping(client, make_message("~addping lucina")) == "A ping for Lucina has been added"
+    assert add_ping(client, make_message("~addping lucina")) == "Ping for Lucina has been added"
     assert add_ping(client, make_message("~addping lucina")) == "Ping for Lucina already exists"
     assert check_ping(client, make_message("~checkping")) == "Lucina"
     assert remove_ping(client, make_message("~removeping lucina")) == "Ping for Lucina has been removed"

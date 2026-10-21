@@ -34,7 +34,7 @@ def test_admin_command_denied_for_non_admin(bot):
 
 
 def test_admin_command_allowed_for_admin(bot):
-    assert dispatch(bot, make_message("~addcharacter Lucina", administrator=True)) == ["Lucina has been added"]
+    assert dispatch(bot, make_message("~addcharacter Lucina", administrator=True)) == ["Character Lucina has been added"]
 
 
 def test_admin_command_denied_in_dms(bot):
@@ -52,6 +52,25 @@ def test_failing_command_still_replies(bot, monkeypatch):
     monkeypatch.setitem(commands.COMMANDS_BY_NAME, "~checkping", Command(command.name, broken, command.description))
 
     assert dispatch(bot, make_message("~checkping")) == ["Something went wrong while running ~checkping"]
+
+
+# The alias commands only reply that aliases aren't supported yet
+COMMANDS_WITH_ARGUMENTS = [command for command in commands.COMMANDS
+                           if command.usage and command.name not in ("~addalias", "~removealias")]
+
+
+@pytest.mark.parametrize("command", COMMANDS_WITH_ARGUMENTS, ids=lambda command: command.name)
+def test_missing_argument_is_answered_with_usage(bot, command):
+    [reply] = dispatch(bot, make_message(command.name, administrator=True))
+
+    assert reply.endswith(f" is missing. Usage: {command.name} ({command.usage})")
+
+
+def test_missing_argument_names_what_is_missing(bot):
+    assert dispatch(bot, make_message("~addcharacter", administrator=True)) == \
+        ["Character name is missing. Usage: ~addcharacter (character name)"]
+    assert dispatch(bot, make_message("~setcurrency Orbs")) == \
+        ["Amount is missing. Usage: ~setcurrency (currency name) (amount)"]
 
 
 def test_replies_cannot_mention_everyone_or_roles(bot):

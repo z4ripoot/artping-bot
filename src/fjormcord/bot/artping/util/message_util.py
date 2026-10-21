@@ -5,6 +5,13 @@ MULTI_WORD_HINT = "Use underscores for multi-word names, e.g. Black_Knight"
 MESSAGE_ONE_NAME_ONLY = f"Only one name is allowed. {MULTI_WORD_HINT}"
 
 
+class MissingArgument(Exception):
+    # Raised by a handler; the client answers with what is missing and the command's usage from ~help
+    def __init__(self, argument):
+        super().__init__(f"{argument} is missing")
+        self.argument = argument
+
+
 def get_entries(content):
     # Everything after the command; split() also ignores repeated whitespace
     entries = content.split()[1:]

@@ -27,7 +27,7 @@ def test_clear_currency(client):
 
     assert clear_currency(client, make_message("~clearcurrency orbs")) == "Your Orbs has been cleared"
     assert clear_currency(client, make_message("~clearcurrency orbs")) == \
-        "Failed to clear currency Orbs for user. Currency Orbs for user doesn't exist"
+        "You don't have any Orbs set"
 
 
 def test_remove_currency_cascades_to_wallets(client, database):
@@ -134,3 +134,23 @@ def test_set_currency_rejects_amount_too_large_for_database(client):
         f"Your Orbs has been set to {2 ** 63 - 1}"
     assert set_currency(client, make_message(f"~setcurrency orbs {2 ** 63}")) == \
         "Failed to set currency. The amount is too large"
+
+
+def test_unknown_currency_is_reported_the_same_everywhere(client):
+    expected = "Currency Gems doesn't exist"
+
+    assert set_currency(client, make_message("~setcurrency Gems 5")) == expected
+    assert clear_currency(client, make_message("~clearcurrency Gems")) == expected
+    assert remove_currency(client, make_message("~removecurrency Gems")) == expected
+    assert asyncio.run(get_scoreboard(client, make_message("~scoreboard Gems"))) == expected
+
+
+def test_add_currency_rejects_duplicates_with_stored_name(client):
+    add_currency(client, make_message("~addcurrency Orbs"))
+
+    assert add_currency(client, make_message("~addcurrency orbs")) == "Currency Orbs already exists"
+
+
+def test_empty_wallet(client):
+    assert check_wallet(client, make_message("~checkwallet")) == \
+        "Your wallet is empty. Use ~setcurrency to add a currency"

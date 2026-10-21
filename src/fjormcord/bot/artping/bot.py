@@ -6,8 +6,8 @@ import discord
 from discord.ext import tasks
 
 from fjormcord.bot.artping import config
-from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, MESSAGE_DENIED
-from fjormcord.bot.artping.util.message_util import split_message
+from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, MESSAGE_DENIED, format_usage
+from fjormcord.bot.artping.util.message_util import MissingArgument, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 # Coliseum closes on Monday at 23:00 UTC; all scheduling is done in UTC, independent of the host's timezone
@@ -95,6 +95,9 @@ class ArtPingClient(discord.Client):
             out = command.handler(self, message)
             if inspect.isawaitable(out):
                 out = await out
+        except MissingArgument as e:
+            out = f"{e.argument.capitalize()} is missing. Usage: {format_usage(command)}"
+            logging.warning(out)
         except Exception:
             logging.exception("Command %s failed", command.name)
             out = f"Something went wrong while running {command.name}"

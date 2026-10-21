@@ -4,7 +4,8 @@ import discord
 
 from fjormcord.bot.artping.repository import currency_repository
 from fjormcord.bot.artping.repository.currency_repository import get_currency_row, get_wallet_row, get_wallet_rows, get_scoreboard_rows
-from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, get_first, get_entries, has_extra_entries
+from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, MissingArgument, get_first, get_entries, \
+    has_extra_entries
 from fjormcord.bot.artping.util.user_util import get_username
 
 SCOREBOARD_PAGE_SIZE = 10
@@ -17,16 +18,15 @@ def add_currency(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:
-        out = "Failed to add currency"
-        logging.warning(out)
-        return out
+        raise MissingArgument("currency name")
 
     if has_extra_entries(message.content):
         logging.warning(MESSAGE_ONE_NAME_ONLY)
         return MESSAGE_ONE_NAME_ONLY
 
-    if get_currency_row(entry):
-        out = f"Failed to add currency {entry}. Currency {entry} already exists"
+    existing = get_currency_row(entry)
+    if existing:
+        out = f"Currency {existing['NAME']} already exists"
         logging.warning(out)
         return out
 
@@ -41,9 +41,7 @@ def remove_currency(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:
-        out = "Failed to remove currency"
-        logging.warning(out)
-        return out
+        raise MissingArgument("currency name")
 
     if has_extra_entries(message.content):
         logging.warning(MESSAGE_ONE_NAME_ONLY)
@@ -52,7 +50,7 @@ def remove_currency(client: discord.Client, message: discord.Message):
     currency = get_currency_row(entry)
 
     if currency is None:
-        out = f"Failed to remove currency {entry}. Currency {entry} doesn't exist"
+        out = f"Currency {entry} doesn't exist"
         logging.warning(out)
         return out
 
@@ -66,14 +64,15 @@ def remove_currency(client: discord.Client, message: discord.Message):
 def set_currency(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
 
-    if entries is not None and len(entries) > 2:
+    if entries is None:
+        raise MissingArgument("currency name")
+
+    if len(entries) > 2:
         logging.warning(MESSAGE_ONE_NAME_ONLY)
         return MESSAGE_ONE_NAME_ONLY
 
-    if entries is None or len(entries) != 2:
-        out = "Failed to set currency"
-        logging.warning(out)
-        return out
+    if len(entries) == 1:
+        raise MissingArgument("amount")
 
     entry = entries[0]
 
@@ -97,7 +96,7 @@ def set_currency(client: discord.Client, message: discord.Message):
     currency = get_currency_row(entry)
 
     if currency is None:
-        out = f"Failed to set currency {entry} for user. Currency {entry} doesn't exist"
+        out = f"Currency {entry} doesn't exist"
         logging.warning(out)
         return out
 
@@ -112,9 +111,7 @@ def clear_currency(client: discord.Client, message: discord.Message):
     entry = get_first(message.content)
 
     if entry is None:
-        out = "Failed to clear currency"
-        logging.warning(out)
-        return out
+        raise MissingArgument("currency name")
 
     if has_extra_entries(message.content):
         logging.warning(MESSAGE_ONE_NAME_ONLY)
@@ -123,7 +120,7 @@ def clear_currency(client: discord.Client, message: discord.Message):
     currency = get_currency_row(entry)
 
     if currency is None:
-        out = f"Failed to clear currency {entry} for user. Currency {entry} doesn't exist"
+        out = f"Currency {entry} doesn't exist"
         logging.warning(out)
         return out
 
@@ -132,7 +129,7 @@ def clear_currency(client: discord.Client, message: discord.Message):
     user_id = str(message.author.id)
 
     if get_wallet_row(user_id, currency_id) is None:
-        out = f"Failed to clear currency {currency_name} for user. Currency {currency_name} for user doesn't exist"
+        out = f"You don't have any {currency_name} set"
         logging.warning(out)
         return out
 
@@ -144,9 +141,14 @@ def clear_currency(client: discord.Client, message: discord.Message):
 
 
 def check_wallet(client: discord.Client, message: discord.Message):
+    wallet_rows = get_wallet_rows(str(message.author.id))
+
+    if not wallet_rows:
+        return "Your wallet is empty. Use ~setcurrency to add a currency"
+
     out = f"User {message.author.display_name}'s wallet:\n"
 
-    for wallet in get_wallet_rows(str(message.author.id)):
+    for wallet in wallet_rows:
         out += f"{wallet['NAME']}: {wallet['AMOUNT']}\n"
 
     return out
@@ -156,9 +158,7 @@ async def get_scoreboard(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
 
     if entries is None:
-        out = "Failed to check scoreboard"
-        logging.warning(out)
-        return out
+        raise MissingArgument("currency name")
 
     if len(entries) > 2:
         logging.warning(MESSAGE_ONE_NAME_ONLY)
@@ -175,7 +175,7 @@ async def get_scoreboard(client: discord.Client, message: discord.Message):
     currency = get_currency_row(entry)
 
     if currency is None:
-        out = f"Failed to check scoreboard for {entry}. Currency {entry} doesn't exist"
+        out = f"Currency {entry} doesn't exist"
         logging.warning(out)
         return out
 

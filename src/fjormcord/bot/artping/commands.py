@@ -31,6 +31,10 @@ class Command:
     admin_only: bool = False
 
 
+def format_usage(command):
+    return f'{command.name} ({command.usage})' if command.usage else command.name
+
+
 def show_help(client: discord.Client, message: discord.Message):
     show_admin = is_administrator(message.author)
     out = 'Commands (content in brackets is what to add when using command):\n'
@@ -46,8 +50,7 @@ def show_help(client: discord.Client, message: discord.Message):
             out += f'\n{section}\n'
             current_section = section
 
-        usage = f' ({command.usage})' if command.usage else ''
-        out += f'{command.name}{usage}: {command.description}\n'
+        out += f'{format_usage(command)}: {command.description}\n'
 
     return out
 
