@@ -29,8 +29,20 @@ Arguments are separated by spaces, so character and currency names cannot contai
 | ~scoreboard <currency>            | This will display a leaderboard of the provided currency. It will display the ranking of users with their amount of the provided currency                         |
 | ~help                             | This will display an overview of all the available commands                                                                                                       |
 
+# Local setup
+1. Create a bot of your own in the [Discord developer portal](https://discord.com/developers/applications), enable the "Message Content Intent" and invite it to a test server.
+2. Install the bot and its test dependencies: `python -m venv .venv`, then `.venv/Scripts/python -m pip install -e ".[dev]"` (use `.venv/bin/python` on Linux/macOS).
+3. Create `config.ini` in the repository root with your bot's token:
+   ```ini
+   [discord]
+   token=<your bot token>
+   ```
+4. Run the bot with `.venv/Scripts/python -m fjormcord.bot.artping`. The database (`test.db`) is created on the first start.
+
+Run the tests with `.venv/Scripts/python -m pytest`. They need neither a token nor `config.ini`.
+
 # Configuration
-The bot is configurable by changing the properties in config.ini.
- * You have to provide your token of Discord bot to the property "discord.token"
- * You have to provide a path to your database to the property "database.path"
+The defaults are in `config.example.ini`, which is committed. `config.ini` is not committed: any property you put there overrides the default.
+ * You have to provide your token of Discord bot to the property "discord.token". Only put it in config.ini
+ * The database is stored at the path in the property "database.path". A database that doesn't exist yet is created on startup
  * Optionally, you can provide the channel name to property "coliseum_notification_channel_name". The FEH coliseum notifications are send to this channel, otherwise no notifications will be sent

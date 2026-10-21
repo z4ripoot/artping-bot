@@ -10,13 +10,13 @@ Discord bot for the Fjormcord community, built on discord.py (2.x) with a SQLite
 
 ```bash
 .venv/Scripts/python -m pip install -e ".[dev]"     # editable install with test dependencies (pyproject.toml)
-.venv/Scripts/python -m fjormcord.bot.artping        # run the bot (needs discord.token in config.ini); also: artping-bot
+.venv/Scripts/python -m fjormcord.bot.artping        # run the bot (exits unless config.ini sets discord.token); also: artping-bot
 .venv/Scripts/python -m pytest                       # run all tests
 .venv/Scripts/python -m pytest tests/fjormcord/bot/artping/service/test_art_ping_service.py::test_add_and_remove_ping   # single test
-sqlite3 test.db < db/schema.sql                      # (re)create the schema — DROPs all tables first
+sqlite3 test.db < db/schema.sql                      # reset an existing database — DROPs all tables first
 ```
 
-Without the editable install, run with `PYTHONPATH=src`. Use `-e` rather than a plain `pip install .`: `config.py` locates `config.ini` relative to its own file in `src/`, which breaks once the code is copied into `site-packages`. There is no linter configured.
+Without the editable install, run with `PYTHONPATH=src`. Use `-e` rather than a plain `pip install .`: `config.py` locates the config files relative to its own file in `src/`, which breaks once the code is copied into `site-packages`. There is no linter configured.
 
 ## Layout
 
@@ -26,7 +26,9 @@ Tests live in `tests/fjormcord/bot/artping/`, mirroring the source tree one-to-o
 
 ## Configuration
 
-`config.ini` (committed, in the repository root) holds `discord.token`, `database.path` (defaults to the committed `test.db`), `tasks.coliseum_notification_channel_name`, and custom emoji IDs under `[emoji]`. `config.py` locates it, and resolves relative paths in it, against the repository root, so the bot can be started from any directory. Do not commit a real token.
+`config.example.ini` (committed, in the repository root) holds the defaults: an empty `discord.token`, `database.path` (`test.db`), `tasks.coliseum_notification_channel_name`, and custom emoji IDs under `[emoji]`. `config.ini` (gitignored) is read after it and overrides any setting; it holds the real token, and production edits it by hand. The bot exits with a hint when no token is set. `config.py` locates both, and resolves relative paths in them, against the repository root, so the bot can be started from any directory. Never put a token in `config.example.ini`.
+
+The database file is gitignored. `database.connect` creates a database that doesn't exist yet from `db/schema.sql`, so a fresh clone needs no manual setup. Tests need neither `config.ini` nor a database file.
 
 ## Architecture
 

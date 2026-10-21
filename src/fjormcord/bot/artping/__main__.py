@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import discord
 
@@ -13,12 +14,16 @@ def main():
         handlers=[logging.StreamHandler()]
     )
 
+    token = config.read_config().get('discord', 'token', fallback='')
+    if not token:
+        sys.exit("No Discord token configured. Create config.ini with your bot's token, see README.md")
+
     intents = discord.Intents.default()
     intents.message_content = True
 
     client = ArtPingClient(intents=intents)
     logging.info("Bot is running")
-    client.run(config.read_config().get('discord', 'token'))
+    client.run(token)
 
 
 if __name__ == "__main__":
