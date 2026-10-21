@@ -1,6 +1,6 @@
 import inspect
 import logging
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 
 import discord
 from discord.ext import tasks
@@ -8,8 +8,10 @@ from discord.ext import tasks
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, MESSAGE_DENIED, is_administrator
 
-COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0)
-COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0)
+# Coliseum closes on Monday at 23:00 UTC; all scheduling is done in UTC, independent of the host's timezone
+COLISEUM_CLOSING_TIME = time(hour=23, minute=0, second=0, tzinfo=timezone.utc)
+COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0, tzinfo=timezone.utc)
+COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0, tzinfo=timezone.utc)
 
 # Replies echo user input, so never let a message trigger @everyone/@here or role pings
 ALLOWED_MENTIONS = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=True)
@@ -92,13 +94,13 @@ class ArtPingClient(discord.Client):
 
     @tasks.loop(time=[COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME, COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME])
     async def task_coliseum_before_closing_notification(self):
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         if now.weekday() == 0:
             channel = discord.utils.get(self.get_all_channels(), name=COLISEUM_NOTIFICATION_CHANNEL_NAME)
             if channel is None:
                 logging.error("Invalid channel. Task will be skipped")
             else:
-                closing_time = now.replace(hour=23, minute=0, second=0, microsecond=0).timestamp().__floor__()
+                closing_time = int(datetime.combine(now.date(), COLISEUM_CLOSING_TIME).timestamp())
                 message = f"Coliseum/Aether Raids closes <t:{closing_time}:R> at <t:{closing_time}:f>"
 
                 logging.info(message)
