@@ -19,7 +19,10 @@ ALLOWED_MENTIONS = discord.AllowedMentions(everyone=False, roles=False, users=Tr
 
 CONFIG = config.read_config()
 
-COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name', fallback=None)
+_channel_id = CONFIG.get('tasks', 'coliseum_notification_channel_id', fallback='')
+COLISEUM_NOTIFICATION_CHANNEL_ID = int(_channel_id) if _channel_id else None
+# Replaced by the channel ID; only read to point configurations that still use it to the new setting
+OLD_COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name', fallback=None)
 LORENZ_SMILE = CONFIG.get('emoji', 'lorenz_smile')
 
 CHROMK_1 = CONFIG.get('emoji', 'chromk_1')
@@ -45,9 +48,13 @@ class ArtPingClient(discord.Client):
     async def on_ready(self):
         logging.info("Initiating tasks")
 
-        if not COLISEUM_NOTIFICATION_CHANNEL_NAME:
+        if not COLISEUM_NOTIFICATION_CHANNEL_ID:
+            if OLD_COLISEUM_NOTIFICATION_CHANNEL_NAME:
+                logging.warning("tasks.coliseum_notification_channel_name is no longer supported. Set "
+                                "tasks.coliseum_notification_channel_id to the ID of the #%s channel instead",
+                                OLD_COLISEUM_NOTIFICATION_CHANNEL_NAME)
             logging.warning(
-                "No channel name is configured for Coliseum notifications. Coliseum notification task will not be initiated")
+                "No channel ID is configured for Coliseum notifications. Coliseum notification task will not be initiated")
         elif not self.task_coliseum_before_closing_notification.is_running():
             # on_ready fires again after reconnects; starting a running loop raises
             logging.info("Initiating Coliseum notification task")
@@ -98,9 +105,9 @@ class ArtPingClient(discord.Client):
     async def task_coliseum_before_closing_notification(self):
         now = datetime.now(timezone.utc)
         if now.weekday() == 0:
-            channel = discord.utils.get(self.get_all_channels(), name=COLISEUM_NOTIFICATION_CHANNEL_NAME)
+            channel = self.get_channel(COLISEUM_NOTIFICATION_CHANNEL_ID)
             if channel is None:
-                logging.error("Invalid channel. Task will be skipped")
+                logging.error("Channel %s not found. Task will be skipped", COLISEUM_NOTIFICATION_CHANNEL_ID)
             else:
                 closing_time = int(datetime.combine(now.date(), COLISEUM_CLOSING_TIME).timestamp())
                 message = f"Coliseum/Aether Raids closes <t:{closing_time}:R> at <t:{closing_time}:f>"

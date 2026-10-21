@@ -73,12 +73,14 @@ def fake_datetime(utc_now, host_offset):
     return FakeDatetime
 
 
-def run_coliseum_task(bot, monkeypatch, utc_now, host_offset=timedelta(hours=2)):
+CHANNEL_ID = 123
+
+
+def run_coliseum_task(bot, monkeypatch, utc_now, host_offset=timedelta(hours=2), channel_id=CHANNEL_ID):
     channel = FakeChannel()
-    channel.name = "general"
-    monkeypatch.setattr(bot_module, "COLISEUM_NOTIFICATION_CHANNEL_NAME", "general")
+    monkeypatch.setattr(bot_module, "COLISEUM_NOTIFICATION_CHANNEL_ID", channel_id)
     monkeypatch.setattr(bot_module, "datetime", fake_datetime(utc_now, host_offset))
-    monkeypatch.setattr(bot, "get_all_channels", lambda: [channel])
+    monkeypatch.setattr(bot, "get_channel", lambda channel_id: channel if channel_id == CHANNEL_ID else None)
 
     asyncio.run(bot.task_coliseum_before_closing_notification.coro(bot))
     return channel.sent
@@ -108,3 +110,20 @@ def test_long_reply_is_split_into_messages_within_discord_limit(bot):
     assert len(sent) > 1
     assert all(len(chunk) <= 2000 for chunk in sent)
     assert all(f"<@{user_id}>" in " ".join(sent) for user_id in user_ids)
+
+
+def test_coliseum_notification_skipped_for_unknown_channel(bot, monkeypatch, caplog):
+    sent = run_coliseum_task(bot, monkeypatch, datetime(2026, 10, 19, 22, 0, tzinfo=timezone.utc), channel_id=456)
+
+    assert sent == []
+    assert "456" in caplog.text
+
+
+def test_old_channel_name_setting_is_reported(bot, monkeypatch, caplog):
+    monkeypatch.setattr(bot_module, "COLISEUM_NOTIFICATION_CHANNEL_ID", None)
+    monkeypatch.setattr(bot_module, "OLD_COLISEUM_NOTIFICATION_CHANNEL_NAME", "general")
+
+    asyncio.run(bot.on_ready())
+
+    assert "coliseum_notification_channel_id" in caplog.text
+    assert not bot.task_coliseum_before_closing_notification.is_running()
