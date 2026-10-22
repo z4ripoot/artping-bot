@@ -16,6 +16,11 @@ ART_PING_COOLDOWN_SECONDS = 1
 _last_pinged = {}
 
 
+def _cooldown_remaining(character_id, now):
+    # Seconds until the character can be pinged again; zero or less when it can be pinged now
+    return ART_PING_COOLDOWN_SECONDS - (now - _last_pinged.get(character_id, -math.inf))
+
+
 def do_art_ping(client: discord.Client, message: discord.Message):
     entries = get_entries(message.content)
 
@@ -32,14 +37,13 @@ def do_art_ping(client: discord.Client, message: discord.Message):
 
     now = monotonic()
     if not is_administrator(message.author):
-        cooling_down = {row['CHARACTER_ID']: ART_PING_COOLDOWN_SECONDS - (now - _last_pinged[row['CHARACTER_ID']])
-                        for row in character_rows
-                        if now - _last_pinged.get(row['CHARACTER_ID'], -math.inf) < ART_PING_COOLDOWN_SECONDS}
+        remaining = {row['CHARACTER_ID']: _cooldown_remaining(row['CHARACTER_ID'], now) for row in character_rows}
+        cooling_down = [row for row in character_rows if remaining[row['CHARACTER_ID']] > 0]
         if cooling_down:
-            names = ", ".join(row['NAME'] for row in character_rows if row['CHARACTER_ID'] in cooling_down)
-            seconds = math.ceil(max(cooling_down.values()))
+            names = ", ".join(row['NAME'] for row in cooling_down)
+            seconds = math.ceil(max(remaining[row['CHARACTER_ID']] for row in cooling_down))
             lines.append(f"{names} was pinged recently. Try again in {seconds} second{'' if seconds == 1 else 's'}")
-            character_rows = [row for row in character_rows if row['CHARACTER_ID'] not in cooling_down]
+            character_rows = [row for row in character_rows if remaining[row['CHARACTER_ID']] <= 0]
 
     if not character_rows:
         raise CommandError("\n".join(lines))
