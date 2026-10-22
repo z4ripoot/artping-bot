@@ -3,6 +3,8 @@ import logging
 # Arguments are split on whitespace, so names of several words are written with underscores
 MULTI_WORD_HINT = "Use underscores for multi-word names, e.g. Black_Knight"
 MESSAGE_ONE_NAME_ONLY = f"Only one name is allowed. {MULTI_WORD_HINT}"
+# Discord rejects messages longer than this
+MAX_MESSAGE_LENGTH = 2000
 
 
 class MissingArgument(Exception):
@@ -33,12 +35,8 @@ def has_extra_entries(content):
     return entries is not None and len(entries) > 1
 
 
-# Discord rejects messages longer than this
-MAX_MESSAGE_LENGTH = 2000
-
-
+# Splits text into chunks within Discord's message length limit; each chunk is sent as a separate message
 def split_message(text, limit=MAX_MESSAGE_LENGTH):
-    # Break at line breaks where possible, then at spaces (keeps mentions intact), and only cut words as a last resort
     chunks = []
     current = ""
 
