@@ -1,25 +1,7 @@
 import logging
-from dataclasses import dataclass
 
 from fjormcord.bot.artping.database import get_database_connection
-
-
-@dataclass(frozen=True)
-class Currency:
-    id: int
-    name: str
-
-
-@dataclass(frozen=True)
-class WalletEntry:
-    currency_name: str
-    amount: int
-
-
-@dataclass(frozen=True)
-class ScoreboardEntry:
-    user_id: str
-    amount: int
+from fjormcord.bot.artping.model.currency import Currency, ScoreboardEntry, WalletEntry
 
 
 def get_currency(currency_name):

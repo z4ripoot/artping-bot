@@ -1,13 +1,7 @@
 import logging
-from dataclasses import dataclass
 
 from fjormcord.bot.artping.database import get_database_connection
-
-
-@dataclass(frozen=True)
-class Character:
-    id: int
-    name: str
+from fjormcord.bot.artping.model.character import Character
 
 
 def _to_character(row):
