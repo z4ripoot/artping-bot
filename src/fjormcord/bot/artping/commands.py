@@ -1,13 +1,13 @@
 from dataclasses import dataclass
-from typing import Callable
+from typing import Awaitable, Callable
 
 import discord
 
 from fjormcord.bot.artping.service.alias_service import add_alias, remove_alias
 from fjormcord.bot.artping.service.art_ping_service import do_art_ping, add_ping, remove_ping, check_ping
 from fjormcord.bot.artping.service.character_service import add_character, remove_character, check_character
-from fjormcord.bot.artping.service.currency_service import add_currency, remove_currency, set_currency, clear_currency, \
-    check_wallet, get_scoreboard
+from fjormcord.bot.artping.service.currency_service import add_currency, remove_currency, set_currency, \
+    clear_currency, check_wallet, get_scoreboard
 from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT
 from fjormcord.bot.artping.util.user_util import is_administrator
 
@@ -17,20 +17,24 @@ SECTION_ART_PING = ""
 SECTION_CURRENCY = "Gacha Currency Commands:"
 SECTION_ADMIN = "Admin Commands:"
 
+# Called as handler(client, message); returns the reply, either directly or as a coroutine
+Handler = Callable[[discord.Client, discord.Message], str | Awaitable[str]]
+
 
 @dataclass(frozen=True)
 class Command:
     name: str
-    # Called as handler(client, message); returns the reply, either directly or as a coroutine
-    handler: Callable
+    handler: Handler
     description: str
-    usage: str = ""
+    # The arguments, in order, e.g. ("currency name", "amount")
+    usage: tuple[str, ...] = ()
     section: str = SECTION_ART_PING
     admin_only: bool = False
 
 
 def format_usage(command):
-    return f'{command.name} ({command.usage})' if command.usage else command.name
+    # ~setcurrency (currency name) (amount)
+    return " ".join([command.name] + [f"({argument})" for argument in command.usage])
 
 
 def show_help(client: discord.Client, message: discord.Message):
@@ -58,35 +62,37 @@ def show_help(client: discord.Client, message: discord.Message):
 #  missing/invalid arguments, permission denials, unknown commands and ~help are answered.
 # Commands are listed in ~help order; keep each section together and admin-only commands last.
 COMMANDS = [
-    Command("~artping", do_art_ping, "Ping users for art of this character", "character name"),
+    Command("~artping", do_art_ping, "Ping users for art of this character", usage=("character name",)),
     Command("~addping", add_ping, "Call to add yourself to the ping list when this character is pinged",
-            "character name"),
-    Command("~removeping", remove_ping, "Remove yourself from the ping list of this character", "character name"),
+            usage=("character name",)),
+    Command("~removeping", remove_ping, "Remove yourself from the ping list of this character",
+            usage=("character name",)),
     Command("~checkping", check_ping, "See which characters you are being pinged for"),
-    Command("~checkcharacter", check_character, "See which users are pinged for this character", "character name"),
+    Command("~checkcharacter", check_character, "See which users are pinged for this character",
+            usage=("character name",)),
     Command("~help", show_help, "Shows this overview of all the available commands"),
 
-    Command("~setcurrency", set_currency,
-            "Set the number of orbs, primos or any other currency that you have", "currency name) (amount",
-            SECTION_CURRENCY),
+    Command("~setcurrency", set_currency, "Set the number of orbs, primos or any other currency that you have",
+            usage=("currency name", "amount"), section=SECTION_CURRENCY),
     Command("~clearcurrency", clear_currency, "Clears the number you have saved for that particular currency",
-            "currency name", SECTION_CURRENCY),
+            usage=("currency name",), section=SECTION_CURRENCY),
     Command("~checkwallet", check_wallet, "Shows a list of all currencies you have and their count",
             section=SECTION_CURRENCY),
     Command("~scoreboard", get_scoreboard, "Shows a leaderboard of the specified currency, 10 users per page",
-            "currency name) (optional page number",
-            SECTION_CURRENCY),
+            usage=("currency name", "optional page number"), section=SECTION_CURRENCY),
 
-    Command("~addcharacter", add_character, "Add a character that users can be pinged for", "character name",
-            admin_only=True),
+    Command("~addcharacter", add_character, "Add a character that users can be pinged for",
+            usage=("character name",), admin_only=True),
     Command("~removecharacter", remove_character, "Remove a character and unsubscribe all its users",
-            "character name", admin_only=True),
-    Command("~addalias", add_alias, "Add an alias to a character", "character name) (alias", admin_only=True),
-    Command("~removealias", remove_alias, "Remove an alias from a character", "character name) (alias",
+            usage=("character name",), admin_only=True),
+    Command("~addalias", add_alias, "Add an alias to a character", usage=("character name", "alias"),
             admin_only=True),
-    Command("~addcurrency", add_currency, "Add a currency that users can track", "currency name", admin_only=True),
-    Command("~removecurrency", remove_currency, "Remove a currency and clear it from all wallets", "currency name",
+    Command("~removealias", remove_alias, "Remove an alias from a character", usage=("character name", "alias"),
             admin_only=True),
+    Command("~addcurrency", add_currency, "Add a currency that users can track", usage=("currency name",),
+            admin_only=True),
+    Command("~removecurrency", remove_currency, "Remove a currency and clear it from all wallets",
+            usage=("currency name",), admin_only=True),
 ]
 
 COMMANDS_BY_NAME = {command.name: command for command in COMMANDS}

@@ -34,7 +34,8 @@ def test_admin_command_ignored_for_non_admin(bot):
 
 
 def test_admin_command_allowed_for_admin(bot):
-    assert dispatch(bot, make_message("~addcharacter Lucina", administrator=True)) == ["Character Lucina has been added"]
+    assert dispatch(bot, make_message("~addcharacter Lucina", administrator=True)) == \
+        ["Character Lucina has been added"]
 
 
 def test_admin_command_ignored_in_dms(bot):
@@ -63,7 +64,7 @@ COMMANDS_WITH_ARGUMENTS = [command for command in commands.COMMANDS
 def test_missing_argument_is_answered_with_usage(bot, command):
     [reply] = dispatch(bot, make_message(command.name, administrator=True))
 
-    assert reply.endswith(f" is missing. Usage: {command.name} ({command.usage})")
+    assert reply.endswith(f" is missing. Usage: {command.name} ({') ('.join(command.usage)})")
 
 
 def test_missing_argument_names_what_is_missing(bot):
