@@ -51,11 +51,10 @@ def test_coliseum_notification_skipped_for_unknown_channel(monkeypatch, caplog):
     assert "456" in caplog.text
 
 
-def test_old_channel_name_setting_is_reported(monkeypatch, caplog):
+def test_coliseum_notification_not_started_without_channel_id(monkeypatch, caplog):
     monkeypatch.setattr(coliseum, "COLISEUM_NOTIFICATION_CHANNEL_ID", None)
-    monkeypatch.setattr(coliseum, "OLD_COLISEUM_NOTIFICATION_CHANNEL_NAME", "general")
 
     coliseum.start_coliseum_notification(SimpleNamespace())
 
-    assert "coliseum_notification_channel_id" in caplog.text
+    assert "No channel ID is configured" in caplog.text
     assert not coliseum.task_coliseum_before_closing_notification.is_running()

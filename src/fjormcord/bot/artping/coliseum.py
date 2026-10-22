@@ -11,20 +11,12 @@ COLISEUM_CLOSING_TIME = time(hour=23, minute=0, second=0, tzinfo=timezone.utc)
 COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0, tzinfo=timezone.utc)
 COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0, tzinfo=timezone.utc)
 
-CONFIG = config.read_config()
-
-_channel_id = CONFIG.get('tasks', 'coliseum_notification_channel_id', fallback='')
+_channel_id = config.read_config().get('tasks', 'coliseum_notification_channel_id', fallback='')
 COLISEUM_NOTIFICATION_CHANNEL_ID = int(_channel_id) if _channel_id else None
-# Replaced by the channel ID; only read to point configurations that still use it to the new setting
-OLD_COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name', fallback=None)
 
 
 def start_coliseum_notification(client: discord.Client):
     if not COLISEUM_NOTIFICATION_CHANNEL_ID:
-        if OLD_COLISEUM_NOTIFICATION_CHANNEL_NAME:
-            logging.warning("tasks.coliseum_notification_channel_name is no longer supported. Set "
-                            "tasks.coliseum_notification_channel_id to the ID of the #%s channel instead",
-                            OLD_COLISEUM_NOTIFICATION_CHANNEL_NAME)
         logging.warning(
             "No channel ID is configured for Coliseum notifications. Coliseum notification task will not be initiated")
     elif not task_coliseum_before_closing_notification.is_running():

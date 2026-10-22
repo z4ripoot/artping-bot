@@ -27,7 +27,7 @@ Tests live in `tests/fjormcord/bot/artping/`, mirroring the source tree one-to-o
 
 ## Configuration
 
-`config.example.ini` (committed, in the repository root) holds the defaults: an empty `discord.token`, `database.path` (`test.db`), `tasks.coliseum_notification_channel_id` (empty: no Coliseum reminders; the old `coliseum_notification_channel_name` is only read to log a warning pointing to it), and custom emoji IDs under `[emoji]`. `config.ini` (gitignored) is read after it and overrides any setting; it holds the real token, and production edits it by hand. The bot exits with a hint when no token is set. `config.py` locates both, and resolves relative paths in them, against the repository root, so the bot can be started from any directory. Never put a token in `config.example.ini`.
+`config.example.ini` (committed, in the repository root) holds the defaults: an empty `discord.token`, `database.path` (`test.db`), `tasks.coliseum_notification_channel_id` (empty: no Coliseum reminders), and custom emoji IDs under `[emoji]`. `config.ini` (gitignored) is read after it and overrides any setting; it holds the real token, and production edits it by hand. The bot exits with a hint when no token is set. `config.py` locates both, and resolves relative paths in them, against the repository root, so the bot can be started from any directory. Never put a token in `config.example.ini`.
 
 The database file is gitignored. Tests need neither `config.ini` nor a database file.
 
