@@ -2,6 +2,7 @@ import logging
 from collections.abc import Sequence
 
 from fjormcord.bot.artping.database import get_database_connection
+from fjormcord.bot.artping.model.character import Character
 
 
 def has_ping(character_id: int, user_id: str) -> bool:
@@ -43,13 +44,13 @@ def remove_ping(character_id: int, user_id: str):
             """, (character_id, user_id,))
 
 
-def get_pings_from_user(user_id: str) -> list[str]:
+def get_pings_from_user(user_id: str) -> list[Character]:
     rows = get_database_connection().execute("""
-        SELECT C.NAME
+        SELECT C.CHARACTER_ID AS id, C.NAME AS name
         FROM PINGS P
         JOIN CHARACTERS C ON P.CHARACTER_ID = C.CHARACTER_ID
         WHERE P.USER = ?
         ORDER BY C.NAME
         """, (user_id,))
 
-    return [name for (name,) in rows]
+    return [Character(**row) for row in rows]

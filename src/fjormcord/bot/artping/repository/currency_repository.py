@@ -6,12 +6,12 @@ from fjormcord.bot.artping.model.currency import Currency, ScoreboardEntry, Wall
 
 def get_currency(currency_name: str) -> Currency | None:
     row = get_database_connection().execute("""
-        SELECT C.GACHA_CURRENCY_ID, C.NAME
+        SELECT C.GACHA_CURRENCY_ID AS id, C.NAME AS name
         FROM GACHA_CURRENCY C
         WHERE C.NAME = ?
         """, (currency_name,)).fetchone()
 
-    return Currency(id=row['GACHA_CURRENCY_ID'], name=row['NAME']) if row else None
+    return Currency(**row) if row else None
 
 
 def add_currency(currency_name: str):
@@ -65,22 +65,22 @@ def has_wallet_entry(user_id: str, currency_id: int) -> bool:
 
 def get_wallet(user_id: str) -> list[WalletEntry]:
     rows = get_database_connection().execute("""
-        SELECT C.NAME, W.AMOUNT
+        SELECT C.NAME AS currency_name, W.AMOUNT AS amount
         FROM GACHA_CURRENCY_WALLET W
         JOIN GACHA_CURRENCY C ON W.GACHA_CURRENCY_ID = C.GACHA_CURRENCY_ID
         WHERE W.USER = ?
         ORDER BY C.NAME
         """, (user_id,))
 
-    return [WalletEntry(currency_name=row['NAME'], amount=row['AMOUNT']) for row in rows]
+    return [WalletEntry(**row) for row in rows]
 
 
 def get_scoreboard(currency_id: int) -> list[ScoreboardEntry]:
     rows = get_database_connection().execute("""
-        SELECT W.USER, W.AMOUNT
+        SELECT W.USER AS user_id, W.AMOUNT AS amount
         FROM GACHA_CURRENCY_WALLET W
         WHERE W.GACHA_CURRENCY_ID = ?
         ORDER BY W.AMOUNT DESC
         """, (currency_id,))
 
-    return [ScoreboardEntry(user_id=row['USER'], amount=row['AMOUNT']) for row in rows]
+    return [ScoreboardEntry(**row) for row in rows]

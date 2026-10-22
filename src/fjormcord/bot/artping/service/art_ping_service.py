@@ -110,9 +110,9 @@ def remove_ping(client: discord.Client, message: discord.Message) -> str:
 
 
 def check_ping(client: discord.Client, message: discord.Message) -> str:
-    pings = art_ping_repository.get_pings_from_user(str(message.author.id))
+    characters = art_ping_repository.get_pings_from_user(str(message.author.id))
 
-    if not pings:
+    if not characters:
         return "You are not subscribed to any characters"
 
-    return ", ".join(pings)
+    return ", ".join(character.name for character in characters)
