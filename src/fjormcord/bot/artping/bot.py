@@ -42,7 +42,7 @@ class ArtPingClient(discord.Client):
         if command is None:
             return
 
-        logging.info(f"Received message from {message.author.display_name}: {content}")
+        logging.info("Received message from %s: %s", message.author.display_name, content)
 
         # Non-admins get no reply to admin commands to prevent bot spam
         if command.admin_only and not is_administrator(message.author):
