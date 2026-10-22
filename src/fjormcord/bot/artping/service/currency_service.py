@@ -1,4 +1,5 @@
 import logging
+import math
 
 import discord
 
@@ -125,7 +126,7 @@ async def get_scoreboard(client: discord.Client, message: discord.Message):
     if not rows:
         return f"Nobody has set their {currency_name} yet"
 
-    page_count = (len(rows) + SCOREBOARD_PAGE_SIZE - 1) // SCOREBOARD_PAGE_SIZE
+    page_count = math.ceil(len(rows) / SCOREBOARD_PAGE_SIZE)
 
     if not 1 <= page <= page_count:
         raise CommandError(f"Page {page} doesn't exist. The scoreboard for {currency_name} has {page_count} pages")
