@@ -4,7 +4,7 @@ import logging
 import discord
 
 from fjormcord.bot.artping.coliseum import start_coliseum_notification
-from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, format_usage
+from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, format_usage, Command
 from fjormcord.bot.artping.easter_eggs import get_easter_egg_reply
 from fjormcord.bot.artping.util.message_util import MissingArgument, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
@@ -48,6 +48,13 @@ class ArtPingClient(discord.Client):
         if command.admin_only and not is_administrator(message.author):
             return
 
+        out = await self.get_message(command, message)
+
+        # Replies longer than Discord allows are sent as several messages
+        for chunk in split_message(out):
+            await message.channel.send(chunk)
+
+    async def get_message(self, command: Command, message: discord.Message) -> str:
         try:
             out = command.handler(self, message)
             if inspect.isawaitable(out):
@@ -58,7 +65,4 @@ class ArtPingClient(discord.Client):
         except Exception:
             logging.exception("Command %s failed", command.name)
             out = f"Something went wrong while running {command.name}"
-
-        for chunk in split_message(out):
-            await message.channel.send(chunk)
-
+        return out
