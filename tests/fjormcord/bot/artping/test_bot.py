@@ -5,11 +5,12 @@ from types import SimpleNamespace
 import discord
 import pytest
 
-from fjormcord.bot.artping import bot as bot_module, commands
+from fjormcord.bot.artping import commands
 from fjormcord.bot.artping.bot import ArtPingClient
 from fjormcord.bot.artping.commands import Command
+from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.easter_eggs import LORENZ_SMILE
-from tests.fakes import make_message
+from tests.fakes import FakeClock, make_message
 
 
 @pytest.fixture
@@ -100,10 +101,9 @@ def test_easter_egg_is_answered(bot):
 
 
 @pytest.fixture
-def clock(monkeypatch):
-    # A clock the test moves forward by hand, in seconds
-    clock = {"now": 1000.0}
-    monkeypatch.setattr(bot_module, "monotonic", lambda: clock["now"])
+def clock(bot):
+    clock = FakeClock()
+    bot.cooldowns = Cooldowns(clock)
     return clock
 
 
@@ -123,7 +123,7 @@ def lucina(bot, monkeypatch):
 def test_command_is_turned_down_during_cooldown(bot, clock, lucina):
     dispatch(bot, make_message("~artping Lucina", user_id=2))
 
-    clock["now"] += 0.5
+    clock.advance(0.5)
 
     assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == \
         ["You used ~artping recently. Try again in 1 second"]
@@ -132,7 +132,7 @@ def test_command_is_turned_down_during_cooldown(bot, clock, lucina):
 def test_command_is_allowed_after_cooldown(bot, clock, lucina):
     dispatch(bot, make_message("~artping Lucina", user_id=2))
 
-    clock["now"] += 1
+    clock.advance(1)
 
     assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == ["Lucina: <@1>"]
 
@@ -165,7 +165,7 @@ def test_cooldown_follows_the_configured_length(bot, clock, lucina, monkeypatch)
     set_art_ping_cooldown(monkeypatch, 30)
     dispatch(bot, make_message("~artping Lucina", user_id=2))
 
-    clock["now"] += 10
+    clock.advance(10)
 
     assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == \
         ["You used ~artping recently. Try again in 20 seconds"]

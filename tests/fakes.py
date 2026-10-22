@@ -15,6 +15,18 @@ class FakeChannel:
         self.sent.append(content)
 
 
+class FakeClock:
+    # Stands in for time.monotonic; the test moves it forward by hand
+    def __init__(self, now=1000.0):
+        self.now = now
+
+    def __call__(self):
+        return self.now
+
+    def advance(self, seconds):
+        self.now += seconds
+
+
 class FakeClient:
     # users can be fetched from Discord; cached_users are also in the client's cache
     def __init__(self, users=None, cached_users=None):

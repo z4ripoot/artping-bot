@@ -1,12 +1,12 @@
 import inspect
 import logging
 import math
-from time import monotonic
 
 import discord
 
 from fjormcord.bot.artping.coliseum import start_coliseum_notification
 from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, format_usage, Command
+from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.easter_eggs import get_easter_egg_reply
 from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
@@ -19,9 +19,7 @@ class ArtPingClient(discord.Client):
     def __init__(self, **options):
         options.setdefault('allowed_mentions', ALLOWED_MENTIONS)
         super().__init__(**options)
-        # (command name, user ID) -> monotonic() time from which the user can use the command again;
-        # kept in memory, so cooldowns reset when the bot restarts
-        self._cooldown_ends = {}
+        self.cooldowns = Cooldowns()
 
     async def on_ready(self):
         logging.info("Initiating tasks")
@@ -60,14 +58,13 @@ class ArtPingClient(discord.Client):
             await message.channel.send(chunk)
 
     async def get_message(self, command: Command, message: discord.Message) -> str:
-        now = monotonic()
         try:
-            self._check_cooldown(command, message.author, now)
+            self._check_cooldown(command, message.author)
             out = command.handler(self, message)
             if inspect.isawaitable(out):
                 out = await out
             # Only a command that succeeded starts the cooldown, so a mistake can be corrected right away
-            self._start_cooldown(command, message.author, now)
+            self._start_cooldown(command, message.author)
         except MissingArgument as e:
             out = f"{e.argument.capitalize()} is missing. Usage: {format_usage(command)}"
             logging.warning(out)
@@ -79,15 +76,15 @@ class ArtPingClient(discord.Client):
             out = f"Something went wrong while running {command.name}"
         return out
 
-    def _check_cooldown(self, command: Command, author: discord.abc.User, now: float):
+    def _check_cooldown(self, command: Command, author: discord.abc.User):
         # Turns the command down while the user's cooldown for it runs
-        remaining = self._cooldown_ends.get((command.name, author.id), now) - now
+        remaining = self.cooldowns.remaining(command.name, author.id)
         if remaining > 0:
             seconds = math.ceil(remaining)
             raise CommandError(
                 f"You used {command.name} recently. Try again in {seconds} second{'' if seconds == 1 else 's'}")
 
-    def _start_cooldown(self, command: Command, author: discord.abc.User, now: float):
+    def _start_cooldown(self, command: Command, author: discord.abc.User):
         # Admins never get a cooldown, so _check_cooldown doesn't have to exempt them
         if command.cooldown_seconds > 0 and not is_administrator(author):
-            self._cooldown_ends[(command.name, author.id)] = now + command.cooldown_seconds
+            self.cooldowns.start(command.name, author.id, command.cooldown_seconds)
