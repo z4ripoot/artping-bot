@@ -3,12 +3,12 @@ import logging
 from fjormcord.bot.artping.database import get_database_connection
 
 
-def get_art_ping_row(character_id, user_id):
+def has_ping(character_id, user_id):
     return get_database_connection().execute("""
-        SELECT P.CHARACTER_ID, P.USER
+        SELECT 1
         FROM PINGS P
         WHERE P.CHARACTER_ID = ? AND P.USER = ?
-        """, (character_id, user_id,)).fetchone()
+        """, (character_id, user_id,)).fetchone() is not None
 
 
 def get_art_ping_users(character_ids):

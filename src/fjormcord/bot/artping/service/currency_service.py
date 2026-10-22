@@ -15,7 +15,7 @@ MAX_AMOUNT = 2 ** 63 - 1
 
 
 def require_currency(name):
-    currency = currency_repository.get_currency_row(name)
+    currency = currency_repository.get_currency(name)
     if currency is None:
         raise CommandError(f"Currency {name} doesn't exist")
     return currency
@@ -24,9 +24,9 @@ def require_currency(name):
 def add_currency(client: discord.Client, message: discord.Message) -> str:
     entry = get_single_name(message.content, "currency name")
 
-    existing = currency_repository.get_currency_row(entry)
+    existing = currency_repository.get_currency(entry)
     if existing:
-        raise CommandError(f"Currency {existing['NAME']} already exists")
+        raise CommandError(f"Currency {existing.name} already exists")
 
     currency_repository.add_currency(entry)
 
@@ -38,9 +38,9 @@ def add_currency(client: discord.Client, message: discord.Message) -> str:
 def remove_currency(client: discord.Client, message: discord.Message) -> str:
     currency = require_currency(get_single_name(message.content, "currency name"))
 
-    currency_repository.remove_currency(currency['GACHA_CURRENCY_ID'])
+    currency_repository.remove_currency(currency.id)
 
-    out = f"Currency {currency['NAME']} has been removed"
+    out = f"Currency {currency.name} has been removed"
     logging.info(out)
     return out
 
@@ -69,38 +69,38 @@ def set_currency(client: discord.Client, message: discord.Message) -> str:
 
     currency = require_currency(entry)
 
-    currency_repository.set_currency(str(message.author.id), currency['GACHA_CURRENCY_ID'], amount)
+    currency_repository.set_currency(str(message.author.id), currency.id, amount)
 
-    out = f"Your {currency['NAME']} has been set to {amount}"
+    out = f"Your {currency.name} has been set to {amount}"
     logging.info(out)
     return out
 
 
 def clear_currency(client: discord.Client, message: discord.Message) -> str:
     currency = require_currency(get_single_name(message.content, "currency name"))
-    currency_id = currency['GACHA_CURRENCY_ID']
+    currency_id = currency.id
     user_id = str(message.author.id)
 
-    if currency_repository.get_wallet_row(user_id, currency_id) is None:
-        raise CommandError(f"You don't have any {currency['NAME']} set")
+    if not currency_repository.has_wallet_entry(user_id, currency_id):
+        raise CommandError(f"You don't have any {currency.name} set")
 
     currency_repository.clear_currency(user_id, currency_id)
 
-    out = f"Your {currency['NAME']} has been cleared"
+    out = f"Your {currency.name} has been cleared"
     logging.info(out)
     return out
 
 
 def check_wallet(client: discord.Client, message: discord.Message) -> str:
-    wallet_rows = currency_repository.get_wallet_rows(str(message.author.id))
+    wallet = currency_repository.get_wallet(str(message.author.id))
 
-    if not wallet_rows:
+    if not wallet:
         return "Your wallet is empty. Use ~setcurrency to add a currency"
 
     out = f"User {message.author.display_name}'s wallet:\n"
 
-    for wallet in wallet_rows:
-        out += f"{wallet['NAME']}: {wallet['AMOUNT']}\n"
+    for entry in wallet:
+        out += f"{entry.currency_name}: {entry.amount}\n"
 
     return out
 
@@ -120,13 +120,13 @@ async def get_scoreboard(client: discord.Client, message: discord.Message) -> st
         raise CommandError(MESSAGE_ONE_NAME_ONLY)
 
     currency = require_currency(entries[0])
-    currency_name = currency['NAME']
-    rows = currency_repository.get_scoreboard_rows(currency['GACHA_CURRENCY_ID'])
+    currency_name = currency.name
+    scoreboard = currency_repository.get_scoreboard(currency.id)
 
-    if not rows:
+    if not scoreboard:
         return f"Nobody has set their {currency_name} yet"
 
-    page_count = math.ceil(len(rows) / SCOREBOARD_PAGE_SIZE)
+    page_count = math.ceil(len(scoreboard) / SCOREBOARD_PAGE_SIZE)
 
     if not 1 <= page <= page_count:
         raise CommandError(f"Page {page} doesn't exist. The scoreboard for {currency_name} has {page_count} pages")
@@ -138,8 +138,8 @@ async def get_scoreboard(client: discord.Client, message: discord.Message) -> st
 
     # Only the users on this page are looked up
     start = (page - 1) * SCOREBOARD_PAGE_SIZE
-    for i, row in enumerate(rows[start:start + SCOREBOARD_PAGE_SIZE], start=start + 1):
-        out += f"{i}. {await get_username(client, row['USER'])} ({row['AMOUNT']})\n"
+    for rank, entry in enumerate(scoreboard[start:start + SCOREBOARD_PAGE_SIZE], start=start + 1):
+        out += f"{rank}. {await get_username(client, entry.user_id)} ({entry.amount})\n"
 
     if page < page_count:
         out += f"Use ~scoreboard {currency_name} {page + 1} for the next page"

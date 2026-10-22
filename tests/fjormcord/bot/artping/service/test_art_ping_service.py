@@ -1,7 +1,7 @@
 import pytest
 
 from fjormcord.bot.artping.repository.art_ping_repository import add_ping as insert_ping
-from fjormcord.bot.artping.repository.character_repository import add_character, get_character_row
+from fjormcord.bot.artping.repository.character_repository import add_character, get_character
 from fjormcord.bot.artping.service import art_ping_service
 from fjormcord.bot.artping.service.art_ping_service import do_art_ping, add_ping, remove_ping, check_ping
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
@@ -9,7 +9,7 @@ from tests.fakes import make_message, reply
 
 
 def subscribe(character_name, user_id):
-    insert_ping(get_character_row(character_name)['CHARACTER_ID'], str(user_id))
+    insert_ping(get_character(character_name).id, str(user_id))
 
 
 def test_art_ping_mentions_subscribers_case_insensitively(client):

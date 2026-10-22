@@ -1,14 +1,35 @@
 import logging
+from dataclasses import dataclass
 
 from fjormcord.bot.artping.database import get_database_connection
 
 
-def get_currency_row(currency_name):
-    return get_database_connection().execute("""
+@dataclass(frozen=True)
+class Currency:
+    id: int
+    name: str
+
+
+@dataclass(frozen=True)
+class WalletEntry:
+    currency_name: str
+    amount: int
+
+
+@dataclass(frozen=True)
+class ScoreboardEntry:
+    user_id: str
+    amount: int
+
+
+def get_currency(currency_name):
+    row = get_database_connection().execute("""
         SELECT C.GACHA_CURRENCY_ID, C.NAME
         FROM GACHA_CURRENCY C
         WHERE C.NAME = ?
         """, (currency_name,)).fetchone()
+
+    return Currency(id=row['GACHA_CURRENCY_ID'], name=row['NAME']) if row else None
 
 
 def add_currency(currency_name):
@@ -52,28 +73,32 @@ def clear_currency(user_id, currency_id):
             """, (currency_id, user_id,))
 
 
-def get_wallet_row(user_id, currency_id):
+def has_wallet_entry(user_id, currency_id):
     return get_database_connection().execute("""
-        SELECT W.GACHA_CURRENCY_ID, W.USER, W.AMOUNT
+        SELECT 1
         FROM GACHA_CURRENCY_WALLET W
         WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
-        """, (currency_id, user_id,)).fetchone()
+        """, (currency_id, user_id,)).fetchone() is not None
 
 
-def get_wallet_rows(user_id):
-    return get_database_connection().execute("""
+def get_wallet(user_id):
+    rows = get_database_connection().execute("""
         SELECT C.NAME, W.AMOUNT
         FROM GACHA_CURRENCY_WALLET W
         JOIN GACHA_CURRENCY C ON W.GACHA_CURRENCY_ID = C.GACHA_CURRENCY_ID
         WHERE W.USER = ?
         ORDER BY C.NAME
-        """, (user_id,)).fetchall()
+        """, (user_id,))
+
+    return [WalletEntry(currency_name=row['NAME'], amount=row['AMOUNT']) for row in rows]
 
 
-def get_scoreboard_rows(currency_id):
-    return get_database_connection().execute("""
+def get_scoreboard(currency_id):
+    rows = get_database_connection().execute("""
         SELECT W.USER, W.AMOUNT
         FROM GACHA_CURRENCY_WALLET W
         WHERE W.GACHA_CURRENCY_ID = ?
         ORDER BY W.AMOUNT DESC
-        """, (currency_id,)).fetchall()
+        """, (currency_id,))
+
+    return [ScoreboardEntry(user_id=row['USER'], amount=row['AMOUNT']) for row in rows]

@@ -1,24 +1,37 @@
 import logging
+from dataclasses import dataclass
 
 from fjormcord.bot.artping.database import get_database_connection
 
 
-def get_character_row(character_name):
-    return get_database_connection().execute("""
+@dataclass(frozen=True)
+class Character:
+    id: int
+    name: str
+
+
+def _to_character(row):
+    return Character(id=row['CHARACTER_ID'], name=row['NAME'])
+
+
+def get_character(character_name):
+    row = get_database_connection().execute("""
         SELECT C.CHARACTER_ID, C.NAME
         FROM CHARACTERS C
         WHERE C.NAME = ?
         """, (character_name,)).fetchone()
 
+    return _to_character(row) if row else None
 
-def get_character_rows(character_names):
+
+def get_characters(character_names):
     sql = """
         SELECT C.CHARACTER_ID, C.NAME
         FROM CHARACTERS C
         WHERE C.NAME IN ({})
         """.format(','.join("?" * len(character_names)))
 
-    return get_database_connection().execute(sql, list(character_names)).fetchall()
+    return [_to_character(row) for row in get_database_connection().execute(sql, list(character_names))]
 
 
 def add_character(character_name):
