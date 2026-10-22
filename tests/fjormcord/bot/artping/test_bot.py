@@ -7,6 +7,7 @@ import pytest
 from fjormcord.bot.artping import commands
 from fjormcord.bot.artping.bot import ArtPingClient
 from fjormcord.bot.artping.commands import Command, MESSAGE_DENIED
+from fjormcord.bot.artping.easter_eggs import LORENZ_SMILE
 from tests.fakes import make_message
 
 
@@ -90,3 +91,7 @@ def test_long_reply_is_split_into_messages_within_discord_limit(bot):
     assert len(sent) > 1
     assert all(len(chunk) <= 2000 for chunk in sent)
     assert all(f"<@{user_id}>" in " ".join(sent) for user_id in user_ids)
+
+
+def test_easter_egg_is_answered(bot):
+    assert dispatch(bot, make_message("Thanks Lorenz")) == [LORENZ_SMILE]
