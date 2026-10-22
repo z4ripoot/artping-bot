@@ -37,7 +37,7 @@ def format_usage(command):
     return " ".join([command.name] + [f"({argument})" for argument in command.usage])
 
 
-def show_help(client: discord.Client, message: discord.Message):
+def show_help(client: discord.Client, message: discord.Message) -> str:
     show_admin = is_administrator(message.author)
     out = 'Commands (content in brackets is what to add when using command):\n'
     out += f'{MULTI_WORD_HINT}\n'

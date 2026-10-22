@@ -21,7 +21,7 @@ def require_currency(name):
     return currency
 
 
-def add_currency(client: discord.Client, message: discord.Message):
+def add_currency(client: discord.Client, message: discord.Message) -> str:
     entry = get_single_name(message.content, "currency name")
 
     existing = currency_repository.get_currency_row(entry)
@@ -35,7 +35,7 @@ def add_currency(client: discord.Client, message: discord.Message):
     return out
 
 
-def remove_currency(client: discord.Client, message: discord.Message):
+def remove_currency(client: discord.Client, message: discord.Message) -> str:
     currency = require_currency(get_single_name(message.content, "currency name"))
 
     currency_repository.remove_currency(currency['GACHA_CURRENCY_ID'])
@@ -45,7 +45,7 @@ def remove_currency(client: discord.Client, message: discord.Message):
     return out
 
 
-def set_currency(client: discord.Client, message: discord.Message):
+def set_currency(client: discord.Client, message: discord.Message) -> str:
     entries = get_entries(message.content)
 
     if not entries:
@@ -76,7 +76,7 @@ def set_currency(client: discord.Client, message: discord.Message):
     return out
 
 
-def clear_currency(client: discord.Client, message: discord.Message):
+def clear_currency(client: discord.Client, message: discord.Message) -> str:
     currency = require_currency(get_single_name(message.content, "currency name"))
     currency_id = currency['GACHA_CURRENCY_ID']
     user_id = str(message.author.id)
@@ -91,7 +91,7 @@ def clear_currency(client: discord.Client, message: discord.Message):
     return out
 
 
-def check_wallet(client: discord.Client, message: discord.Message):
+def check_wallet(client: discord.Client, message: discord.Message) -> str:
     wallet_rows = currency_repository.get_wallet_rows(str(message.author.id))
 
     if not wallet_rows:
@@ -105,7 +105,7 @@ def check_wallet(client: discord.Client, message: discord.Message):
     return out
 
 
-async def get_scoreboard(client: discord.Client, message: discord.Message):
+async def get_scoreboard(client: discord.Client, message: discord.Message) -> str:
     entries = get_entries(message.content)
 
     if not entries:

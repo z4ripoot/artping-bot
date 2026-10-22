@@ -14,7 +14,7 @@ def require_character(name):
     return character
 
 
-def add_character(client: discord.Client, message: discord.Message):
+def add_character(client: discord.Client, message: discord.Message) -> str:
     entry = get_single_name(message.content, "character name")
 
     existing = character_repository.get_character_row(entry)
@@ -28,7 +28,7 @@ def add_character(client: discord.Client, message: discord.Message):
     return out
 
 
-def remove_character(client: discord.Client, message: discord.Message):
+def remove_character(client: discord.Client, message: discord.Message) -> str:
     character = require_character(get_single_name(message.content, "character name"))
 
     character_repository.remove_character(character['CHARACTER_ID'])
@@ -38,7 +38,7 @@ def remove_character(client: discord.Client, message: discord.Message):
     return out
 
 
-async def check_character(client: discord.Client, message: discord.Message):
+async def check_character(client: discord.Client, message: discord.Message) -> str:
     character = require_character(get_single_name(message.content, "character name"))
 
     user_ids = art_ping_repository.get_art_ping_users((character['CHARACTER_ID'],))

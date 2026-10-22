@@ -4,9 +4,9 @@ import discord
 MESSAGE_NOT_IMPLEMENTED = "Aliases are not supported yet"
 
 
-def add_alias(client: discord.Client, message: discord.Message):
+def add_alias(client: discord.Client, message: discord.Message) -> str:
     return MESSAGE_NOT_IMPLEMENTED
 
 
-def remove_alias(client: discord.Client, message: discord.Message):
+def remove_alias(client: discord.Client, message: discord.Message) -> str:
     return MESSAGE_NOT_IMPLEMENTED

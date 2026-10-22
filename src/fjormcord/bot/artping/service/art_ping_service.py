@@ -21,7 +21,7 @@ def _cooldown_remaining(character_id, now):
     return ART_PING_COOLDOWN_SECONDS - (now - _last_pinged.get(character_id, -math.inf))
 
 
-def do_art_ping(client: discord.Client, message: discord.Message):
+def do_art_ping(client: discord.Client, message: discord.Message) -> str:
     entries = get_entries(message.content)
 
     if not entries:
@@ -62,7 +62,7 @@ def do_art_ping(client: discord.Client, message: discord.Message):
     return "\n".join(lines)
 
 
-def add_ping(client: discord.Client, message: discord.Message):
+def add_ping(client: discord.Client, message: discord.Message) -> str:
     character = require_character(get_single_name(message.content, "character name"))
     user_id = str(message.author.id)
 
@@ -76,7 +76,7 @@ def add_ping(client: discord.Client, message: discord.Message):
     return out
 
 
-def remove_ping(client: discord.Client, message: discord.Message):
+def remove_ping(client: discord.Client, message: discord.Message) -> str:
     character = require_character(get_single_name(message.content, "character name"))
     user_id = str(message.author.id)
 
@@ -90,7 +90,7 @@ def remove_ping(client: discord.Client, message: discord.Message):
     return out
 
 
-def check_ping(client: discord.Client, message: discord.Message):
+def check_ping(client: discord.Client, message: discord.Message) -> str:
     pings = art_ping_repository.get_pings_from_user(str(message.author.id))
 
     if not pings:
