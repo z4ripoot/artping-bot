@@ -19,7 +19,8 @@ def get_art_ping_users(character_ids: Sequence[int]) -> list[str]:
         WHERE P.CHARACTER_ID IN ({})
         """.format(','.join("?" * len(character_ids)))
 
-    return [row['USER'] for row in get_database_connection().execute(sql, list(character_ids))]
+    # Each row holds just the one selected column
+    return [user_id for (user_id,) in get_database_connection().execute(sql, list(character_ids))]
 
 
 def add_ping(character_id: int, user_id: str):
@@ -51,4 +52,4 @@ def get_pings_from_user(user_id: str) -> list[str]:
         ORDER BY C.NAME
         """, (user_id,))
 
-    return [row['NAME'] for row in rows]
+    return [name for (name,) in rows]
