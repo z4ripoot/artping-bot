@@ -29,9 +29,9 @@ def get_characters(character_names: Sequence[str]) -> list[Character]:
 
 def add_character(character_name: str):
     sql = """
-          INSERT INTO CHARACTERS (NAME)
-          VALUES (?) \
-          """
+        INSERT INTO CHARACTERS (NAME)
+        VALUES (?)
+        """
 
     logging.info("Adding character %s", character_name)
     with get_database_connection() as conn:
