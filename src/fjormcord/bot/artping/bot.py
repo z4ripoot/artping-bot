@@ -1,29 +1,19 @@
 import inspect
 import logging
-from datetime import datetime, time, timezone
 
 import discord
-from discord.ext import tasks
 
 from fjormcord.bot.artping import config
+from fjormcord.bot.artping.coliseum import start_coliseum_notification
 from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, MESSAGE_DENIED, format_usage
 from fjormcord.bot.artping.util.message_util import MissingArgument, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
-
-# Coliseum closes on Monday at 23:00 UTC; all scheduling is done in UTC, independent of the host's timezone
-COLISEUM_CLOSING_TIME = time(hour=23, minute=0, second=0, tzinfo=timezone.utc)
-COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0, tzinfo=timezone.utc)
-COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0, tzinfo=timezone.utc)
 
 # Replies echo user input, so never let a message trigger @everyone/@here or role pings
 ALLOWED_MENTIONS = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=True)
 
 CONFIG = config.read_config()
 
-_channel_id = CONFIG.get('tasks', 'coliseum_notification_channel_id', fallback='')
-COLISEUM_NOTIFICATION_CHANNEL_ID = int(_channel_id) if _channel_id else None
-# Replaced by the channel ID; only read to point configurations that still use it to the new setting
-OLD_COLISEUM_NOTIFICATION_CHANNEL_NAME = CONFIG.get('tasks', 'coliseum_notification_channel_name', fallback=None)
 LORENZ_SMILE = CONFIG.get('emoji', 'lorenz_smile')
 
 CHROMK_1 = CONFIG.get('emoji', 'chromk_1')
@@ -48,19 +38,7 @@ class ArtPingClient(discord.Client):
 
     async def on_ready(self):
         logging.info("Initiating tasks")
-
-        if not COLISEUM_NOTIFICATION_CHANNEL_ID:
-            if OLD_COLISEUM_NOTIFICATION_CHANNEL_NAME:
-                logging.warning("tasks.coliseum_notification_channel_name is no longer supported. Set "
-                                "tasks.coliseum_notification_channel_id to the ID of the #%s channel instead",
-                                OLD_COLISEUM_NOTIFICATION_CHANNEL_NAME)
-            logging.warning(
-                "No channel ID is configured for Coliseum notifications. Coliseum notification task will not be initiated")
-        elif not self.task_coliseum_before_closing_notification.is_running():
-            # on_ready fires again after reconnects; starting a running loop raises
-            logging.info("Initiating Coliseum notification task")
-            self.task_coliseum_before_closing_notification.start()
-
+        start_coliseum_notification(self)
         logging.info("Tasks are initiated")
 
     async def on_message(self, message: discord.Message):
@@ -105,16 +83,3 @@ class ArtPingClient(discord.Client):
         for chunk in split_message(out):
             await message.channel.send(chunk)
 
-    @tasks.loop(time=[COLISEUM_ONE_HOUR_BEFORE_CLOSING_TIME, COLISEUM_FIVE_HOUR_BEFORE_CLOSING_TIME])
-    async def task_coliseum_before_closing_notification(self):
-        now = datetime.now(timezone.utc)
-        if now.weekday() == 0:
-            channel = self.get_channel(COLISEUM_NOTIFICATION_CHANNEL_ID)
-            if channel is None:
-                logging.error("Channel %s not found. Task will be skipped", COLISEUM_NOTIFICATION_CHANNEL_ID)
-            else:
-                closing_time = int(datetime.combine(now.date(), COLISEUM_CLOSING_TIME).timestamp())
-                message = f"Coliseum/Aether Raids closes <t:{closing_time}:R> at <t:{closing_time}:f>"
-
-                logging.info(message)
-                await channel.send(message)
