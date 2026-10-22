@@ -11,8 +11,7 @@ CLOSING_TIME = time(hour=23, minute=0, second=0, tzinfo=timezone.utc)
 ONE_HOUR_BEFORE_CLOSING_TIME = time(hour=22, minute=0, second=0, tzinfo=timezone.utc)
 FIVE_HOUR_BEFORE_CLOSING_TIME = time(hour=18, minute=0, second=0, tzinfo=timezone.utc)
 
-_channel_id = config.read_config().get('tasks', 'coliseum_notification_channel_id', fallback='')
-NOTIFICATION_CHANNEL_ID = int(_channel_id) if _channel_id else None
+NOTIFICATION_CHANNEL_ID = config.read_settings().coliseum_channel_id
 
 
 def start_coliseum_notification(client: discord.Client):

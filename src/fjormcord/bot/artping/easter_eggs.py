@@ -1,6 +1,6 @@
 from fjormcord.bot.artping import config
 
-EMOJI = config.read_config()['emoji']
+EMOJI = config.read_settings().emoji
 
 LORENZ_SMILE = EMOJI['lorenz_smile']
 

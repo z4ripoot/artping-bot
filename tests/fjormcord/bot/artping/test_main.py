@@ -1,6 +1,9 @@
+from pathlib import Path
+
 import pytest
 
 from fjormcord.bot.artping import __main__ as main_module, config, database
+from fjormcord.bot.artping.config import Settings
 
 
 class RecordingClient:
@@ -18,9 +21,14 @@ def reset_recording_client(monkeypatch):
     monkeypatch.setattr(RecordingClient, "started_with", None)
 
 
-def test_missing_token_exits_with_setup_hint(tmp_path, monkeypatch):
-    (tmp_path / "config.example.ini").write_text("[discord]\ntoken=\n")
-    monkeypatch.setattr(config, "read_config", lambda: config.load_config(tmp_path))
+def use_token(monkeypatch, token):
+    settings = Settings(discord_token=token, database_path=Path("test.db"), art_ping_cooldown_seconds=1,
+                        coliseum_channel_id=None, emoji={})
+    monkeypatch.setattr(config, "read_settings", lambda: settings)
+
+
+def test_missing_token_exits_with_setup_hint(monkeypatch):
+    use_token(monkeypatch, "")
     monkeypatch.setattr(main_module, "ArtPingClient", RecordingClient)
 
     with pytest.raises(SystemExit, match="config.ini"):
@@ -29,10 +37,9 @@ def test_missing_token_exits_with_setup_hint(tmp_path, monkeypatch):
     assert RecordingClient.started_with is None
 
 
-def test_database_is_opened_before_connecting_to_discord(tmp_path, monkeypatch):
+def test_database_is_opened_before_connecting_to_discord(monkeypatch):
     # A failing migration then stops the bot at startup instead of failing every command
-    (tmp_path / "config.example.ini").write_text("[discord]\ntoken=secret\n")
-    monkeypatch.setattr(config, "read_config", lambda: config.load_config(tmp_path))
+    use_token(monkeypatch, "secret")
     monkeypatch.setattr(main_module, "ArtPingClient", RecordingClient)
 
     def broken_database():

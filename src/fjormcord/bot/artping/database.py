@@ -11,8 +11,7 @@ _connection = None
 
 def get_database_connection():
     if _connection is None:
-        path = config.read_config().get('database', 'path')
-        set_database_connection(connect(config.resolve_path(path)))
+        set_database_connection(connect(config.read_settings().database_path))
     return _connection
 
 

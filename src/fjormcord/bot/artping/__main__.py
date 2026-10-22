@@ -14,7 +14,7 @@ def main():
         handlers=[logging.StreamHandler()]
     )
 
-    token = config.read_config().get('discord', 'token', fallback='')
+    token = config.read_settings().discord_token
     if not token:
         sys.exit("No Discord token configured. Create config.ini with your bot's token, see README.md")
 

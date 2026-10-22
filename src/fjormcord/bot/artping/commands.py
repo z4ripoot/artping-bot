@@ -18,8 +18,6 @@ SECTION_ART_PING = ""
 SECTION_CURRENCY = "Gacha Currency Commands:"
 SECTION_ADMIN = "Admin Commands:"
 
-ART_PING_COOLDOWN_SECONDS = config.read_config().getfloat('art_ping', 'cooldown_seconds')
-
 # Called as handler(client, message); returns the reply, either directly or as a coroutine
 Handler = Callable[[discord.Client, discord.Message], str | Awaitable[str]]
 
@@ -68,7 +66,7 @@ def show_help(client: discord.Client, message: discord.Message) -> str:
 # Commands are listed in ~help order; keep each section together and admin-only commands last.
 COMMANDS = [
     Command("~artping", do_art_ping, "Ping users for art of this character", usage=("character name",),
-            cooldown_seconds=ART_PING_COOLDOWN_SECONDS),
+            cooldown_seconds=config.read_settings().art_ping_cooldown_seconds),
     Command("~addping", add_ping, "Call to add yourself to the ping list when this character is pinged",
             usage=("character name",)),
     Command("~removeping", remove_ping, "Remove yourself from the ping list of this character",
