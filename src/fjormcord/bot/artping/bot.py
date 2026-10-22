@@ -1,5 +1,7 @@
 import inspect
 import logging
+import math
+from time import monotonic
 
 import discord
 
@@ -17,6 +19,9 @@ class ArtPingClient(discord.Client):
     def __init__(self, **options):
         options.setdefault('allowed_mentions', ALLOWED_MENTIONS)
         super().__init__(**options)
+        # (command name, user ID) -> monotonic() time from which the user can use the command again;
+        # kept in memory, so cooldowns reset when the bot restarts
+        self._cooldown_ends = {}
 
     async def on_ready(self):
         logging.info("Initiating tasks")
@@ -55,10 +60,14 @@ class ArtPingClient(discord.Client):
             await message.channel.send(chunk)
 
     async def get_message(self, command: Command, message: discord.Message) -> str:
+        now = monotonic()
         try:
+            self._check_cooldown(command, message.author, now)
             out = command.handler(self, message)
             if inspect.isawaitable(out):
                 out = await out
+            # Only a command that succeeded starts the cooldown, so a mistake can be corrected right away
+            self._start_cooldown(command, message.author, now)
         except MissingArgument as e:
             out = f"{e.argument.capitalize()} is missing. Usage: {format_usage(command)}"
             logging.warning(out)
@@ -69,3 +78,16 @@ class ArtPingClient(discord.Client):
             logging.exception("Command %s failed", command.name)
             out = f"Something went wrong while running {command.name}"
         return out
+
+    def _check_cooldown(self, command: Command, author: discord.abc.User, now: float):
+        # Turns the command down while the user's cooldown for it runs
+        remaining = self._cooldown_ends.get((command.name, author.id), now) - now
+        if remaining > 0:
+            seconds = math.ceil(remaining)
+            raise CommandError(
+                f"You used {command.name} recently. Try again in {seconds} second{'' if seconds == 1 else 's'}")
+
+    def _start_cooldown(self, command: Command, author: discord.abc.User, now: float):
+        # Admins never get a cooldown, so _check_cooldown doesn't have to exempt them
+        if command.cooldown_seconds > 0 and not is_administrator(author):
+            self._cooldown_ends[(command.name, author.id)] = now + command.cooldown_seconds

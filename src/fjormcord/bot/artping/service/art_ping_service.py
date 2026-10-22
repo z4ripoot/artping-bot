@@ -1,6 +1,4 @@
 import logging
-import math
-from time import monotonic
 
 import discord
 
@@ -8,18 +6,6 @@ from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.repository import art_ping_repository, character_repository
 from fjormcord.bot.artping.service.character_service import require_character
 from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, get_entries, get_single_name
-from fjormcord.bot.artping.util.user_util import is_administrator
-
-# A character can't be pinged again within this many seconds, except by admins
-ART_PING_COOLDOWN_SECONDS = 1
-
-# Character ID -> monotonic() time of its last ping; kept in memory, so it resets when the bot restarts
-_last_pinged = {}
-
-
-def _cooldown_remaining(character_id: int, now: float) -> float:
-    # Seconds until the character can be pinged again; zero or less when it can be pinged now
-    return ART_PING_COOLDOWN_SECONDS - (now - _last_pinged.get(character_id, -math.inf))
 
 
 def _find_characters(names: list[str]) -> tuple[list[Character], list[str]]:
@@ -29,25 +15,10 @@ def _find_characters(names: list[str]) -> tuple[list[Character], list[str]]:
     return characters, [name for name in names if name.lower() not in found_names]
 
 
-def _hold_back_cooling_down(characters: list[Character], now: float) -> tuple[list[Character], str | None]:
-    # Returns the characters that can be pinged now, and a notice about the others (None when there are none)
-    remaining = {character.id: _cooldown_remaining(character.id, now) for character in characters}
-    cooling_down = [character for character in characters if remaining[character.id] > 0]
-    if not cooling_down:
-        return characters, None
-
-    names = ", ".join(character.name for character in cooling_down)
-    seconds = math.ceil(max(remaining[character.id] for character in cooling_down))
-    notice = f"{names} was pinged recently. Try again in {seconds} second{'' if seconds == 1 else 's'}"
-    return [character for character in characters if remaining[character.id] <= 0], notice
-
-
-def _ping(characters: list[Character], now: float) -> str:
-    # Mentions everyone subscribed to these characters, and starts their cooldown
+def _ping(characters: list[Character]) -> str:
+    # Mentions everyone subscribed to these characters
     character_names = ", ".join(character.name for character in characters)
     user_ids = art_ping_repository.get_art_ping_users([character.id for character in characters])
-    for character in characters:
-        _last_pinged[character.id] = now
 
     logging.info("Pinged %s users for %s", len(user_ids), character_names)
     if not user_ids:
@@ -61,23 +32,17 @@ def do_art_ping(client: discord.Client, message: discord.Message) -> str:
     if not entries:
         raise MissingArgument("character name")
 
-    # Unknown and cooling-down characters are reported in the same reply as the ping for the rest
+    # Unknown characters are reported in the same reply as the ping for the rest
     lines = []
 
     characters, missing_names = _find_characters(entries)
     if missing_names:
         lines.append(f"No character entry for {', '.join(missing_names)}")
 
-    now = monotonic()
-    if not is_administrator(message.author):
-        characters, cooldown_notice = _hold_back_cooling_down(characters, now)
-        if cooldown_notice:
-            lines.append(cooldown_notice)
-
     if not characters:
         raise CommandError("\n".join(lines))
 
-    lines.append(_ping(characters, now))
+    lines.append(_ping(characters))
     return "\n".join(lines)
 
 

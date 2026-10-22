@@ -45,4 +45,5 @@ Run the tests with `.venv/Scripts/python -m pytest`. They need neither a token n
 The defaults are in `config.example.ini`, which is committed. `config.ini` is not committed: any property you put there overrides the default.
  * You have to provide your token of Discord bot to the property "discord.token". Only put it in config.ini
  * The database is stored at the path in the property "database.path". A database that doesn't exist yet is created on startup
+ * The property "art_ping.cooldown_seconds" (default 1) is how many seconds a user has to wait after using ~artping before they can use it again. Admins don't have to wait, and 0 turns the cooldown off
  * Optionally, you can provide the ID of a channel to property "coliseum_notification_channel_id". The FEH coliseum notifications are sent to this channel, otherwise no notifications will be sent. To copy a channel's ID, enable Developer Mode in Discord (User Settings > Advanced), then right-click the channel and choose "Copy Channel ID"

@@ -1,8 +1,5 @@
-import pytest
-
 from fjormcord.bot.artping.repository.art_ping_repository import add_ping as insert_ping
 from fjormcord.bot.artping.repository.character_repository import add_character, get_character
-from fjormcord.bot.artping.service import art_ping_service
 from fjormcord.bot.artping.service.art_ping_service import do_art_ping, add_ping, remove_ping, check_ping
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
 from tests.fakes import make_message, reply
@@ -67,52 +64,3 @@ def test_check_ping_without_pings_is_not_empty(client):
 def test_add_and_remove_ping_hint_at_underscores_for_several_words(client):
     assert reply(add_ping, client, make_message("~addping Black Knight")) == MESSAGE_ONE_NAME_ONLY
     assert reply(remove_ping, client, make_message("~removeping Black Knight")) == MESSAGE_ONE_NAME_ONLY
-
-
-@pytest.fixture
-def clock(monkeypatch):
-    # A clock the test moves forward by hand, in seconds
-    clock = {"now": 1000.0}
-    monkeypatch.setattr(art_ping_service, "monotonic", lambda: clock["now"])
-    return clock
-
-
-def test_art_ping_is_blocked_during_cooldown(client, clock):
-    add_character("Lucina")
-    subscribe("Lucina", 1)
-    do_art_ping(client, make_message("~artping Lucina", user_id=2))
-
-    clock["now"] += 0.5
-
-    assert reply(do_art_ping, client, make_message("~artping Lucina", user_id=3)) == \
-        "Lucina was pinged recently. Try again in 1 second"
-
-
-def test_art_ping_is_allowed_after_cooldown(client, clock):
-    add_character("Lucina")
-    subscribe("Lucina", 1)
-    do_art_ping(client, make_message("~artping Lucina"))
-
-    clock["now"] += 1
-
-    assert reply(do_art_ping, client, make_message("~artping Lucina")) == "Lucina: <@1>"
-
-
-def test_art_ping_cooldown_only_holds_back_that_character(client, clock):
-    add_character("Lucina")
-    add_character("Marth")
-    subscribe("Lucina", 1)
-    subscribe("Marth", 2)
-    do_art_ping(client, make_message("~artping Lucina"))
-
-    out = do_art_ping(client, make_message("~artping Lucina Marth"))
-
-    assert out == "Lucina was pinged recently. Try again in 1 second\nMarth: <@2>"
-
-
-def test_admins_are_not_held_back_by_cooldown(client, clock):
-    add_character("Lucina")
-    subscribe("Lucina", 1)
-    do_art_ping(client, make_message("~artping Lucina"))
-
-    assert reply(do_art_ping, client, make_message("~artping Lucina", administrator=True)) == "Lucina: <@1>"

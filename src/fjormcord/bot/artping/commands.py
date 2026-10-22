@@ -3,6 +3,7 @@ from typing import Awaitable, Callable
 
 import discord
 
+from fjormcord.bot.artping import config
 from fjormcord.bot.artping.service.alias_service import add_alias, remove_alias
 from fjormcord.bot.artping.service.art_ping_service import do_art_ping, add_ping, remove_ping, check_ping
 from fjormcord.bot.artping.service.character_service import add_character, remove_character, check_character
@@ -17,6 +18,8 @@ SECTION_ART_PING = ""
 SECTION_CURRENCY = "Gacha Currency Commands:"
 SECTION_ADMIN = "Admin Commands:"
 
+ART_PING_COOLDOWN_SECONDS = config.read_config().getfloat('art_ping', 'cooldown_seconds')
+
 # Called as handler(client, message); returns the reply, either directly or as a coroutine
 Handler = Callable[[discord.Client, discord.Message], str | Awaitable[str]]
 
@@ -30,6 +33,8 @@ class Command:
     usage: tuple[str, ...] = ()
     section: str = SECTION_ART_PING
     admin_only: bool = False
+    # Seconds a user has to wait before using the command again, except admins; 0 means no cooldown
+    cooldown_seconds: float = 0
 
 
 def format_usage(command):
@@ -62,7 +67,8 @@ def show_help(client: discord.Client, message: discord.Message) -> str:
 #  missing/invalid arguments, permission denials, unknown commands and ~help are answered.
 # Commands are listed in ~help order; keep each section together and admin-only commands last.
 COMMANDS = [
-    Command("~artping", do_art_ping, "Ping users for art of this character", usage=("character name",)),
+    Command("~artping", do_art_ping, "Ping users for art of this character", usage=("character name",),
+            cooldown_seconds=ART_PING_COOLDOWN_SECONDS),
     Command("~addping", add_ping, "Call to add yourself to the ping list when this character is pinged",
             usage=("character name",)),
     Command("~removeping", remove_ping, "Remove yourself from the ping list of this character",

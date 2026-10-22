@@ -1,10 +1,11 @@
 import asyncio
+from dataclasses import replace
 from types import SimpleNamespace
 
 import discord
 import pytest
 
-from fjormcord.bot.artping import commands
+from fjormcord.bot.artping import bot as bot_module, commands
 from fjormcord.bot.artping.bot import ArtPingClient
 from fjormcord.bot.artping.commands import Command
 from fjormcord.bot.artping.easter_eggs import LORENZ_SMILE
@@ -96,3 +97,75 @@ def test_long_reply_is_split_into_messages_within_discord_limit(bot):
 
 def test_easter_egg_is_answered(bot):
     assert dispatch(bot, make_message("Thanks Lorenz")) == [LORENZ_SMILE]
+
+
+@pytest.fixture
+def clock(monkeypatch):
+    # A clock the test moves forward by hand, in seconds
+    clock = {"now": 1000.0}
+    monkeypatch.setattr(bot_module, "monotonic", lambda: clock["now"])
+    return clock
+
+
+def set_art_ping_cooldown(monkeypatch, seconds):
+    command = commands.COMMANDS_BY_NAME["~artping"]
+    monkeypatch.setitem(commands.COMMANDS_BY_NAME, "~artping", replace(command, cooldown_seconds=seconds))
+
+
+@pytest.fixture
+def lucina(bot, monkeypatch):
+    # Lucina with user 1 subscribed, and the default cooldown whatever a local config.ini sets
+    set_art_ping_cooldown(monkeypatch, 1)
+    dispatch(bot, make_message("~addcharacter Lucina", administrator=True))
+    dispatch(bot, make_message("~addping Lucina", user_id=1))
+
+
+def test_command_is_turned_down_during_cooldown(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucina", user_id=2))
+
+    clock["now"] += 0.5
+
+    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == \
+        ["You used ~artping recently. Try again in 1 second"]
+
+
+def test_command_is_allowed_after_cooldown(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucina", user_id=2))
+
+    clock["now"] += 1
+
+    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == ["Lucina: <@1>"]
+
+
+def test_cooldown_only_holds_back_that_user(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucina", user_id=2))
+
+    assert dispatch(bot, make_message("~artping Lucina", user_id=3)) == ["Lucina: <@1>"]
+
+
+def test_cooldown_only_holds_back_that_command(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucina", user_id=1))
+
+    assert dispatch(bot, make_message("~checkping", user_id=1)) == ["Lucina"]
+
+
+def test_turned_down_command_does_not_start_cooldown(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucin", user_id=2))
+
+    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == ["Lucina: <@1>"]
+
+
+def test_admins_are_not_held_back_by_cooldown(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucina", administrator=True))
+
+    assert dispatch(bot, make_message("~artping Lucina", administrator=True)) == ["Lucina: <@1>"]
+
+
+def test_cooldown_follows_the_configured_length(bot, clock, lucina, monkeypatch):
+    set_art_ping_cooldown(monkeypatch, 30)
+    dispatch(bot, make_message("~artping Lucina", user_id=2))
+
+    clock["now"] += 10
+
+    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == \
+        ["You used ~artping recently. Try again in 20 seconds"]
