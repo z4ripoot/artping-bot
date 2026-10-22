@@ -6,7 +6,7 @@ import pytest
 
 from fjormcord.bot.artping import commands
 from fjormcord.bot.artping.bot import ArtPingClient
-from fjormcord.bot.artping.commands import Command, MESSAGE_DENIED
+from fjormcord.bot.artping.commands import Command
 from fjormcord.bot.artping.easter_eggs import LORENZ_SMILE
 from tests.fakes import make_message
 
@@ -29,19 +29,19 @@ def test_command_must_match_exactly(bot):
     assert dispatch(bot, make_message("~checkpingx")) == []
 
 
-def test_admin_command_denied_for_non_admin(bot):
-    assert dispatch(bot, make_message("~addcharacter Lucina")) == [MESSAGE_DENIED]
+def test_admin_command_ignored_for_non_admin(bot):
+    assert dispatch(bot, make_message("~addcharacter Lucina")) == []
 
 
 def test_admin_command_allowed_for_admin(bot):
     assert dispatch(bot, make_message("~addcharacter Lucina", administrator=True)) == ["Character Lucina has been added"]
 
 
-def test_admin_command_denied_in_dms(bot):
+def test_admin_command_ignored_in_dms(bot):
     message = make_message("~addcharacter Lucina")
     message.author = SimpleNamespace(id=1, display_name="user1")
 
-    assert dispatch(bot, message) == [MESSAGE_DENIED]
+    assert dispatch(bot, message) == []
 
 
 def test_failing_command_still_replies(bot, monkeypatch):

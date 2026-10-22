@@ -4,7 +4,7 @@ import logging
 import discord
 
 from fjormcord.bot.artping.coliseum import start_coliseum_notification
-from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, MESSAGE_DENIED, format_usage
+from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, format_usage
 from fjormcord.bot.artping.easter_eggs import get_easter_egg_reply
 from fjormcord.bot.artping.util.message_util import MissingArgument, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
@@ -44,8 +44,8 @@ class ArtPingClient(discord.Client):
 
         logging.info(f"Received message from {message.author.display_name}: {content}")
 
+        # Non-admins get no reply to admin commands to prevent bot spam
         if command.admin_only and not is_administrator(message.author):
-            await message.channel.send(MESSAGE_DENIED)
             return
 
         try:

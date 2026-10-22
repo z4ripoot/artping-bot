@@ -44,7 +44,7 @@ The schema is defined only by the numbered scripts in `db/migrations/` (`001_ini
 Layered, all module-level functions:
 
 - `__main__.py` — entry point; sets up logging, checks the token, opens (and migrates) the database, sets intents (`message_content` is required) and runs `ArtPingClient`.
-- `bot.py` — `ArtPingClient(discord.Client)`: `on_message` looks the first word up in `COMMANDS_BY_NAME` (case-insensitive, exact match), enforces `admin_only`, calls the handler and sends the returned string. Handler exceptions are logged and answered with a generic failure message. `on_ready` starts the Coliseum reminder.
+- `bot.py` — `ArtPingClient(discord.Client)`: `on_message` looks the first word up in `COMMANDS_BY_NAME` (case-insensitive, exact match), silently ignores `admin_only` commands from non-admins, calls the handler and sends the returned string. Handler exceptions are logged and answered with a generic failure message. `on_ready` starts the Coliseum reminder.
 - `easter_eggs.py` — the custom-emoji replies to whole messages such as "thanks lorenz" and "chromk" (`EASTER_EGG_REPLIES`, emoji from the `[emoji]` config section); `on_message` sends them before command dispatch.
 - `coliseum.py` — the Coliseum closing reminder: a module-level `tasks.loop` (times in UTC) that `start_coliseum_notification(client)` starts with the client, once, and only when `tasks.coliseum_notification_channel_id` is set.
 - `commands.py` — the `COMMANDS` table. Each `Command` holds its name, handler, help text/usage, help section and `admin_only` flag; `~help` is generated from it (admin commands only shown to admins). Adding a command = write a service handler + add a `Command` entry, keeping the list grouped by section with admin-only commands last.

@@ -13,8 +13,6 @@ from fjormcord.bot.artping.util.user_util import is_administrator
 
 COMMAND_PREFIX = "~"
 
-MESSAGE_DENIED = "You do not have the permissions for this command"
-
 SECTION_ART_PING = ""
 SECTION_CURRENCY = "Gacha Currency Commands:"
 SECTION_ADMIN = "Admin Commands:"
