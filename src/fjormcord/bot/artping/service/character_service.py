@@ -2,28 +2,24 @@ import logging
 
 import discord
 
-from fjormcord.bot.artping.repository import character_repository
-from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users
-from fjormcord.bot.artping.repository.character_repository import get_character_row
-from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, MissingArgument, get_first, has_extra_entries
+from fjormcord.bot.artping.repository import art_ping_repository, character_repository
+from fjormcord.bot.artping.util.message_util import CommandError, get_single_name
 from fjormcord.bot.artping.util.user_util import get_username
 
 
+def require_character(name):
+    character = character_repository.get_character_row(name)
+    if character is None:
+        raise CommandError(f"Character {name} doesn't exist")
+    return character
+
+
 def add_character(client: discord.Client, message: discord.Message):
-    entry = get_first(message.content)
+    entry = get_single_name(message.content, "character name")
 
-    if entry is None:
-        raise MissingArgument("character name")
-
-    if has_extra_entries(message.content):
-        logging.warning(MESSAGE_ONE_NAME_ONLY)
-        return MESSAGE_ONE_NAME_ONLY
-
-    existing = get_character_row(entry)
+    existing = character_repository.get_character_row(entry)
     if existing:
-        out = f"Character {existing['NAME']} already exists"
-        logging.warning(out)
-        return out
+        raise CommandError(f"Character {existing['NAME']} already exists")
 
     character_repository.add_character(entry)
 
@@ -33,21 +29,7 @@ def add_character(client: discord.Client, message: discord.Message):
 
 
 def remove_character(client: discord.Client, message: discord.Message):
-    entry = get_first(message.content)
-
-    if entry is None:
-        raise MissingArgument("character name")
-
-    if has_extra_entries(message.content):
-        logging.warning(MESSAGE_ONE_NAME_ONLY)
-        return MESSAGE_ONE_NAME_ONLY
-
-    character = get_character_row(entry)
-
-    if character is None:
-        out = f"Character {entry} doesn't exist"
-        logging.warning(out)
-        return out
+    character = require_character(get_single_name(message.content, "character name"))
 
     character_repository.remove_character(character['CHARACTER_ID'])
 
@@ -57,23 +39,9 @@ def remove_character(client: discord.Client, message: discord.Message):
 
 
 async def check_character(client: discord.Client, message: discord.Message):
-    entry = get_first(message.content)
+    character = require_character(get_single_name(message.content, "character name"))
 
-    if entry is None:
-        raise MissingArgument("character name")
+    user_ids = art_ping_repository.get_art_ping_users((character['CHARACTER_ID'],))
+    usernames = [await get_username(client, user_id) for user_id in user_ids]
 
-    if has_extra_entries(message.content):
-        logging.warning(MESSAGE_ONE_NAME_ONLY)
-        return MESSAGE_ONE_NAME_ONLY
-
-    character = get_character_row(entry)
-
-    if character is None:
-        out = f"Character {entry} doesn't exist"
-        logging.warning(out)
-        return out
-
-    usernames = [await get_username(client, user_id) for user_id in get_art_ping_users((character['CHARACTER_ID'],))]
-
-    return f"Character entry found for {character['NAME']}\n" \
-        + f"Users: {', '.join(usernames)}"
+    return f"Character entry found for {character['NAME']}\nUsers: {', '.join(usernames)}"

@@ -6,7 +6,7 @@ import discord
 from fjormcord.bot.artping.coliseum import start_coliseum_notification
 from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, format_usage, Command
 from fjormcord.bot.artping.easter_eggs import get_easter_egg_reply
-from fjormcord.bot.artping.util.message_util import MissingArgument, split_message
+from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 # Replies echo user input, so never let a message trigger @everyone/@here or role pings
@@ -61,6 +61,9 @@ class ArtPingClient(discord.Client):
                 out = await out
         except MissingArgument as e:
             out = f"{e.argument.capitalize()} is missing. Usage: {format_usage(command)}"
+            logging.warning(out)
+        except CommandError as e:
+            out = str(e)
             logging.warning(out)
         except Exception:
             logging.exception("Command %s failed", command.name)

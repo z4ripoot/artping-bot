@@ -4,7 +4,8 @@ from fjormcord.bot.artping.repository.art_ping_repository import add_ping as ins
 from fjormcord.bot.artping.repository.character_repository import add_character, get_character_row
 from fjormcord.bot.artping.service import art_ping_service
 from fjormcord.bot.artping.service.art_ping_service import do_art_ping, add_ping, remove_ping, check_ping
-from tests.fakes import make_message
+from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
+from tests.fakes import make_message, reply
 
 
 def subscribe(character_name, user_id):
@@ -16,7 +17,7 @@ def test_art_ping_mentions_subscribers_case_insensitively(client):
     subscribe("Lucina", 1)
     subscribe("Lucina", 2)
 
-    assert do_art_ping(client, make_message("~artping lucina")) == "Lucina: <@1> <@2>"
+    assert reply(do_art_ping, client, make_message("~artping lucina")) == "Lucina: <@1> <@2>"
 
 
 def test_art_ping_reports_missing_characters_in_same_reply(client):
@@ -29,47 +30,43 @@ def test_art_ping_reports_missing_characters_in_same_reply(client):
 
 
 def test_art_ping_with_only_unknown_characters(client):
-    assert do_art_ping(client, make_message("~artping Marth")) == "No character entry for Marth"
+    assert reply(do_art_ping, client, make_message("~artping Marth")) == "No character entry for Marth"
 
 
 def test_art_ping_without_subscribers(client):
     add_character("Lucina")
 
-    assert do_art_ping(client, make_message("~artping Lucina")) == "Nobody is subscribed to Lucina"
+    assert reply(do_art_ping, client, make_message("~artping Lucina")) == "Nobody is subscribed to Lucina"
 
 
 def test_art_ping_ignores_repeated_spaces(client):
     add_character("Lucina")
     subscribe("Lucina", 1)
 
-    assert do_art_ping(client, make_message("~artping  Lucina ")) == "Lucina: <@1>"
+    assert reply(do_art_ping, client, make_message("~artping  Lucina ")) == "Lucina: <@1>"
 
 
 def test_add_and_remove_ping(client):
     add_character("Lucina")
 
-    assert add_ping(client, make_message("~addping lucina")) == "Ping for Lucina has been added"
-    assert add_ping(client, make_message("~addping lucina")) == "Ping for Lucina already exists"
-    assert check_ping(client, make_message("~checkping")) == "Lucina"
-    assert remove_ping(client, make_message("~removeping lucina")) == "Ping for Lucina has been removed"
-    assert remove_ping(client, make_message("~removeping lucina")) == "Ping for Lucina doesn't exist"
+    assert reply(add_ping, client, make_message("~addping lucina")) == "Ping for Lucina has been added"
+    assert reply(add_ping, client, make_message("~addping lucina")) == "Ping for Lucina already exists"
+    assert reply(check_ping, client, make_message("~checkping")) == "Lucina"
+    assert reply(remove_ping, client, make_message("~removeping lucina")) == "Ping for Lucina has been removed"
+    assert reply(remove_ping, client, make_message("~removeping lucina")) == "Ping for Lucina doesn't exist"
 
 
 def test_add_ping_for_unknown_character(client):
-    assert add_ping(client, make_message("~addping Marth")) == "Character Marth doesn't exist"
+    assert reply(add_ping, client, make_message("~addping Marth")) == "Character Marth doesn't exist"
 
 
 def test_check_ping_without_pings_is_not_empty(client):
-    assert check_ping(client, make_message("~checkping")) == "You are not subscribed to any characters"
+    assert reply(check_ping, client, make_message("~checkping")) == "You are not subscribed to any characters"
 
 
 def test_add_and_remove_ping_hint_at_underscores_for_several_words(client):
-    assert add_ping(client, make_message("~addping Black Knight")) == \
-        "More than one character detected. Please add the characters separately. " \
-        "Use underscores for multi-word names, e.g. Black_Knight"
-    assert remove_ping(client, make_message("~removeping Black Knight")) == \
-        "More than one character detected. Please remove the characters separately. " \
-        "Use underscores for multi-word names, e.g. Black_Knight"
+    assert reply(add_ping, client, make_message("~addping Black Knight")) == MESSAGE_ONE_NAME_ONLY
+    assert reply(remove_ping, client, make_message("~removeping Black Knight")) == MESSAGE_ONE_NAME_ONLY
 
 
 @pytest.fixture
@@ -87,7 +84,7 @@ def test_art_ping_is_blocked_during_cooldown(client, clock):
 
     clock["now"] += 0.5
 
-    assert do_art_ping(client, make_message("~artping Lucina", user_id=3)) == \
+    assert reply(do_art_ping, client, make_message("~artping Lucina", user_id=3)) == \
         "Lucina was pinged recently. Try again in 1 second"
 
 
@@ -98,7 +95,7 @@ def test_art_ping_is_allowed_after_cooldown(client, clock):
 
     clock["now"] += 1
 
-    assert do_art_ping(client, make_message("~artping Lucina")) == "Lucina: <@1>"
+    assert reply(do_art_ping, client, make_message("~artping Lucina")) == "Lucina: <@1>"
 
 
 def test_art_ping_cooldown_only_holds_back_that_character(client, clock):
@@ -118,4 +115,4 @@ def test_admins_are_not_held_back_by_cooldown(client, clock):
     subscribe("Lucina", 1)
     do_art_ping(client, make_message("~artping Lucina"))
 
-    assert do_art_ping(client, make_message("~artping Lucina", administrator=True)) == "Lucina: <@1>"
+    assert reply(do_art_ping, client, make_message("~artping Lucina", administrator=True)) == "Lucina: <@1>"

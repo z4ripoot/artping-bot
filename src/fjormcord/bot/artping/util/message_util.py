@@ -1,5 +1,3 @@
-import logging
-
 # Arguments are split on whitespace, so names of several words are written with underscores
 MULTI_WORD_HINT = "Use underscores for multi-word names, e.g. Black_Knight"
 MESSAGE_ONE_NAME_ONLY = f"Only one name is allowed. {MULTI_WORD_HINT}"
@@ -14,25 +12,24 @@ class MissingArgument(Exception):
         self.argument = argument
 
 
+class CommandError(Exception):
+    # Raised by a handler to turn a command down; the client logs the message and sends it as the reply
+    pass
+
+
 def get_entries(content):
-    # Everything after the command; split() also ignores repeated whitespace
-    entries = content.split()[1:]
+    # Everything after the command, empty when there is nothing; split() also ignores repeated whitespace
+    return content.split()[1:]
 
+
+def get_single_name(content, argument):
+    # For commands that take exactly one name; argument says what it is, e.g. "character name"
+    entries = get_entries(content)
     if not entries:
-        logging.warning("No entries found")
-        return None
-
-    return entries
-
-
-def get_first(content):
-    entries = get_entries(content)
-    return entries[0] if entries else None
-
-
-def has_extra_entries(content):
-    entries = get_entries(content)
-    return entries is not None and len(entries) > 1
+        raise MissingArgument(argument)
+    if len(entries) > 1:
+        raise CommandError(MESSAGE_ONE_NAME_ONLY)
+    return entries[0]
 
 
 # Splits text into chunks within Discord's message length limit; each chunk is sent as a separate message

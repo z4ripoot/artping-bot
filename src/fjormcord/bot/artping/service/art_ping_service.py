@@ -4,10 +4,9 @@ from time import monotonic
 
 import discord
 
-from fjormcord.bot.artping.repository import art_ping_repository
-from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users, get_art_ping_row, get_pings_from_user
-from fjormcord.bot.artping.repository.character_repository import get_character_rows, get_character_row
-from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT, MissingArgument, get_entries
+from fjormcord.bot.artping.repository import art_ping_repository, character_repository
+from fjormcord.bot.artping.service.character_service import require_character
+from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, get_entries, get_single_name
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 # A character can't be pinged again within this many seconds, except by admins
@@ -23,7 +22,7 @@ def do_art_ping(client: discord.Client, message: discord.Message):
     if not entries:
         raise MissingArgument("character name")
 
-    character_rows = get_character_rows(entries)
+    character_rows = character_repository.get_character_rows(entries)
     found_names = {row['NAME'].lower() for row in character_rows}
     missing_characters = [entry for entry in entries if entry.lower() not in found_names]
 
@@ -43,12 +42,10 @@ def do_art_ping(client: discord.Client, message: discord.Message):
             character_rows = [row for row in character_rows if row['CHARACTER_ID'] not in cooling_down]
 
     if not character_rows:
-        out = "\n".join(lines)
-        logging.warning(out)
-        return out
+        raise CommandError("\n".join(lines))
 
     character_names = ", ".join(row['NAME'] for row in character_rows)
-    user_ids = get_art_ping_users([row['CHARACTER_ID'] for row in character_rows])
+    user_ids = art_ping_repository.get_art_ping_users([row['CHARACTER_ID'] for row in character_rows])
     for row in character_rows:
         _last_pinged[row['CHARACTER_ID']] = now
 
@@ -62,71 +59,35 @@ def do_art_ping(client: discord.Client, message: discord.Message):
 
 
 def add_ping(client: discord.Client, message: discord.Message):
-    entries = get_entries(message.content)
-
-    if not entries:
-        raise MissingArgument("character name")
-    elif len(entries) > 1:
-        out = f"More than one character detected. Please add the characters separately. {MULTI_WORD_HINT}"
-        logging.warning(out)
-        return out
-
-    entry = entries[0]
-    character = get_character_row(entry)
-
-    if character is None:
-        out = f"Character {entry} doesn't exist"
-        logging.warning(out)
-        return out
-
+    character = require_character(get_single_name(message.content, "character name"))
     user_id = str(message.author.id)
-    character_name = character['NAME']
 
-    if get_art_ping_row(character['CHARACTER_ID'], user_id):
-        out = f"Ping for {character_name} already exists"
-        logging.info(out)
-        return out
+    if art_ping_repository.get_art_ping_row(character['CHARACTER_ID'], user_id):
+        raise CommandError(f"Ping for {character['NAME']} already exists")
 
     art_ping_repository.add_ping(character['CHARACTER_ID'], user_id)
 
-    out = f"Ping for {character_name} has been added"
+    out = f"Ping for {character['NAME']} has been added"
     logging.info(out)
     return out
 
 
 def remove_ping(client: discord.Client, message: discord.Message):
-    entries = get_entries(message.content)
-
-    if not entries:
-        raise MissingArgument("character name")
-    elif len(entries) > 1:
-        return f"More than one character detected. Please remove the characters separately. {MULTI_WORD_HINT}"
-
-    entry = entries[0]
-    character = get_character_row(entry)
-
-    if character is None:
-        out = f"Character {entry} doesn't exist"
-        logging.warning(out)
-        return out
-
+    character = require_character(get_single_name(message.content, "character name"))
     user_id = str(message.author.id)
-    character_name = character['NAME']
 
-    if not get_art_ping_row(character['CHARACTER_ID'], user_id):
-        out = f"Ping for {character_name} doesn't exist"
-        logging.warning(out)
-        return out
+    if not art_ping_repository.get_art_ping_row(character['CHARACTER_ID'], user_id):
+        raise CommandError(f"Ping for {character['NAME']} doesn't exist")
 
     art_ping_repository.remove_ping(character['CHARACTER_ID'], user_id)
 
-    out = f"Ping for {character_name} has been removed"
+    out = f"Ping for {character['NAME']} has been removed"
     logging.info(out)
     return out
 
 
 def check_ping(client: discord.Client, message: discord.Message):
-    pings = get_pings_from_user(str(message.author.id))
+    pings = art_ping_repository.get_pings_from_user(str(message.author.id))
 
     if not pings:
         return "You are not subscribed to any characters"

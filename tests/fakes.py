@@ -1,6 +1,10 @@
+import asyncio
+import inspect
 from types import SimpleNamespace
 
 import discord
+
+from fjormcord.bot.artping.util.message_util import CommandError
 
 
 class FakeChannel:
@@ -34,3 +38,12 @@ def make_message(content, user_id=1, administrator=False):
     author = SimpleNamespace(id=user_id, display_name=f"user{user_id}",
                              guild_permissions=SimpleNamespace(administrator=administrator))
     return SimpleNamespace(content=content, author=author, channel=FakeChannel())
+
+
+def reply(handler, client, message):
+    # Runs a handler as the bot does: awaited when it is async, and a CommandError's message is the reply
+    try:
+        out = handler(client, message)
+        return asyncio.run(out) if inspect.isawaitable(out) else out
+    except CommandError as e:
+        return str(e)
