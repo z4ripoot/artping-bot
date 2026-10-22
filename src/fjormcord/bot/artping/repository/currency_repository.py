@@ -4,7 +4,7 @@ from fjormcord.bot.artping.database import get_database_connection
 from fjormcord.bot.artping.model.currency import Currency, ScoreboardEntry, WalletEntry
 
 
-def get_currency(currency_name):
+def get_currency(currency_name: str) -> Currency | None:
     row = get_database_connection().execute("""
         SELECT C.GACHA_CURRENCY_ID, C.NAME
         FROM GACHA_CURRENCY C
@@ -14,7 +14,7 @@ def get_currency(currency_name):
     return Currency(id=row['GACHA_CURRENCY_ID'], name=row['NAME']) if row else None
 
 
-def add_currency(currency_name):
+def add_currency(currency_name: str):
     logging.info("Adding currency %s", currency_name)
 
     with get_database_connection() as conn:
@@ -24,7 +24,7 @@ def add_currency(currency_name):
             """, (currency_name,))
 
 
-def remove_currency(currency_id):
+def remove_currency(currency_id: int):
     logging.info("Removing currency %s", currency_id)
 
     with get_database_connection() as conn:
@@ -34,7 +34,7 @@ def remove_currency(currency_id):
             """, (currency_id,))
 
 
-def set_currency(user_id, currency_id, amount):
+def set_currency(user_id: str, currency_id: int, amount: int):
     logging.info("Setting user %s's currency %s to %s", user_id, currency_id, amount)
 
     with get_database_connection() as conn:
@@ -45,7 +45,7 @@ def set_currency(user_id, currency_id, amount):
             """, (currency_id, user_id, amount,))
 
 
-def clear_currency(user_id, currency_id):
+def clear_currency(user_id: str, currency_id: int):
     logging.info("Clearing user %s's currency %s", user_id, currency_id)
 
     with get_database_connection() as conn:
@@ -55,7 +55,7 @@ def clear_currency(user_id, currency_id):
             """, (currency_id, user_id,))
 
 
-def has_wallet_entry(user_id, currency_id):
+def has_wallet_entry(user_id: str, currency_id: int) -> bool:
     return get_database_connection().execute("""
         SELECT 1
         FROM GACHA_CURRENCY_WALLET W
@@ -63,7 +63,7 @@ def has_wallet_entry(user_id, currency_id):
         """, (currency_id, user_id,)).fetchone() is not None
 
 
-def get_wallet(user_id):
+def get_wallet(user_id: str) -> list[WalletEntry]:
     rows = get_database_connection().execute("""
         SELECT C.NAME, W.AMOUNT
         FROM GACHA_CURRENCY_WALLET W
@@ -75,7 +75,7 @@ def get_wallet(user_id):
     return [WalletEntry(currency_name=row['NAME'], amount=row['AMOUNT']) for row in rows]
 
 
-def get_scoreboard(currency_id):
+def get_scoreboard(currency_id: int) -> list[ScoreboardEntry]:
     rows = get_database_connection().execute("""
         SELECT W.USER, W.AMOUNT
         FROM GACHA_CURRENCY_WALLET W

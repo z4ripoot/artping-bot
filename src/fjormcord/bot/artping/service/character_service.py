@@ -2,12 +2,13 @@ import logging
 
 import discord
 
+from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.repository import art_ping_repository, character_repository
 from fjormcord.bot.artping.util.message_util import CommandError, get_single_name
 from fjormcord.bot.artping.util.user_util import get_username
 
 
-def require_character(name):
+def require_character(name: str) -> Character:
     character = character_repository.get_character(name)
     if character is None:
         raise CommandError(f"Character {name} doesn't exist")

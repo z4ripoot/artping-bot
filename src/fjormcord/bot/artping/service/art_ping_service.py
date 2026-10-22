@@ -4,6 +4,7 @@ from time import monotonic
 
 import discord
 
+from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.repository import art_ping_repository, character_repository
 from fjormcord.bot.artping.service.character_service import require_character
 from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, get_entries, get_single_name
@@ -16,19 +17,19 @@ ART_PING_COOLDOWN_SECONDS = 1
 _last_pinged = {}
 
 
-def _cooldown_remaining(character_id, now):
+def _cooldown_remaining(character_id: int, now: float) -> float:
     # Seconds until the character can be pinged again; zero or less when it can be pinged now
     return ART_PING_COOLDOWN_SECONDS - (now - _last_pinged.get(character_id, -math.inf))
 
 
-def _find_characters(names):
+def _find_characters(names: list[str]) -> tuple[list[Character], list[str]]:
     # Returns the characters that exist, and the names that matched none
     characters = character_repository.get_characters(names)
     found_names = {character.name.lower() for character in characters}
     return characters, [name for name in names if name.lower() not in found_names]
 
 
-def _hold_back_cooling_down(characters, now):
+def _hold_back_cooling_down(characters: list[Character], now: float) -> tuple[list[Character], str | None]:
     # Returns the characters that can be pinged now, and a notice about the others (None when there are none)
     remaining = {character.id: _cooldown_remaining(character.id, now) for character in characters}
     cooling_down = [character for character in characters if remaining[character.id] > 0]
@@ -41,7 +42,7 @@ def _hold_back_cooling_down(characters, now):
     return [character for character in characters if remaining[character.id] <= 0], notice
 
 
-def _ping(characters, now):
+def _ping(characters: list[Character], now: float) -> str:
     # Mentions everyone subscribed to these characters, and starts their cooldown
     character_names = ", ".join(character.name for character in characters)
     user_ids = art_ping_repository.get_art_ping_users([character.id for character in characters])

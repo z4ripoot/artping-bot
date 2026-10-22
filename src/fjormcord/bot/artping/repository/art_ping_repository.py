@@ -1,9 +1,10 @@
 import logging
+from collections.abc import Sequence
 
 from fjormcord.bot.artping.database import get_database_connection
 
 
-def has_ping(character_id, user_id):
+def has_ping(character_id: int, user_id: str) -> bool:
     return get_database_connection().execute("""
         SELECT 1
         FROM PINGS P
@@ -11,7 +12,7 @@ def has_ping(character_id, user_id):
         """, (character_id, user_id,)).fetchone() is not None
 
 
-def get_art_ping_users(character_ids):
+def get_art_ping_users(character_ids: Sequence[int]) -> list[str]:
     sql = """
         SELECT DISTINCT P.USER
         FROM PINGS P
@@ -21,7 +22,7 @@ def get_art_ping_users(character_ids):
     return [row['USER'] for row in get_database_connection().execute(sql, list(character_ids))]
 
 
-def add_ping(character_id, user_id):
+def add_ping(character_id: int, user_id: str):
     logging.info("Adding ping for character %s and user %s", character_id, user_id)
 
     with get_database_connection() as conn:
@@ -31,7 +32,7 @@ def add_ping(character_id, user_id):
             """, (character_id, user_id,))
 
 
-def remove_ping(character_id, user_id):
+def remove_ping(character_id: int, user_id: str):
     logging.info("Removing ping for character %s and user %s", character_id, user_id)
 
     with get_database_connection() as conn:
@@ -41,7 +42,7 @@ def remove_ping(character_id, user_id):
             """, (character_id, user_id,))
 
 
-def get_pings_from_user(user_id):
+def get_pings_from_user(user_id: str) -> list[str]:
     rows = get_database_connection().execute("""
         SELECT C.NAME
         FROM PINGS P

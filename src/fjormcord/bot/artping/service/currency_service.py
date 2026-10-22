@@ -3,6 +3,7 @@ import math
 
 import discord
 
+from fjormcord.bot.artping.model.currency import Currency
 from fjormcord.bot.artping.repository import currency_repository
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, CommandError, MissingArgument, \
     get_entries, get_single_name
@@ -14,7 +15,7 @@ SCOREBOARD_PAGE_SIZE = 10
 MAX_AMOUNT = 2 ** 63 - 1
 
 
-def require_currency(name):
+def require_currency(name: str) -> Currency:
     currency = currency_repository.get_currency(name)
     if currency is None:
         raise CommandError(f"Currency {name} doesn't exist")
