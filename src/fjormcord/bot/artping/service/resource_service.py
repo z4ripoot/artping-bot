@@ -25,7 +25,7 @@ def _parse_name(entry: str) -> str:
 
 def _require_not_a_command(name: str):
     # Imported here: commands imports this module for its handlers
-    from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME
+    from fjormcord.bot.artping.legacy.commands import COMMAND_PREFIX, COMMANDS_BY_NAME
 
     command_name = COMMAND_PREFIX + name.lower()
     if command_name in COMMANDS_BY_NAME:

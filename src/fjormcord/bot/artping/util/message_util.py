@@ -1,6 +1,10 @@
+import discord
+
 # Arguments are split on whitespace, so names of several words are written with underscores
 MULTI_WORD_HINT = "Use underscores for multi-word names, e.g. Black_Knight"
 MESSAGE_ONE_NAME_ONLY = f"Only one name is allowed. {MULTI_WORD_HINT}"
+# Replies echo user input, so never let a message trigger @everyone/@here or role pings
+ALLOWED_MENTIONS = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=True)
 # Discord rejects messages longer than this
 MAX_MESSAGE_LENGTH = 2000
 

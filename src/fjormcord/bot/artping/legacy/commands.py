@@ -45,6 +45,7 @@ def show_help(client: discord.Client, message: discord.Message) -> str:
     show_admin = is_administrator(message.author)
     out = 'Commands (content in brackets is what to add when using command):\n'
     out += f'{MULTI_WORD_HINT}\n'
+    out += 'All commands are also available as slash commands, type /\n'
 
     current_section = SECTION_ART_PING
     for command in COMMANDS:
@@ -61,9 +62,7 @@ def show_help(client: discord.Client, message: discord.Message) -> str:
     return out
 
 
-# TODO: consider migrating to discord.ext.commands (Bot + Cogs). It would give quoted multi-word arguments,
-#  typed argument conversion, permission check decorators and a path to slash commands, but changes how
-#  missing/invalid arguments, permission denials, unknown commands and ~help are answered.
+# The ~ commands; slash commands are in fjormcord.bot.artping.slash (docs/superpowers/specs/2026-10-26-slash-commands-design.md)
 # Commands are listed in ~help order; keep each section together and admin-only commands last.
 COMMANDS = [
     Command("~artping", do_art_ping, "Ping users for art of this character", usage=("character name",),
@@ -109,3 +108,8 @@ COMMANDS = [
 ]
 
 COMMANDS_BY_NAME = {command.name: command for command in COMMANDS}
+
+
+def cooldown_key(command: Command) -> str:
+    # The bare name, so a ~ command and its slash command share one cooldown
+    return command.name.removeprefix(COMMAND_PREFIX)

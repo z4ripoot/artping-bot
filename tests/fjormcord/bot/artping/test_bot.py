@@ -3,11 +3,12 @@ from dataclasses import replace
 from types import SimpleNamespace
 
 import discord
+from discord.ext import commands as discord_commands
 import pytest
 
-from fjormcord.bot.artping import commands
+from fjormcord.bot.artping.legacy import commands
 from fjormcord.bot.artping.bot import ArtPingClient
-from fjormcord.bot.artping.commands import Command
+from fjormcord.bot.artping.legacy.commands import Command
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.easter_eggs import LORENZ_SMILE
 from tests.fakes import FakeClock, make_message
@@ -213,3 +214,8 @@ def test_cooldown_follows_the_configured_length(bot, clock, lucina, monkeypatch)
 
     assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == \
         ["You used ~artping recently. Try again in 20 seconds"]
+
+
+def test_client_is_a_bot_without_prefix_commands(bot):
+    assert isinstance(bot, discord_commands.Bot)
+    assert bot.help_command is None
