@@ -101,7 +101,7 @@ def count_voters(message_id: str) -> int:
 
 def convert_vote(message_id: str, user_ids: Iterable[str]):
     # Stores the voters counted from the reactions and marks the vote as counting stored voters, all or nothing
-    add_voter = """
+    add_voters = """
         INSERT OR IGNORE INTO CHARACTER_VOTE_VOTER (MESSAGE_ID, USER)
         VALUES (?, ?)
         """
@@ -113,7 +113,7 @@ def convert_vote(message_id: str, user_ids: Iterable[str]):
 
     logging.info("Converting vote %s to a button vote", message_id)
     with get_database_connection() as conn:
-        conn.executemany(add_voter, [(message_id, user_id) for user_id in user_ids])
+        conn.executemany(add_voters, [(message_id, user_id) for user_id in user_ids])
         conn.execute(mark_vote, (message_id,))
 
 

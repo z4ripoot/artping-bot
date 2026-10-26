@@ -77,7 +77,14 @@ def test_admin_command_ignored_for_non_admin(bot):
 def test_add_character_by_non_admin_posts_a_vote(bot):
     [vote] = dispatch(bot, make_message("~addcharacter Lucina"))
 
-    assert vote.startswith("Vote to add Lucina: react with ")
+    assert vote.startswith("Vote to add Lucina. Votes needed: ")
+
+
+def test_setup_adds_the_vote_cog_and_its_button(bot):
+    asyncio.run(bot.setup_hook())
+
+    assert bot.get_cog("CharacterVoteCog") is not None
+    assert [type(view).__name__ for view in bot.persistent_views] == ["VoteView"]
 
 
 def test_admin_command_allowed_for_admin(bot):

@@ -5,13 +5,17 @@ from types import SimpleNamespace
 
 import discord
 
+from fjormcord.bot.artping.service import character_vote_service
 from fjormcord.bot.artping.util.message_util import CommandError
 
 
-# The bot's own user, e.g. on the reaction it adds to a vote message
+# The bot's own user, e.g. on the reaction it added to vote messages before they had a button
 BOT_USER = SimpleNamespace(id=999, bot=True)
 
 _message_ids = itertools.count(1000)
+
+# Stands for an argument left out of an edit, as discord.py's MISSING does
+_UNCHANGED = object()
 
 
 def make_user(user_id, bot=False):
@@ -50,11 +54,12 @@ class FakeReaction:
 
 
 class FakeSentMessage:
-    # A message the bot sent: users can react to it, the bot can edit it
-    def __init__(self, content, guild):
+    # A message the bot sent: users can react to it, the bot can edit its content and its view (the vote button)
+    def __init__(self, content, guild, view=None):
         self.id = next(_message_ids)
         self.content = content
         self.guild = guild
+        self.view = view
         self.reactions = []
 
     def react(self, emoji, user):
@@ -67,8 +72,11 @@ class FakeSentMessage:
     async def add_reaction(self, emoji):
         self.react(emoji, BOT_USER)
 
-    async def edit(self, content):
-        self.content = content
+    async def edit(self, content=_UNCHANGED, view=_UNCHANGED):
+        if content is not _UNCHANGED:
+            self.content = content
+        if view is not _UNCHANGED:
+            self.view = view
 
 
 class FakeChannel:
@@ -85,11 +93,11 @@ class FakeChannel:
     async def send(self, content, allowed_mentions=None, view=None):
         self.sent.append(content)
         self.sent_allowed_mentions.append(allowed_mentions)
-        return self.post(content)
+        return self.post(content, view)
 
-    def post(self, content):
+    def post(self, content, view=None):
         # A message in the channel, e.g. one a user wrote earlier
-        message = FakeSentMessage(content, self.guild)
+        message = FakeSentMessage(content, self.guild, view)
         self.messages[message.id] = message
         return message
 
@@ -154,6 +162,11 @@ def make_message(content, user_id=1, administrator=False, channel=None, bot=Fals
                              guild_permissions=SimpleNamespace(administrator=administrator))
     return SimpleNamespace(content=content, author=author, channel=channel or FakeChannel(),
                            guild=SimpleNamespace(id=1))
+
+
+def click(client, message, user_id, administrator=False):
+    # A click on a vote message's button by a server member; returns the ephemeral reply
+    return asyncio.run(character_vote_service.toggle_vote(client, message, make_member(user_id, administrator)))
 
 
 def reply(handler, client, message):

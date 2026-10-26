@@ -6,7 +6,8 @@ import discord
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.model.character_vote import CharacterVote, VoteChannel
 from fjormcord.bot.artping.repository import character_vote_repository
-# Imported as a module, since character_service imports this one too
+# Imported as modules, since character_service and vote_view import this one too
+from fjormcord.bot.artping import vote_view
 from fjormcord.bot.artping.service import character_service
 from fjormcord.bot.artping.util.message_util import CommandError
 from fjormcord.bot.artping.util.user_util import is_administrator
@@ -22,75 +23,59 @@ async def start_vote(vote_channel: VoteChannel, proposer_id: str, name: str) -> 
     if not vote_channel.in_guild:
         raise CommandError("Votes can only be started in a server")
 
-    settings = config.read_settings()
-    vote_message = await vote_channel.send(f"Vote to add {name}: react with {settings.character_vote_emoji}. "
-                                           f"Votes needed: {settings.character_votes_needed}", None)
+    vote_message = await vote_channel.send(_vote_text(name), vote_view.VoteView(0))
     character_vote_repository.add_vote(
-        CharacterVote(str(vote_message.id), vote_channel.channel_id, name, proposer_id))
-
-    try:
-        await vote_message.add_reaction(settings.character_vote_emoji)
-    except discord.HTTPException as e:
-        # Users can still add the reaction themselves
-        logging.warning("Failed to react to the vote for %s. %s", name, e)
+        CharacterVote(str(vote_message.id), vote_channel.channel_id, name, proposer_id, uses_button=True))
 
     # An empty reply sends nothing more
     return ""
 
 
-async def check_vote(client: discord.Client, message_id: str):
-    # Adds the character once enough users, or an admin, reacted; drops the vote when its message is gone or its name got taken
+async def toggle_vote(client: discord.Client, vote_message: discord.Message, user: discord.abc.User) -> str:
+    # A click on the vote button adds the user's vote or takes it back; an admin's click passes the vote.
+    # Returns the reply only the clicker sees.
+    message_id = str(vote_message.id)
     vote = character_vote_repository.get_vote(message_id)
     if vote is None:
-        return
+        # Closed while its message kept the button, e.g. when editing the message failed
+        await _edit(vote_message, view=None)
+        return "This vote has already been closed"
 
+    name = vote.character_name
     try:
-        vote_message = await _fetch_vote_message(client, vote)
-    except discord.NotFound:
-        logging.info("The message of vote %s is gone, dropping the vote", message_id)
-        character_vote_repository.remove_vote(message_id)
-        return
-    except discord.Forbidden as e:
-        # Kept, so the vote counts again once the bot may read the channel
-        logging.warning("Can't read the message of vote %s, check the bot's permissions. %s", message_id, e)
-        return
-
-    settings = config.read_settings()
-    voters = await _get_voters(vote_message, settings.character_vote_emoji)
-
-    # Another event may have closed the vote while the reactions were fetched; nothing awaits from here to the commit
-    if character_vote_repository.get_vote(message_id) is None:
-        return
-
-    try:
-        character_service.require_unused_name(vote.character_name)
+        character_service.require_unused_name(name)
     except CommandError as e:
         logging.info("Dropping vote %s: %s", message_id, e)
         character_vote_repository.remove_vote(message_id)
-        await _edit(vote_message, str(e))
-        return
+        await _edit(vote_message, content=str(e), view=None)
+        return str(e)
 
-    if len(voters) < settings.character_votes_needed and not await _has_administrator(vote_message.guild, voters):
-        return
+    # Nothing awaits from reading the vote to the commit, so other clicks and events can't interleave
+    user_id = str(user.id)
+    # The click comes from a server member, so the permissions are there without fetching the member
+    administrator = is_administrator(user)
+    if not administrator and character_vote_repository.has_voter(message_id, user_id):
+        character_vote_repository.remove_voter(message_id, user_id)
+        out = f"Your vote for {name} has been taken back"
+    else:
+        # An admin is subscribed along with the other voters
+        character_vote_repository.add_voter(message_id, user_id)
+        out = f"Your vote for {name} has been added"
 
-    # Another event may have closed the vote while the members were fetched
-    if character_vote_repository.get_vote(message_id) is None:
-        return
-
-    other_votes = [other for other in character_vote_repository.get_votes_for(vote.character_name)
-                   if other.message_id != message_id]
-    for voter in voters:
-        character_vote_repository.add_voter(message_id, str(voter.id))
-    character_vote_repository.pass_vote(message_id, vote.character_name)
-    await _edit(vote_message, f"Character {vote.character_name} has been added")
-    await _close(client, other_votes, vote.character_name)
+    count = character_vote_repository.count_voters(message_id)
+    if administrator or count >= config.read_settings().character_votes_needed:
+        await _pass(client, vote_message, vote)
+    else:
+        await _edit(vote_message, view=vote_view.VoteView(count))
+    return out
 
 
 async def check_open_votes(client: discord.Client):
-    # Run at startup: reactions may have changed while the bot was offline
+    # Run at startup: votes_needed or the names may have changed while the bot was offline, and votes still counted
+    # by their reactions get the button
     for vote in character_vote_repository.get_votes():
         try:
-            await check_vote(client, vote.message_id)
+            await _check_open_vote(client, vote)
         except Exception:
             logging.exception("Checking vote %s failed", vote.message_id)
 
@@ -108,6 +93,66 @@ def drop_deleted_vote(message_id: str):
         character_vote_repository.remove_vote(message_id)
 
 
+def _vote_text(name: str) -> str:
+    return f"Vote to add {name}. Votes needed: {config.read_settings().character_votes_needed}"
+
+
+async def _check_open_vote(client: discord.Client, vote: CharacterVote):
+    # Adds the character once enough users voted, or an admin reacted before the conversion; drops the vote when its
+    # message is gone or its name got taken
+    message_id = vote.message_id
+    try:
+        vote_message = await _fetch_vote_message(client, vote)
+    except discord.NotFound:
+        logging.info("The message of vote %s is gone, dropping the vote", message_id)
+        character_vote_repository.remove_vote(message_id)
+        return
+    except discord.Forbidden as e:
+        # Kept, so the vote is checked, or converted, again once the bot may read the channel
+        logging.warning("Can't read the message of vote %s, check the bot's permissions. %s", message_id, e)
+        return
+
+    settings = config.read_settings()
+    voters = []
+    has_administrator = False
+    if not vote.uses_button:
+        voters = await _get_voters(vote_message, settings.character_vote_emoji)
+        has_administrator = (len(voters) < settings.character_votes_needed
+                             and await _has_administrator(vote_message.guild, voters))
+
+    # Another event may have closed the vote while the reactions and members were fetched, or another check
+    # converted it; nothing awaits from here to the commit
+    current = character_vote_repository.get_vote(message_id)
+    if current is None:
+        return
+    try:
+        character_service.require_unused_name(vote.character_name)
+    except CommandError as e:
+        logging.info("Dropping vote %s: %s", message_id, e)
+        character_vote_repository.remove_vote(message_id)
+        await _edit(vote_message, content=str(e), view=None)
+        return
+
+    converting = not current.uses_button
+    if converting:
+        character_vote_repository.convert_vote(message_id, [str(voter.id) for voter in voters])
+
+    count = character_vote_repository.count_voters(message_id)
+    if (converting and has_administrator) or count >= settings.character_votes_needed:
+        await _pass(client, vote_message, vote)
+    elif converting:
+        await _edit(vote_message, content=_vote_text(vote.character_name), view=vote_view.VoteView(count))
+
+
+async def _pass(client: discord.Client, vote_message: discord.Message, vote: CharacterVote):
+    # The caller has awaited nothing since it read the vote, so it is still open
+    other_votes = [other for other in character_vote_repository.get_votes_for(vote.character_name)
+                   if other.message_id != vote.message_id]
+    character_vote_repository.pass_vote(vote.message_id, vote.character_name)
+    await _edit(vote_message, content=f"Character {vote.character_name} has been added", view=None)
+    await _close(client, other_votes, vote.character_name)
+
+
 async def _fetch_vote_message(client: discord.Client, vote: CharacterVote) -> discord.Message:
     channel_id = int(vote.channel_id)
     # The cache costs no request to Discord
@@ -116,7 +161,8 @@ async def _fetch_vote_message(client: discord.Client, vote: CharacterVote) -> di
 
 
 async def _get_voters(vote_message: discord.Message, emoji: str) -> list[discord.abc.User]:
-    # Users who reacted with the vote emoji, without bots such as this one
+    # Users who reacted with the vote emoji, without bots such as this one; only read to convert a vote that was
+    # counted by its reactions
     for reaction in vote_message.reactions:
         if str(reaction.emoji) == emoji:
             return [user async for user in reaction.users() if not user.bot]
@@ -140,18 +186,19 @@ async def _has_administrator(guild: discord.Guild, voters: list[discord.abc.User
 
 
 async def _close(client: discord.Client, votes: Iterable[CharacterVote], name: str):
-    # The votes are already gone from the database; this only tells their messages
+    # The votes are already gone from the database; this only tells their messages, and removes their buttons
     for vote in votes:
         try:
             vote_message = await _fetch_vote_message(client, vote)
         except discord.HTTPException as e:
             logging.warning("Failed to fetch the message of closed vote %s. %s", vote.message_id, e)
             continue
-        await _edit(vote_message, f"Character {name} has already been added")
+        await _edit(vote_message, content=f"Character {name} has already been added", view=None)
 
 
-async def _edit(vote_message: discord.Message, content: str):
+async def _edit(vote_message: discord.Message, **changes):
+    # changes: the content and view as Message.edit takes them, view=None removing the button
     try:
-        await vote_message.edit(content=content)
+        await vote_message.edit(**changes)
     except discord.HTTPException as e:
         logging.warning("Failed to edit vote message %s. %s", vote_message.id, e)
