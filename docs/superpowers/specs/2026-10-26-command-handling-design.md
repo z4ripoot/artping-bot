@@ -1,7 +1,8 @@
 # Command handling: design
 
-Describes the bot as built. Covers how messages become commands and replies; the commands themselves are in
-the feature specs (art pings, characters and aliases, character votes, gacha currency).
+Describes the bot as built. Covers how messages become commands and replies (the legacy `~` path); the commands
+themselves are in the feature specs (art pings, characters and aliases, character votes, gacha currency), and
+the slash commands, which share the services and the cooldowns, in the slash commands design.
 
 ## Intent
 
@@ -9,7 +10,7 @@ Community members type short `~` commands in a channel and get a plain-text repl
 dispatch is one small loop around a table of commands, so adding a command means writing one handler and one
 table entry, and `~help` stays in step with the table automatically.
 
-## Dispatch (`bot.py`, `ArtPingClient.on_message`)
+## Dispatch (`legacy/dispatch.py`, called by `ArtPingClient.on_message`)
 
 1. Messages from bots, this one included, get no reply at all (no commands, no easter eggs), so no bot can
    make this one spam or ping users. Messages without text are ignored too.
@@ -21,6 +22,9 @@ table entry, and `~help` stays in step with the table automatically.
 4. An `admin_only` command from a non-admin gets **no reply at all**, so the commands can't be used to make
    the bot spam. An admin is a member with the server's Administrator permission; in DMs nobody is an admin.
 5. The cooldown is checked, the handler runs, and its reply is sent.
+
+The table, the handlers (`legacy/*_handlers.py`, which only parse the message and call a service function) and
+the dispatch all live in the `legacy` package.
 
 ## Arguments
 
@@ -51,20 +55,21 @@ Black_Knight`.
 
 - A command can have `cooldown_seconds`; only `~artping` has one (`art_ping.cooldown_seconds`, default 1).
 - The cooldown is per command and per user: other users, and the same user's other commands, are not held
-  back.
+  back. The key is the name without `~` (`legacy.commands.cooldown_key`), so `/artping` shares it.
 - A user still cooling down is answered `You used ~artping recently. Try again in 3 seconds` (rounded up,
   `1 second` singular).
 - Only a command that **succeeded** starts the cooldown, so a typo can be corrected right away.
 - Admins never get a cooldown.
 - Cooldowns are kept in memory and reset when the bot restarts. The clock is injectable for tests.
 
-## `~help` (`commands.show_help`)
+## `~help` (`legacy/commands.show_help`)
 
 Generated from the `COMMANDS` table, in table order:
 
 ```
 Commands (content in brackets is what to add when using command):
 Use underscores for multi-word names, e.g. Black_Knight
+All commands are also available as slash commands, type /
 ~artping (character name): Ping users for art of this character
 ...
 
@@ -81,11 +86,12 @@ each section together and admin-only commands last.
 
 ## Non-goals
 
-- No slash commands, quoted arguments or typed argument conversion; migrating to `discord.ext.commands` is a
-  noted TODO in `commands.py`.
+- No quoted arguments or typed argument conversion. The `~` commands are not `discord.ext.commands` prefix
+  commands: the client is a `commands.Bot` for its cogs, but `on_message` dispatches by hand and never calls
+  `process_commands`.
 - No reply to unknown commands (that aren't a resource either) or to admin commands from non-admins.
 
 ## Tests
 
 `tests/fjormcord/bot/artping/test_bot.py` (dispatch, errors, splitting, mentions, cooldowns),
-`test_commands.py` (`~help`), `test_cooldowns.py`, `util/test_message_util.py`.
+`legacy/test_commands.py` (`~help`), `test_cooldowns.py`, `util/test_message_util.py`.

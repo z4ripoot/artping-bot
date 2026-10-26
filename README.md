@@ -9,7 +9,7 @@ A Discord bot that provides various features to your community:
  * Notification when Coliseum in Fire Emblem Heroes is closing. Notification will occur 5 hours and 1 hour before closing.
 
 # Commands
-You have to type these commands in the channel chat to perform them.
+You can type these commands in the channel chat to perform them. Every one of them is also a slash command (see below).
 Arguments are separated by spaces, so character and currency names cannot contain spaces. Use underscores for multi-word names, e.g. `Black_Knight`.
 A character can also have aliases, other names that work in every command that takes a character, e.g. `Focalors` for `Furina`. Replies always show the character's name.
 Character names and aliases are stored with every part capitalized, whatever casing was typed: `black_knight` becomes `Black_Knight`, `m!robin` becomes `M!Robin` and `l'arachel` becomes `L'Arachel`.
@@ -38,14 +38,25 @@ Character names and aliases are stored with every part capitalized, whatever cas
 | ~removeresource <resource>        | This will remove the provided resource                                                                                                                            |
 | ~help                             | This will display an overview of all the available commands                                                                                                       |
 
+# Slash commands
+Every command above is also available as a slash command with the same name, e.g. `/addping`; type `/` to see them. Discord shows the arguments and their descriptions, autocompletes character, currency and resource names, and hides the admin commands from users who aren't admins. The `~` commands keep working exactly as before, and both share the same cooldown.
+ * Slash arguments can contain spaces, which become underscores: `/addping Black Knight` is `~addping Black_Knight`.
+ * `/artping` has a `character` argument and optional `character2`, `character3`, ... arguments, up to the number in the property "art_ping.slash_max_characters" (default 10, at most 25; applied on restart). To ping more characters at once, use `~artping`.
+ * `/resource <name>` posts a resource, as `~<resource>` does, and `/resources` lists them.
+ * `/lorenz` and `/chromk` post the same emoji as the "thanks lorenz" and "chromk" messages.
+ * Errors are only shown to the user who made them. Admin commands can only be used in a server, and for a non-admin they answer "This command is for admins only".
+ * There is no `/help`: Discord's command list already shows them all.
+
 # Local setup
-1. Create a bot of your own in the [Discord developer portal](https://discord.com/developers/applications), enable the "Message Content Intent" and invite it to a test server.
+1. Create a bot of your own in the [Discord developer portal](https://discord.com/developers/applications), enable the "Message Content Intent" and invite it to a test server with the `bot` and `applications.commands` scopes. The slash commands need the second one: a bot that was invited before they existed (such as the production bot) has to be invited again, which keeps its settings.
 2. Install the bot and its test dependencies: `python -m venv .venv`, then `.venv/Scripts/python -m pip install -e ".[dev]"` (use `.venv/bin/python` on Linux/macOS).
 3. Create `config.ini` in the repository root with your bot's token:
    ```ini
    [discord]
    token=<your bot token>
+   guild_id=<your test server's ID>
    ```
+   With `guild_id` set the slash commands are registered in that server only, and show up at once; without it they are registered globally, which can take a while to show up. Only use it for a bot of your own: starting the bot with a `guild_id` also clears the global slash commands of that application. To remove commands left in a server after you stop using `guild_id`, send an empty list to Discord: `curl -X PUT -H "Authorization: Bot <your bot token>" -H "Content-Type: application/json" -d "[]" https://discord.com/api/v10/applications/<application ID>/guilds/<server ID>/commands`.
 4. Run the bot with `.venv/Scripts/python -m fjormcord.bot.artping`. The database (`test.db`) is created on the first start.
 
 Run the tests with `.venv/Scripts/python -m pytest`. They need neither a token nor `config.ini`.
@@ -54,7 +65,9 @@ Run the tests with `.venv/Scripts/python -m pytest`. They need neither a token n
 The defaults are in `config.example.ini`, which is committed. `config.ini` is not committed: any property you put there overrides the default.
  * You have to provide your token of Discord bot to the property "discord.token". Only put it in config.ini
  * The database is stored at the path in the property "database.path". A database that doesn't exist yet is created on startup
- * The property "art_ping.cooldown_seconds" (default 1) is how many seconds a user has to wait after using ~artping before they can use it again. Admins don't have to wait, and 0 turns the cooldown off
- * The properties "character_vote.votes_needed" (default 5) and "character_vote.emoji" (default ⭐) control voting: a non-admin's ~addcharacter posts a vote message, and the character is added once that many users (bots excluded) have reacted to it with that emoji, or as soon as an admin has. With fewer than 2 votes needed there are no votes: non-admins add characters directly, like admins. A custom server emoji is written as `<:name:id>`. Open votes are stored in the database, so they survive restarts and don't expire. The bot needs the "Add Reactions" and "Read Message History" permissions in the channels where votes are started
+ * The property "discord.guild_id" (default empty) is for development, see Local setup. Leave it empty in production, which registers the slash commands globally
+ * The property "art_ping.cooldown_seconds" (default 1) is how many seconds a user has to wait after using ~artping or /artping before they can use it again. Admins don't have to wait, and 0 turns the cooldown off
+ * The property "art_ping.slash_max_characters" (default 10, between 1 and 25) is how many characters /artping takes. Changing it takes effect after a restart
+ * The properties "character_vote.votes_needed" (default 5) and "character_vote.emoji" (default ⭐) control voting: a non-admin's ~addcharacter or /addcharacter posts a vote message with a Vote button (showing the emoji and the count, e.g. "Vote (1/5)"), and the character is added once that many users have clicked it, or as soon as an admin does. Clicking again takes your vote back. With fewer than 2 votes needed there are no votes: non-admins add characters directly, like admins. A custom server emoji is written as `<:name:id>`. Open votes and their voters are stored in the database, so they survive restarts and don't expire. Clicks made while the bot is offline fail and can be repeated. If you raise "character_vote.votes_needed" while the bot is offline, the open votes show the old number until their next click. Votes that were still counted by ⭐ reactions when the button came are converted at the first start: the users who reacted become voters. The bot needs the "Read Message History" permission in the channels where votes are started (to check open votes at startup and for the conversion; "Add Reactions" is no longer needed)
  * Resources copy the text of a Discord message when they are set, so the bot needs "Read Message History" in the channel of that message. Later edits of the message are not followed: set the resource again to refresh it
  * Optionally, you can provide the ID of a channel to property "coliseum_notification_channel_id". The FEH coliseum notifications are sent to this channel, otherwise no notifications will be sent. To copy a channel's ID, enable Developer Mode in Discord (User Settings > Advanced), then right-click the channel and choose "Copy Channel ID"

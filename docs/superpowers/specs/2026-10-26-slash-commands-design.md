@@ -1,10 +1,7 @@
 # Slash commands: design
 
-Adds slash commands (`/artping`, `/addping`, ...) next to the existing `~` commands. Describes a change, not
-the bot as built; the existing behaviour is in the other specs, in particular command handling.
-
-Marked **(my call)**: decisions the designer made that the owner didn't state; the owner can still overrule
-them. Everything else was decided with the owner.
+Adds slash commands (`/artping`, `/addping`, ...) next to the existing `~` commands. Describes the bot as
+built; the behaviour of the `~` side is in the other specs, in particular command handling.
 
 ## Intent
 
@@ -31,7 +28,7 @@ no longer where the command logic lives.
 - Converting the `~` commands to `ext.commands` prefix commands. The legacy dispatch keeps its own table and
   loop (`on_message`).
 - Moving the other non-command parts (the message easter eggs, the Coliseum reminder) into cogs. They stay
-  where they are. **(my call)** Character voting does move, into its own cog (see Character votes).
+  where they are. Character voting does move, into its own cog (see Character votes).
 - Removing or deprecating the `~` commands, or announcing that they will go.
 - Context menus, modals, `hybrid_command`s, and buttons other than the vote button.
 
@@ -71,17 +68,16 @@ Three service replies name a command to use next: `check_wallet` ("Use ~setcurre
 ("Resources: ~hof, ..."). Slash users see the slash form instead ("Use /setcurrency ...", "Use /scoreboard
 currency:{currency} page:{page} ...", "Resources: hof, ... (post one with /resource)"). These functions take
 a parameter saying which syntax to answer in, with legacy as the default, so the legacy texts stay
-byte-for-byte the same. **(my call)**
+byte-for-byte the same.
 
 Argument-count and argument-format errors belong to the legacy handlers. Range and existence checks belong to
 the services. Where a check is about the value itself (an amount that isn't a number), the slash side gets it
 from Discord's option types instead.
 
 The existing service tests keep running against the legacy handlers unchanged, which proves the `~` side
-didn't change. New tests cover the service functions directly where the legacy tests don't already. **(my
-call)**
+didn't change. New tests cover the service functions directly where the legacy tests don't already.
 
-### The legacy package **(my call)**
+### The legacy package
 
 The `~` path moves into `fjormcord.bot.artping.legacy`:
 
@@ -99,7 +95,7 @@ The tests move to mirror the source tree (`tests/fjormcord/bot/artping/legacy/..
 
 ### The slash package
 
-`fjormcord.bot.artping.slash`, one cog per feature **(my call)**:
+`fjormcord.bot.artping.slash`, one cog per feature:
 
 | Cog | Commands |
 |---|---|
@@ -122,8 +118,9 @@ handling never runs. The `command_prefix` that `Bot` requires is therefore unuse
 
 ## Commands
 
-The names are the legacy names without `~`. Descriptions come from the legacy `COMMANDS` table, shortened
-where Discord's 100-character limit for descriptions requires it.
+The names are the legacy names without `~`. Descriptions adapt the legacy `COMMANDS` descriptions slightly:
+shortened to fit Discord's 100-character limit, and worded for slash use (`/resources` and `/resource` point
+at each other).
 
 ### Options
 
@@ -179,39 +176,39 @@ like the message easter eggs. The message easter eggs ("thanks lorenz", "chromk"
   non-admins.
 - Server admins can override that visibility in the server settings, so each admin command also checks
   `user_util.is_administrator(interaction.user)`. A non-admin gets an ephemeral "This command is for admins
-  only". A slash command has to be answered, so the legacy silence can't carry over. **(my call)**
+  only". A slash command has to be answered, so the legacy silence can't carry over.
 
 ### No `/help`
 
 Discord's command picker already lists every slash command with its description and options, so there is no
-`/help`. **(my call)** `~help` gets one extra line under the multi-word hint: "All commands are also
-available as slash commands, type /". This is the only visible change to the legacy side. **(my call)**
+`/help`. `~help` gets one extra line under the multi-word hint: "All commands are also
+available as slash commands, type /". This is the only visible change to the legacy side.
 
 ### DMs
 
 Slash commands work wherever the `~` command works today. `/addcharacter` from a non-admin in a DM gets the
-same "Votes can only be started in a server" error. Admin commands are `guild_only`. **(my call)**
+same "Votes can only be started in a server" error. Admin commands are `guild_only`.
 
 ## Replies
 
 - A reply is sent as the interaction response with the same allowed mentions as today (users only).
   `/artping` therefore pings the subscribers just like `~artping`.
-- Successful replies are public, like the `~` replies. **(my call)**
-- `CommandError` replies are ephemeral, so a typo isn't posted for everyone. **(my call)**
+- Successful replies are public, like the `~` replies.
+- `CommandError` replies are ephemeral, so a typo isn't posted for everyone.
 - Other exceptions are logged with their traceback and answered, ephemerally, with
-  `Something went wrong while running /command`. One cog-level or tree-level error handler does this for
-  every command.
+  `Something went wrong while running /command`. `slash.runner.run`, which every command goes through, does
+  this, so the cogs have no error handlers of their own.
 - Replies longer than 2000 characters are split with `split_message`: the first part is the response, the
   rest are follow-ups.
 - An empty reply (a passed-on vote) sends nothing more.
 - Commands that wait on Discord (`/checkcharacter`, `/scoreboard`, `/setresource`, `/addcharacter`) defer
-  first. After a defer Discord fixes the visibility, so their errors follow the defer's visibility rather than
-  being ephemeral. The builder decides which commands defer and how, within the 3-second rule.
+  first (`run(..., defer=True)`). After a defer Discord fixes the visibility, so their errors follow the
+  defer's visibility rather than being ephemeral.
 
 ## Character votes
 
 Votes change from ⭐ reactions to a **Vote button** on the vote message, for votes started with
-`~addcharacter` and with `/addcharacter` alike (owner's decision). Everything else about votes stays as the
+`~addcharacter` and with `/addcharacter` alike (as the owner chose). Everything else about votes stays as the
 character votes spec describes: who gets a vote (non-admins, when `votes_needed` is 2 or more), the vote
 message text, admins passing a vote at once, adding the character and subscribing exactly the voters in one
 transaction, closing the other votes for the name, dropping a vote whose message is deleted or whose name
@@ -222,8 +219,10 @@ got taken, and votes never expiring.
 `character_vote_service.start_vote` takes a `discord.Message` today and sends the vote message itself. It is
 changed to take what it really needs: a way to send the vote message (with the button) and get the sent
 message back, for its ID, plus the channel ID, whether this is in a server, and the proposer's user ID.
-Legacy sends to the message's channel. Slash sends the vote message as the interaction response and stores
-the ID of that response message (`interaction.original_response()`).
+The service gets a `VoteChannel` (`model/character_vote.py`: channel ID, whether it is in a server, and a
+`send(content, view)` coroutine returning the sent message). Legacy sends to the message's channel. Slash
+defers `/addcharacter`, so the vote message is a follow-up (`interaction.followup.send(..., wait=True)`), and
+the ID of that message is stored.
 
 The vote message text no longer asks users to react. It says to click the button, e.g. `Vote to add
 Black_Knight. Votes needed: 5`. The button's label shows the count: `Vote (0/5)`.
@@ -231,9 +230,10 @@ Black_Knight. Votes needed: 5`. The button's label shows the count: `Vote (0/5)`
 ### Clicking the button
 
 - A click from a user who hasn't voted records their vote. A click from a user who has voted takes it back
-  (owner's decision).
+  (as the owner chose).
 - The clicker gets a short ephemeral confirmation ("Your vote for Black_Knight has been added" / "... has been
-  taken back"), and the button label is updated to the new count. **(my call)**
+  taken back"), and the button label is updated to the new count. The button defers ephemerally ("thinking")
+  first, as passing a vote edits several messages, and then sends the confirmation as a follow-up.
 - A click from an admin passes the vote right away, as an admin's reaction does now. The admin is subscribed
   along with the other voters. The click comes from a server member, so `is_administrator(interaction.user)`
   works without fetching the member.
@@ -243,7 +243,7 @@ Black_Knight. Votes needed: 5`. The button's label shows the count: `Vote (0/5)`
 - A click on a vote whose name got taken another way, e.g. by an alias, drops the vote, as checking it does
   today. The message says why and loses its button.
 - The proposer gets no automatic vote and votes by clicking, just as today they react like anyone else.
-  **(my call)**
+
 - Bots can't click buttons, so the "bots excluded" rule no longer needs code.
 
 ### Storage
@@ -256,10 +256,11 @@ it, in the same transaction as today.
 ### Restarts
 
 The button must keep working after a restart, since votes don't expire. It is a persistent view: a fixed
-`custom_id` and no timeout, registered with `bot.add_view` in `setup_hook`. The vote is found by
+`custom_id` and no timeout, registered with `bot.add_view` by `CharacterVoteCog` when it loads. The vote is found by
 `interaction.message.id`. Clicks made while the bot is offline fail on the user's side ("This interaction
 failed"), and the user can click again. At startup the open votes are checked as now, so a vote that already
-meets a lowered `votes_needed` passes, and one whose name got taken is dropped.
+meets a lowered `votes_needed` passes, and one whose name got taken is dropped. Known limitation: raising
+`votes_needed` while the bot is offline leaves open button votes showing the old number until their next click.
 
 ### Converting the open ⭐ votes
 
@@ -268,13 +269,15 @@ converts each one once: the users (bots excluded) who reacted with `character_vo
 voters, and the message is edited to the new text with the button. If that already reaches `votes_needed`,
 or a reactor is an admin, the vote passes during the conversion. The existing reaction-reading code is kept
 only for this. How a converted vote is recognised (a stored marker, or the message already having the
-button) is up to the builder. It must not convert a vote twice or lose voters on a second start.
+button) is a stored marker: `CHARACTER_VOTE.USES_BUTTON`, added by migration `007` (0 for the votes open at release, 1
+for new votes, set when a vote is converted). A converted vote isn't converted twice, and no voters are lost on
+a second start.
 
 ### What goes away
 
 - `on_raw_reaction_add` and counting votes from reactions (apart from the one-off conversion).
 - `character_vote.emoji` keeps its meaning as the vote's emoji, now shown on the button. The default ⭐ stays.
-  **(my call)**
+
 
 ### The voting cog
 
@@ -296,20 +299,21 @@ One `Cooldowns` on the client serves both syntaxes. The key becomes the command 
 (`artping`), so a cooldown started with `~artping` also holds back `/artping`, and the other way around.
 The cooldown time comes from the same setting. Admins are exempt, and only a successful command starts the
 cooldown. The legacy message keeps saying `You used ~artping recently...`. The slash message says
-`/artping` and is ephemeral. **(my call)**
+`/artping` and is ephemeral.
 
 ## Command sync
 
 - A new setting `discord.guild_id` (default empty in `config.example.ini`, a `Settings` field, parsed in
-  `load_settings`), for development only. **(my call)**
+  `load_settings`), for development only.
   - When set, `setup_hook` copies the global commands to that server and syncs there, which takes effect
     immediately. It also syncs an empty global set, so the commands don't show up twice. A developer's bot is
     their own application (README, local setup), so this never touches production.
   - When empty, as in production, it syncs globally, which also makes the slash commands available in DMs.
     Commands left over from a guild sync on that application aren't cleared automatically. The README says
-    how to clear them: start once with `guild_id` set and an empty tree, or leave them. It's a one-off for
-    developers.
-- The sync runs on every start. A failed sync is logged and the bot keeps running with the `~` commands.
+    how to clear them (an API call that sets the server's commands to an empty list), or they can be left. It's
+    a one-off for developers.
+- The sync runs on every start. A failed sync (`discord.DiscordException`, `OSError` or `asyncio.TimeoutError`)
+  is logged and swallowed by `slash.sync.sync_commands`, and the bot keeps running with the `~` commands.
 - The bot has to be invited with the `applications.commands` scope. The README's local setup and deployment
   notes say so. The production bot may need to be re-invited once.
 

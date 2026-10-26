@@ -1,10 +1,14 @@
 # Character votes: design
 
+Votes were first cast by reacting with an emoji and are now cast with a **Vote button** (see "The vote button"
+at the end; the slash commands design has the details). The sections below describe the original design;
+where the button changed something it is marked, and the end section wins.
+
 ## Intent
 
 Today only admins can add characters (`~addcharacter`). Non-admins should be able to propose a character
-themselves, with the community deciding: the bot posts a vote message, users react with a configured emoji,
-and once enough users have reacted the character is added and everyone who voted is subscribed to its art
+themselves, with the community deciding: the bot posts a vote message, users vote on it (first by reacting with
+a configured emoji, now with a button), and once enough users have voted the character is added and everyone who voted is subscribed to its art
 pings. Admins keep adding characters directly.
 
 ## Goals
@@ -48,9 +52,9 @@ pings. Admins keep adding characters directly.
 ## Behavior (my calls, the user can override)
 
 - **Vote message:** e.g. `Vote to add Black_Knight: react with ⭐. Votes needed: 5` The bot adds the
-  emoji to the message itself so people can just click it. The name in it is normalized
+  emoji to the message itself so people can just click it (the button replaced both, see the end). The name in it is normalized
   (`name_util.normalize_name`), as everywhere else.
-- **Counting:** reactions are not stored. On each reaction add/remove on a vote message, the bot fetches the
+- **Counting (reaction votes; now only read for the conversion):** reactions are not stored. On each reaction add/remove on a vote message, the bot fetches the
   message from Discord and counts the users who reacted with the vote emoji, excluding bots. Reactions with
   other emoji are ignored. Removing a reaction therefore takes the vote back; there is nothing to do on
   removal other than not counting it, so only reaction *adds* need to trigger a check.
@@ -71,7 +75,8 @@ pings. Admins keep adding characters directly.
   `~setprimaryname`). No hooks are added there; instead a vote is dropped lazily whenever it is checked (a
   reaction, or startup) and its name fails `character_service.require_unused_name`. Its message is edited to
   that error's text (e.g. `Black_Knight is already an alias of Black_Knight_Zelgius`).
-- **Missing permissions:** voting needs the bot to have Add Reactions and Read Message History in the channel.
+- **Missing permissions:** voting needed the bot to have Add Reactions and Read Message History in the channel;
+  with the button only Read Message History is left, for the conversion and for fetching vote messages.
   A `discord.Forbidden` while reacting to the new vote message, or while fetching it to count, is logged as a
   warning and the vote is kept, so it works once the permissions are fixed (the startup check picks it up).
   `README.md` mentions the two permissions.
@@ -82,6 +87,35 @@ pings. Admins keep adding characters directly.
 - **`~help`:** `~addcharacter` moves out of the admin section into the art ping section, with a description
   like "Add a character that users can be pinged for; for non-admins this starts a vote". `README.md` is
   updated to match.
+
+## The vote button
+
+Votes are cast with a **Vote button** on the vote message, for `~addcharacter` and `/addcharacter` alike.
+
+- The vote message reads `Vote to add Black_Knight. Votes needed: 5`, the button `Vote (0/5)` with
+  `character_vote.emoji` as its emoji. The label is edited to the new count after each click.
+- A click from a user who hasn't voted adds their vote, a second click takes it back. The clicker gets an
+  ephemeral confirmation (`Your vote for Black_Knight has been added` / `... has been taken back`): the button
+  defers ephemerally first ("thinking"), since passing a vote edits every vote message for the name, and then
+  sends the confirmation as a follow-up.
+- A click from an admin passes the vote at once, and the admin is subscribed like any voter. Bots can't click.
+- At `votes_needed` the message becomes `Character Black_Knight has been added` and loses its button; the other
+  votes for the name are edited to `... has already been added` and lose theirs. A click on a vote whose name
+  got taken (an alias) drops it, as checking it does.
+- The voters are stored (migration `007`, table `CHARACTER_VOTE_VOTER`: message ID and user ID, cascading with
+  the vote), since a button keeps no list of who clicked. `CHARACTER_VOTE.USES_BUTTON` is `1` for votes counted
+  by their stored voters and `0` for the votes that were open when the button came.
+- The button is a persistent view (fixed `custom_id`, no timeout), registered with `bot.add_view` by
+  `CharacterVoteCog`, so it works on vote messages from before a restart. The vote is found by the clicked
+  message's ID. Clicks made while the bot is offline fail on the user's side and can be repeated.
+- **Conversion:** at startup (`check_open_votes`) each vote with `USES_BUTTON = 0` is converted once: the users
+  (bots excluded) who reacted with `character_vote.emoji` become stored voters, `USES_BUTTON` is set, and the
+  message gets the new text and the button. If that reaches `votes_needed`, or a reactor is an admin, the vote
+  passes during the conversion. A converted vote isn't converted again. This is the only place reactions are
+  still read; `on_raw_reaction_add` is gone, `on_raw_message_delete` stays.
+- **Known limitation:** the startup check also compares each vote with `votes_needed`, but it only edits the
+  messages it converts. Raising `votes_needed` while the bot is offline leaves the open button votes showing
+  the old number until their next click.
 
 ## Configuration
 
@@ -130,8 +164,8 @@ IDs as text, like `PINGS.USER`. Not unique on the name, since several votes for 
   `user_util.is_administrator(message.author)`: admins add directly and drop open votes; non-admins start a
   vote.
 - **commands:** `~addcharacter` loses `admin_only=True` and moves to the art ping section.
-- **bot:** `ArtPingClient` gets `on_raw_reaction_add`, `on_raw_message_delete`, and the open-vote check in
-  `on_ready`. Errors in these handlers are logged, never raised (there is no user to reply to).
+- **bot:** `ArtPingClient` got `on_raw_reaction_add`, `on_raw_message_delete`, and the open-vote check in
+  `on_ready`; they now live in `CharacterVoteCog` (without the reaction listener). Errors in these handlers are logged, never raised (there is no user to reply to).
 
 ### Handler reply
 

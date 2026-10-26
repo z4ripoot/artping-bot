@@ -34,7 +34,7 @@ async def add_character(client: discord.Client, user: discord.abc.User, name: st
 
     require_unused_name(entry)
 
-    # Non-admins start a vote instead; the character is added once enough users, or an admin, react to it
+    # Non-admins start a vote instead; the character is added once enough users, or an admin, click its button
     if not is_administrator(user) and character_vote_service.is_voting_enabled():
         return await character_vote_service.start_vote(vote_channel, str(user.id), entry)
 
