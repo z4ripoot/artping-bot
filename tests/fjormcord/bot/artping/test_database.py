@@ -92,6 +92,21 @@ def test_unversioned_database_is_migrated_without_losing_data(tmp_path):
     connection.close()
 
 
+def test_migration_normalizes_existing_names_and_aliases(tmp_path):
+    path = tmp_path / "live.db"
+    old = unversioned_database(path)
+    with old:
+        old.execute("INSERT INTO CHARACTERS (CHARACTER_ID, NAME) VALUES (7, 'black_KNIGHT')")
+        old.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (7, 'zelgius')")
+    old.close()
+
+    connection = connect(path)
+
+    assert connection.execute("SELECT NAME FROM CHARACTERS").fetchall() == [("Black_Knight",)]
+    assert connection.execute("SELECT ALIAS FROM ALIAS").fetchall() == [("Zelgius",)]
+    connection.close()
+
+
 def test_failed_migration_leaves_database_unchanged(tmp_path):
     path = tmp_path / "duplicates.db"
     old = unversioned_database(path)

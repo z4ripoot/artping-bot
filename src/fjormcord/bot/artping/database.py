@@ -2,6 +2,7 @@ import logging
 import sqlite3
 
 from fjormcord.bot.artping import config
+from fjormcord.bot.artping.util.name_util import normalize_name
 
 # Numbered scripts (001_initial_schema.sql, ...); a database's user_version is the number of the last one applied to it
 MIGRATIONS_PATH = config.PROJECT_ROOT / 'db' / 'migrations'
@@ -17,6 +18,8 @@ def get_database_connection():
 
 def connect(path):
     connection = sqlite3.connect(path)
+    # Lets migrations normalize names the same way the commands do
+    connection.create_function("NORMALIZE_NAME", 1, normalize_name, deterministic=True)
     # Runs before foreign keys are enabled: rebuilding a table would otherwise cascade-delete the rows referencing it
     migrate(connection)
     return connection

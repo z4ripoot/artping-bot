@@ -5,13 +5,14 @@ import discord
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.repository import alias_repository, art_ping_repository, character_repository
 from fjormcord.bot.artping.util.message_util import CommandError, get_single_name
+from fjormcord.bot.artping.util.name_util import normalize_name
 from fjormcord.bot.artping.util.user_util import get_username
 
 
 def require_character(name: str) -> Character:
     character = character_repository.get_character(name)
     if character is None:
-        raise CommandError(f"Character {name} doesn't exist")
+        raise CommandError(f"Character {normalize_name(name)} doesn't exist")
     return character
 
 
@@ -26,7 +27,7 @@ def require_unused_name(name: str):
 
 
 def add_character(client: discord.Client, message: discord.Message) -> str:
-    entry = get_single_name(message.content, "character name")
+    entry = normalize_name(get_single_name(message.content, "character name"))
 
     require_unused_name(entry)
 

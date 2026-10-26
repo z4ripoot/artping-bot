@@ -97,3 +97,10 @@ def test_art_ping_lists_characters_alphabetically(client):
     subscribe("Marth", 1)
 
     assert reply(do_art_ping, client, make_message("~artping Marth lucina Chrom")) == "Chrom, lucina, Marth: <@1>"
+
+
+def test_art_ping_names_unknown_characters_normalized(client):
+    add_character("Lucina")
+    subscribe("Lucina", 1)
+
+    assert reply(do_art_ping, client, make_message("~artping lucina marth")) == "No character entry for Marth\nLucina: <@1>"

@@ -12,6 +12,7 @@ A Discord bot that provides various features to your community:
 You have to type these commands in the channel chat to perform them.
 Arguments are separated by spaces, so character and currency names cannot contain spaces. Use underscores for multi-word names, e.g. `Black_Knight`.
 A character can also have aliases, other names that work in every command that takes a character, e.g. `Focalors` for `Furina`. Replies always show the character's name.
+Character names and aliases are stored with every part capitalized, whatever casing was typed: `black_knight` becomes `Black_Knight`, `m!robin` becomes `M!Robin` and `l'arachel` becomes `L'Arachel`.
 
 | Command                           | Description                                                                                                                                                       |
 |-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|

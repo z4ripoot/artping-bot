@@ -6,6 +6,7 @@ from fjormcord.bot.artping.repository import alias_repository, character_reposit
 from fjormcord.bot.artping.service.character_service import require_character, require_unused_name
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, CommandError, MissingArgument, \
     get_entries, get_single_name
+from fjormcord.bot.artping.util.name_util import normalize_name
 
 
 def _get_character_and_alias(content):
@@ -19,7 +20,7 @@ def _get_character_and_alias(content):
         raise MissingArgument("alias")
 
     name, alias = entries
-    return require_character(name), alias
+    return require_character(name), normalize_name(alias)
 
 
 def add_alias(client: discord.Client, message: discord.Message) -> str:
@@ -48,7 +49,7 @@ def remove_alias(client: discord.Client, message: discord.Message) -> str:
 
 
 def set_primary_name(client: discord.Client, message: discord.Message) -> str:
-    alias = get_single_name(message.content, "alias")
+    alias = normalize_name(get_single_name(message.content, "alias"))
     character = require_character(alias)
 
     if not alias_repository.has_alias(character.id, alias):

@@ -6,6 +6,7 @@ from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.repository import art_ping_repository, character_repository
 from fjormcord.bot.artping.service.character_service import require_character
 from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, get_entries, get_single_name
+from fjormcord.bot.artping.util.name_util import normalize_name
 
 
 def _find_characters(names: list[str]) -> tuple[list[Character], list[str]]:
@@ -16,7 +17,7 @@ def _find_characters(names: list[str]) -> tuple[list[Character], list[str]]:
     for name in names:
         character = character_repository.get_character(name)
         if character is None:
-            missing_names.append(name)
+            missing_names.append(normalize_name(name))
         elif character not in characters:
             characters.append(character)
     characters.sort(key=lambda character: character.name.casefold())

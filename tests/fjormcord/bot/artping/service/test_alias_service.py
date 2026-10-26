@@ -12,6 +12,15 @@ def test_add_alias_makes_the_alias_find_the_character(client):
     assert get_character("focalors") == get_character("Furina")
 
 
+def test_add_alias_normalizes_the_alias(client):
+    add_character("Furina")
+
+    assert reply(add_alias, client, make_message("~addalias Furina FOCALORS")) == \
+        "Alias Focalors has been added to Furina"
+    assert reply(set_primary_name, client, make_message("~setprimaryname focalors")) == \
+        "Focalors is now the primary name; Furina has become an alias"
+
+
 def test_add_alias_for_unknown_character(client):
     assert reply(add_alias, client, make_message("~addalias Furina Focalors")) == "Character Furina doesn't exist"
 
@@ -22,9 +31,9 @@ def test_add_alias_rejects_an_existing_alias_of_any_character(client):
     add_alias(client, make_message("~addalias Furina Focalors"))
 
     assert reply(add_alias, client, make_message("~addalias Neuvillette FOCALORS")) == \
-        "FOCALORS is already an alias of Furina"
+        "Focalors is already an alias of Furina"
     assert reply(add_alias, client, make_message("~addalias Furina focalors")) == \
-        "focalors is already an alias of Furina"
+        "Focalors is already an alias of Furina"
 
 
 def test_add_alias_rejects_a_character_name(client):
@@ -48,7 +57,7 @@ def test_remove_alias(client):
     add_alias(client, make_message("~addalias Furina Focalors"))
 
     assert reply(remove_alias, client, make_message("~removealias furina focalors")) == \
-        "Alias focalors has been removed from Furina"
+        "Alias Focalors has been removed from Furina"
     assert get_character("Focalors") is None
 
 

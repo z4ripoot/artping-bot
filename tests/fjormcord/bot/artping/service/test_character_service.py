@@ -36,7 +36,17 @@ def test_add_character_rejects_an_alias(client, database):
     database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
 
     assert reply(add_character, client, make_message("~addcharacter focalors")) == \
-        "focalors is already an alias of Furina"
+        "Focalors is already an alias of Furina"
+
+
+def test_add_character_normalizes_the_name(client):
+    assert reply(add_character, client, make_message("~addcharacter m!ROBIN")) == "Character M!Robin has been added"
+    assert get_character("m!robin").name == "M!Robin"
+
+
+def test_unknown_character_is_named_normalized(client):
+    assert reply(check_character, client, make_message("~checkcharacter black_knight")) == \
+        "Character Black_Knight doesn't exist"
 
 
 def test_remove_character_by_alias_cascades_to_aliases(client, database):
