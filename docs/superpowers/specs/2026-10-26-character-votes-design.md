@@ -47,7 +47,7 @@ pings. Admins keep adding characters directly.
 
 ## Behavior (my calls, the user can override)
 
-- **Vote message:** e.g. `Vote to add Black_Knight: react with ⭐. 5 votes are needed.` The bot adds the
+- **Vote message:** e.g. `Vote to add Black_Knight: react with ⭐. Votes needed: 5` The bot adds the
   emoji to the message itself so people can just click it. The name in it is normalized
   (`name_util.normalize_name`), as everywhere else.
 - **Counting:** reactions are not stored. On each reaction add/remove on a vote message, the bot fetches the
