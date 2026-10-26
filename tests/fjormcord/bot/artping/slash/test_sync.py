@@ -46,3 +46,11 @@ def test_sync_failure_is_logged(caplog):
     asyncio.run(sync_commands(tree, 42))
 
     assert "Syncing the slash commands failed" in caplog.text
+
+
+def test_sync_network_failure_is_logged(caplog):
+    tree = FakeTree(ConnectionResetError("connection lost"))
+
+    asyncio.run(sync_commands(tree, 42))
+
+    assert "Syncing the slash commands failed" in caplog.text

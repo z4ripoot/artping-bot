@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import discord
@@ -18,5 +19,5 @@ async def sync_commands(tree: app_commands.CommandTree, guild_id: int | None) ->
         await tree.sync(guild=guild)
         tree.clear_commands(guild=None)
         await tree.sync()
-    except discord.HTTPException:
+    except (discord.DiscordException, OSError, asyncio.TimeoutError):
         logging.exception("Syncing the slash commands failed")

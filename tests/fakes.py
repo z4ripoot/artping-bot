@@ -199,6 +199,9 @@ class FakeFollowup:
         self._interaction = interaction
 
     async def send(self, content, ephemeral=False, allowed_mentions=None, view=None, wait=False):
+        # As in Discord, a follow-up needs the interaction to be answered or deferred first
+        if not self._interaction.response.is_done():
+            raise RuntimeError("Follow-up sent before the interaction was responded to or deferred")
         # After a defer Discord fixes the first follow-up's visibility; ephemeral is recorded as given
         message = self._interaction.record(content, ephemeral, allowed_mentions, view)
         return message if wait else None
