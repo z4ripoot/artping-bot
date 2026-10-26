@@ -11,7 +11,8 @@ table entry, and `~help` stays in step with the table automatically.
 
 ## Dispatch (`bot.py`, `ArtPingClient.on_message`)
 
-1. Messages from the bot itself and messages without text are ignored. Messages from other bots are not.
+1. Messages from bots, this one included, get no reply at all (no commands, no easter eggs), so no bot can
+   make this one spam or ping users. Messages without text are ignored too.
 2. Easter eggs are answered first (see the easter eggs spec); this doesn't stop dispatch.
 3. A message is a command when it starts with `~` and its first word, lowercased, is exactly a command name
    (`~CheckPing` works, `~checkpingx` doesn't). Anything else gets no reply.

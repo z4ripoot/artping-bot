@@ -31,6 +31,12 @@ def test_command_must_match_exactly(bot):
     assert dispatch(bot, make_message("~checkpingx")) == []
 
 
+def test_messages_from_other_bots_are_ignored(bot):
+    assert dispatch(bot, make_message("~checkping", bot=True)) == []
+    assert dispatch(bot, make_message("~addcharacter Lucina", administrator=True, bot=True)) == []
+    assert dispatch(bot, make_message("Thanks Lorenz", bot=True)) == []
+
+
 def test_admin_command_ignored_for_non_admin(bot):
     assert dispatch(bot, make_message("~removecharacter Lucina")) == []
 
@@ -48,7 +54,7 @@ def test_admin_command_allowed_for_admin(bot):
 
 def test_admin_command_ignored_in_dms(bot):
     message = make_message("~removecharacter Lucina")
-    message.author = SimpleNamespace(id=1, display_name="user1")
+    message.author = SimpleNamespace(id=1, display_name="user1", bot=False)
 
     assert dispatch(bot, message) == []
 

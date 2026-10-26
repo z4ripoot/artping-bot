@@ -14,9 +14,9 @@ Community in-jokes: a few exact phrases get a custom-emoji reply from the bot.
 | `chromk` | a picture of 12 emoji pieces, `chromk_1` to `chromk_12`, in 3 lines of 4 |
 
 - Only the whole message matches: `thanks lorenz!` or `ok thanks lorenz` get no reply.
-- The bot's own messages are ignored. Easter eggs are answered before command dispatch; no phrase starts with
+- Messages from bots, this one included, are ignored. Easter eggs are answered before command dispatch; no phrase starts with
   `~`, so a message is never both.
-- Anyone can trigger them, without a cooldown.
+- Any user can trigger them, without a cooldown.
 
 ## Configuration
 

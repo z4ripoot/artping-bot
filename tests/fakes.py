@@ -138,8 +138,8 @@ class FakeClient:
         return SimpleNamespace(global_name=self.users[user_id], name=f"name{user_id}")
 
 
-def make_message(content, user_id=1, administrator=False, channel=None):
-    author = SimpleNamespace(id=user_id, display_name=f"user{user_id}",
+def make_message(content, user_id=1, administrator=False, channel=None, bot=False):
+    author = SimpleNamespace(id=user_id, display_name=f"user{user_id}", bot=bot,
                              guild_permissions=SimpleNamespace(administrator=administrator))
     return SimpleNamespace(content=content, author=author, channel=channel or FakeChannel(),
                            guild=SimpleNamespace(id=1))

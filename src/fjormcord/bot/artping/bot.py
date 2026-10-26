@@ -46,7 +46,8 @@ class ArtPingClient(discord.Client):
             logging.exception("Dropping vote %s failed", payload.message_id)
 
     async def on_message(self, message: discord.Message):
-        if message.author == self.user:
+        # Bots, this one included, get no reply at all, so no bot can make this one spam
+        if message.author.bot:
             return
 
         content = message.content
