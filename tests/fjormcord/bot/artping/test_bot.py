@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands as discord_commands
 import pytest
 
+from fjormcord.bot.artping import config
 from fjormcord.bot.artping.legacy import commands
 from fjormcord.bot.artping.bot import ArtPingClient
 from fjormcord.bot.artping.legacy.commands import Command
@@ -80,11 +81,20 @@ def test_add_character_by_non_admin_posts_a_vote(bot):
     assert vote.startswith("Vote to add Lucina. Votes needed: ")
 
 
-def test_setup_adds_the_vote_cog_and_its_button(bot):
+def test_setup_adds_the_vote_cog_and_its_button(bot, monkeypatch):
+    synced = []
+
+    async def sync_commands(tree, guild_id):
+        synced.append((tree, guild_id))
+
+    monkeypatch.setattr("fjormcord.bot.artping.bot.sync_commands", sync_commands)
+
     asyncio.run(bot.setup_hook())
 
     assert bot.get_cog("CharacterVoteCog") is not None
     assert [type(view).__name__ for view in bot.persistent_views] == ["VoteView"]
+    # The sync comes last, so it registers the commands of every cog
+    assert synced == [(bot.tree, config.read_settings().guild_id)]
 
 
 def test_admin_command_allowed_for_admin(bot):

@@ -3,10 +3,12 @@ import logging
 import discord
 from discord.ext import commands
 
+from fjormcord.bot.artping import config
 from fjormcord.bot.artping.coliseum import start_coliseum_notification
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.legacy.dispatch import handle_message
 from fjormcord.bot.artping.slash.character_vote_cog import CharacterVoteCog
+from fjormcord.bot.artping.slash.sync import sync_commands
 from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS
 
 
@@ -21,6 +23,7 @@ class ArtPingClient(commands.Bot):
 
     async def setup_hook(self):
         await self.add_cog(CharacterVoteCog(self))
+        await sync_commands(self.tree, config.read_settings().guild_id)
 
     async def on_ready(self):
         logging.info("Initiating tasks")

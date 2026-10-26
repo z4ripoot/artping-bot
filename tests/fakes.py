@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import discord
 
+from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.service import character_vote_service
 from fjormcord.bot.artping.util.message_util import CommandError
 
@@ -132,6 +133,7 @@ class FakeClient:
         self.channels = {channel.id: channel for channel in channels}
         self.fetched = []
         self.user = BOT_USER
+        self.cooldowns = Cooldowns(FakeClock())
 
     def get_channel(self, channel_id):
         return self.channels.get(channel_id)
@@ -170,31 +172,61 @@ def click(client, message, user_id, administrator=False):
 
 
 class FakeInteractionResponse:
-    def __init__(self):
+    def __init__(self, interaction):
+        self._interaction = interaction
         # The keyword arguments of each defer
         self.deferred = []
+        self._done = False
+
+    async def send_message(self, content, ephemeral=False, allowed_mentions=None, view=None):
+        self._done = True
+        self._interaction.record(content, ephemeral, allowed_mentions, view)
 
     async def defer(self, **options):
+        self._done = True
         self.deferred.append(options)
+
+    def is_done(self):
+        return self._done
+
+    async def edit_message(self, content=_UNCHANGED, view=_UNCHANGED):
+        self._done = True
+        await self._interaction.message.edit(content=content, view=view)
 
 
 class FakeFollowup:
-    def __init__(self):
-        # (content, ephemeral) of each follow-up message
-        self.sent = []
+    def __init__(self, interaction):
+        self._interaction = interaction
 
-    async def send(self, content, ephemeral=False):
-        self.sent.append((content, ephemeral))
+    async def send(self, content, ephemeral=False, allowed_mentions=None, view=None, wait=False):
+        # After a defer Discord fixes the first follow-up's visibility; ephemeral is recorded as given
+        message = self._interaction.record(content, ephemeral, allowed_mentions, view)
+        return message if wait else None
 
 
 class FakeInteraction:
-    # A click on a component of message by user
-    def __init__(self, client, message, user):
-        self.client = client
+    # A slash command or component click by a user; message is the message a component belongs to
+    def __init__(self, user_id=1, administrator=False, channel=None, client=None, in_guild=True, message=None):
+        self.user = make_member(user_id, administrator)
+        self.channel = channel or FakeChannel()
+        self.channel_id = self.channel.id
+        self.client = client or FakeClient(channels=[self.channel])
+        self.guild = SimpleNamespace(id=1) if in_guild else None
         self.message = message
-        self.user = user
-        self.response = FakeInteractionResponse()
-        self.followup = FakeFollowup()
+        self.response = FakeInteractionResponse(self)
+        self.followup = FakeFollowup(self)
+        # (content, ephemeral, allowed_mentions) of everything sent, as response or follow-up
+        self.sent = []
+
+    def record(self, content, ephemeral, allowed_mentions, view):
+        self.sent.append((content, ephemeral, allowed_mentions))
+        return self.channel.post(content, view)
+
+
+def invoke(command, interaction, cog=None, **options):
+    # Runs an app command's callback as discord.py does after parsing the options
+    arguments = (interaction,) if cog is None else (cog, interaction)
+    return asyncio.run(command.callback(*arguments, **options))
 
 
 def reply(handler, client, message):

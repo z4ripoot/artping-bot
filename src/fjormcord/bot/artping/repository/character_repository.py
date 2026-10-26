@@ -17,6 +17,19 @@ def get_character(name: str) -> Character | None:
     return Character(**row) if row else None
 
 
+def get_all_names() -> list[str]:
+    # The names of all characters and all aliases, for autocompletion
+    sql = """
+        SELECT C.NAME FROM CHARACTERS C
+        UNION
+        SELECT A.ALIAS FROM ALIAS A
+        ORDER BY 1 COLLATE NOCASE
+        """
+
+    # Each row holds just the one selected column
+    return [name for (name,) in get_database_connection().execute(sql)]
+
+
 def add_character(character_name: str):
     sql = """
         INSERT INTO CHARACTERS (NAME)

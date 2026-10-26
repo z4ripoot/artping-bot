@@ -91,3 +91,14 @@ def get_scoreboard(currency_id: int) -> list[ScoreboardEntry]:
         """
 
     return [ScoreboardEntry(**row) for row in get_database_connection().execute(sql, (currency_id,))]
+
+
+def get_currency_names() -> list[str]:
+    sql = """
+        SELECT C.NAME
+        FROM GACHA_CURRENCY C
+        ORDER BY C.NAME
+        """
+
+    # Each row holds just the one selected column
+    return [name for (name,) in get_database_connection().execute(sql)]

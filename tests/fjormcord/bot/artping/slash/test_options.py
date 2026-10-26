@@ -1,0 +1,57 @@
+import asyncio
+
+import pytest
+
+from fjormcord.bot.artping.model.resource import Resource
+from fjormcord.bot.artping.repository import alias_repository, character_repository, currency_repository, \
+    resource_repository
+from fjormcord.bot.artping.slash.options import character_choices, currency_choices, resource_choices, to_name
+from fjormcord.bot.artping.util.message_util import CommandError
+
+
+def names(choices):
+    return [choice.name for choice in choices]
+
+
+def test_to_name_turns_spaces_into_underscores():
+    assert to_name("  black   knight ") == "black_knight"
+
+
+def test_to_name_refuses_blank():
+    with pytest.raises(CommandError, match="A name can't be empty"):
+        to_name("   ")
+
+
+def test_character_choices_match_prefix_and_aliases():
+    character_repository.add_character("Marth")
+    character_repository.add_character("Lucina")
+    marth = character_repository.get_character("Marth")
+    alias_repository.add_alias(marth.id, "Marth_Mask")
+
+    assert names(asyncio.run(character_choices(None, "mar"))) == ["Marth", "Marth_Mask"]
+    assert names(asyncio.run(character_choices(None, "mask"))) == []
+    assert names(asyncio.run(character_choices(None, "marth m"))) == ["Marth_Mask"]
+    assert names(asyncio.run(character_choices(None, ""))) == ["Lucina", "Marth", "Marth_Mask"]
+
+
+def test_currency_choices_match_prefix():
+    currency_repository.add_currency("Orbs")
+    currency_repository.add_currency("Gems")
+
+    assert names(asyncio.run(currency_choices(None, "O"))) == ["Orbs"]
+
+
+def test_resource_choices_match_prefix():
+    resource_repository.set_resource(Resource("hof", "text", "link"))
+
+    assert names(asyncio.run(resource_choices(None, "HO"))) == ["hof"]
+
+
+def test_choices_are_capped_at_25():
+    for number in range(30):
+        character_repository.add_character(f"Hero{number:02}")
+
+    choices = asyncio.run(character_choices(None, "hero"))
+
+    assert len(choices) == 25
+    assert choices[0].value == "Hero00"
