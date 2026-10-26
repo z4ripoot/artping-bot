@@ -7,7 +7,9 @@ from fjormcord.bot.artping.repository.character_repository import add_character
 from fjormcord.bot.artping.service import character_vote_service
 from fjormcord.bot.artping.service.alias_service import add_alias
 from fjormcord.bot.artping.service.art_ping_service import add_ping, do_art_ping
+from fjormcord.bot.artping.service.currency_service import add_currency, check_wallet, get_scoreboard, set_currency
 from fjormcord.bot.artping.util.message_util import CommandError
+from tests.fakes import FakeClient
 
 
 def test_add_ping_takes_user_and_name():
@@ -39,3 +41,23 @@ def test_start_vote_refuses_outside_a_server():
 
     with pytest.raises(CommandError, match="Votes can only be started in a server"):
         asyncio.run(character_vote_service.start_vote(vote_channel, "1", "Lucina"))
+
+
+def test_check_wallet_names_the_slash_command():
+    assert check_wallet("5", "user5", slash=True) == "Your wallet is empty. Use /setcurrency to add a currency"
+
+
+def test_scoreboard_hint_uses_slash_syntax():
+    add_currency("Orbs")
+    for user_id in range(1, 12):
+        set_currency(str(user_id), "Orbs", user_id)
+
+    out = asyncio.run(get_scoreboard(FakeClient(), "Orbs", slash=True))
+
+    assert out.endswith("Use /scoreboard currency:Orbs page:2 for the next page")
+
+
+def test_set_currency_takes_an_int():
+    add_currency("Orbs")
+
+    assert set_currency("5", "Orbs", 3) == "Your Orbs has been set to 3"

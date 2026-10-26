@@ -7,7 +7,7 @@ from fjormcord.bot.artping import config
 from fjormcord.bot.artping.legacy.alias_handlers import add_alias, remove_alias, set_primary_name
 from fjormcord.bot.artping.legacy.art_ping_handlers import do_art_ping, add_ping, remove_ping, check_ping
 from fjormcord.bot.artping.legacy.character_handlers import add_character, remove_character, check_character
-from fjormcord.bot.artping.service.currency_service import add_currency, remove_currency, set_currency, \
+from fjormcord.bot.artping.legacy.currency_handlers import add_currency, remove_currency, set_currency, \
     clear_currency, check_wallet, get_scoreboard
 from fjormcord.bot.artping.service.resource_service import list_resources, remove_resource, set_resource
 from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT

@@ -1,4 +1,4 @@
-from fjormcord.bot.artping.service.currency_service import add_currency, remove_currency, set_currency, \
+from fjormcord.bot.artping.legacy.currency_handlers import add_currency, remove_currency, set_currency, \
     clear_currency, check_wallet, get_scoreboard
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
 from tests.fakes import FakeClient, make_message, reply

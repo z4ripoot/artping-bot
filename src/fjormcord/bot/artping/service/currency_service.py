@@ -5,8 +5,7 @@ import discord
 
 from fjormcord.bot.artping.model.currency import Currency
 from fjormcord.bot.artping.repository import currency_repository
-from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, CommandError, MissingArgument, \
-    get_entries, get_single_name
+from fjormcord.bot.artping.util.message_util import CommandError
 from fjormcord.bot.artping.util.user_util import get_username
 
 SCOREBOARD_PAGE_SIZE = 10
@@ -22,22 +21,20 @@ def require_currency(name: str) -> Currency:
     return currency
 
 
-def add_currency(client: discord.Client, message: discord.Message) -> str:
-    entry = get_single_name(message.content, "currency name")
-
-    existing = currency_repository.get_currency(entry)
+def add_currency(name: str) -> str:
+    existing = currency_repository.get_currency(name)
     if existing:
         raise CommandError(f"Currency {existing.name} already exists")
 
-    currency_repository.add_currency(entry)
+    currency_repository.add_currency(name)
 
-    out = f"Currency {entry} has been added"
+    out = f"Currency {name} has been added"
     logging.info(out)
     return out
 
 
-def remove_currency(client: discord.Client, message: discord.Message) -> str:
-    currency = require_currency(get_single_name(message.content, "currency name"))
+def remove_currency(name: str) -> str:
+    currency = require_currency(name)
 
     currency_repository.remove_currency(currency.id)
 
@@ -46,59 +43,42 @@ def remove_currency(client: discord.Client, message: discord.Message) -> str:
     return out
 
 
-def set_currency(client: discord.Client, message: discord.Message) -> str:
-    entries = get_entries(message.content)
-
-    if not entries:
-        raise MissingArgument("currency name")
-    if len(entries) > 2:
-        raise CommandError(MESSAGE_ONE_NAME_ONLY)
-    if len(entries) == 1:
-        raise MissingArgument("amount")
-
-    entry, amount_entry = entries
-
-    try:
-        amount = int(amount_entry)
-    except ValueError:
-        raise CommandError(f"Failed to set currency. Please enter a valid amount for your {entry}.")
-
+def set_currency(user_id: str, name: str, amount: int) -> str:
     if amount < 0:
         raise CommandError("Failed to set currency. The amount can't be negative")
     if amount > MAX_AMOUNT:
         raise CommandError("Failed to set currency. The amount is too large")
 
-    currency = require_currency(entry)
+    currency = require_currency(name)
 
-    currency_repository.set_currency(str(message.author.id), currency.id, amount)
+    currency_repository.set_currency(user_id, currency.id, amount)
 
     out = f"Your {currency.name} has been set to {amount}"
     logging.info(out)
     return out
 
 
-def clear_currency(client: discord.Client, message: discord.Message) -> str:
-    currency = require_currency(get_single_name(message.content, "currency name"))
-    currency_id = currency.id
-    user_id = str(message.author.id)
+def clear_currency(user_id: str, name: str) -> str:
+    currency = require_currency(name)
 
-    if not currency_repository.has_wallet_entry(user_id, currency_id):
+    if not currency_repository.has_wallet_entry(user_id, currency.id):
         raise CommandError(f"You don't have any {currency.name} set")
 
-    currency_repository.clear_currency(user_id, currency_id)
+    currency_repository.clear_currency(user_id, currency.id)
 
     out = f"Your {currency.name} has been cleared"
     logging.info(out)
     return out
 
 
-def check_wallet(client: discord.Client, message: discord.Message) -> str:
-    wallet = currency_repository.get_wallet(str(message.author.id))
+def check_wallet(user_id: str, display_name: str, slash: bool = False) -> str:
+    wallet = currency_repository.get_wallet(user_id)
 
     if not wallet:
-        return "Your wallet is empty. Use ~setcurrency to add a currency"
+        set_command = "/setcurrency" if slash else "~setcurrency"
+        return f"Your wallet is empty. Use {set_command} to add a currency"
 
-    out = f"User {message.author.display_name}'s wallet:\n"
+    out = f"User {display_name}'s wallet:\n"
 
     for entry in wallet:
         out += f"{entry.currency_name}: {entry.amount}\n"
@@ -106,21 +86,8 @@ def check_wallet(client: discord.Client, message: discord.Message) -> str:
     return out
 
 
-async def get_scoreboard(client: discord.Client, message: discord.Message) -> str:
-    entries = get_entries(message.content)
-
-    if not entries:
-        raise MissingArgument("currency name")
-    if len(entries) > 2:
-        raise CommandError(MESSAGE_ONE_NAME_ONLY)
-
-    try:
-        page = int(entries[1]) if len(entries) == 2 else 1
-    except ValueError:
-        # The optional second argument is the page; anything else is most likely a name with spaces
-        raise CommandError(MESSAGE_ONE_NAME_ONLY)
-
-    currency = require_currency(entries[0])
+async def get_scoreboard(client: discord.Client, name: str, page: int = 1, slash: bool = False) -> str:
+    currency = require_currency(name)
     currency_name = currency.name
     scoreboard = currency_repository.get_scoreboard(currency.id)
 
@@ -143,6 +110,9 @@ async def get_scoreboard(client: discord.Client, message: discord.Message) -> st
         out += f"{rank}. {await get_username(client, entry.user_id)} ({entry.amount})\n"
 
     if page < page_count:
-        out += f"Use ~scoreboard {currency_name} {page + 1} for the next page"
+        if slash:
+            out += f"Use /scoreboard currency:{currency_name} page:{page + 1} for the next page"
+        else:
+            out += f"Use ~scoreboard {currency_name} {page + 1} for the next page"
 
     return out
