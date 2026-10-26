@@ -65,6 +65,7 @@ start, without a separate migration step.
 | `003_unique_aliases.sql` | aliases unique ignoring case |
 | `004_normalize_names.sql` | normalized casing of existing names and aliases |
 | `005_character_votes.sql` | `CHARACTER_VOTE` for open votes |
+| `006_resources.sql` | `RESOURCE` for resources |
 
 Resetting a local database means deleting the file; it is recreated on the next start.
 

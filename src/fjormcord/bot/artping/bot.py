@@ -10,6 +10,7 @@ from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, for
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.easter_eggs import get_easter_egg_reply
 from fjormcord.bot.artping.service.character_vote_service import check_open_votes, check_vote, drop_deleted_vote
+from fjormcord.bot.artping.service.resource_service import get_resource_content
 from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
 
@@ -61,8 +62,11 @@ class ArtPingClient(discord.Client):
         if not content.startswith(COMMAND_PREFIX):
             return
 
-        command = COMMANDS_BY_NAME.get(content.split()[0].lower())
+        word = content.split()[0]
+        command = COMMANDS_BY_NAME.get(word.lower())
         if command is None:
+            # Commands are looked up first, so a resource never hides one
+            await self.send_resource(message, word.removeprefix(COMMAND_PREFIX))
             return
 
         logging.info("Received message from %s: %s", message.author.display_name, content)
@@ -76,6 +80,16 @@ class ArtPingClient(discord.Client):
         # Replies longer than Discord allows are sent as several messages; an empty reply sends nothing
         for chunk in split_message(out):
             await message.channel.send(chunk)
+
+    async def send_resource(self, message: discord.Message, name: str):
+        content = get_resource_content(name)
+        if content is None:
+            return
+
+        logging.info("Posting resource %s for %s", name, message.author.display_name)
+        # The copied text may mention users or roles; posting it again must not ping them
+        for chunk in split_message(content):
+            await message.channel.send(chunk, allowed_mentions=discord.AllowedMentions.none())
 
     async def get_message(self, command: Command, message: discord.Message) -> str:
         try:

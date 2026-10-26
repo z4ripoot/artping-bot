@@ -37,6 +37,38 @@ def test_messages_from_other_bots_are_ignored(bot):
     assert dispatch(bot, make_message("Thanks Lorenz", bot=True)) == []
 
 
+def set_hof(bot):
+    dispatch(bot, make_message("~setresource hof https://example.com/hof", administrator=True))
+
+
+def test_resource_is_posted_without_mentions(bot):
+    set_hof(bot)
+    message = make_message("~HoF please")
+
+    assert dispatch(bot, message) == ["https://example.com/hof"]
+    [mentions] = message.channel.sent_allowed_mentions
+    assert (mentions.everyone, mentions.users, mentions.roles, mentions.replied_user) == (False, False, False, False)
+
+
+def test_unknown_resource_gets_no_reply(bot):
+    assert dispatch(bot, make_message("~faq")) == []
+
+
+def test_command_wins_over_a_resource_of_the_same_name(bot, database):
+    database.execute("INSERT INTO RESOURCE (NAME, CONTENT, SOURCE) VALUES ('checkping', 'Resource', 'x')")
+
+    assert dispatch(bot, make_message("~checkping")) == ["You are not subscribed to any characters"]
+
+
+def test_long_resource_is_split_into_messages_within_discord_limit(bot, database):
+    database.execute("INSERT INTO RESOURCE (NAME, CONTENT, SOURCE) VALUES ('hof', ?, 'x')", ("line\n" * 1000,))
+
+    sent = dispatch(bot, make_message("~hof"))
+
+    assert len(sent) > 1
+    assert all(len(chunk) <= 2000 for chunk in sent)
+
+
 def test_admin_command_ignored_for_non_admin(bot):
     assert dispatch(bot, make_message("~removecharacter Lucina")) == []
 

@@ -9,6 +9,7 @@ from fjormcord.bot.artping.service.art_ping_service import do_art_ping, add_ping
 from fjormcord.bot.artping.service.character_service import add_character, remove_character, check_character
 from fjormcord.bot.artping.service.currency_service import add_currency, remove_currency, set_currency, \
     clear_currency, check_wallet, get_scoreboard
+from fjormcord.bot.artping.service.resource_service import list_resources, remove_resource, set_resource
 from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT
 from fjormcord.bot.artping.util.user_util import is_administrator
 
@@ -77,6 +78,7 @@ COMMANDS = [
             "votes is subscribed once it passes", usage=("character name",)),
     Command("~checkcharacter", check_character, "See which users are pinged for this character",
             usage=("character name",)),
+    Command("~resources", list_resources, "See which resources there are; ~(resource name) posts one"),
     Command("~help", show_help, "Shows this overview of all the available commands"),
 
     Command("~setcurrency", set_currency, "Set the number of orbs, primos or any other currency that you have",
@@ -96,6 +98,10 @@ COMMANDS = [
             admin_only=True),
     Command("~setprimaryname", set_primary_name, "Make an alias the character's name; the old name becomes an alias",
             usage=("alias",), admin_only=True),
+    Command("~setresource", set_resource,
+            "Save the text of a Discord message, or a website link, for everyone to post with ~(resource name)",
+            usage=("resource name", "link"), admin_only=True),
+    Command("~removeresource", remove_resource, "Remove a resource", usage=("resource name",), admin_only=True),
     Command("~addcurrency", add_currency, "Add a currency that users can track", usage=("currency name",),
             admin_only=True),
     Command("~removecurrency", remove_currency, "Remove a currency and clear it from all wallets",

@@ -32,6 +32,10 @@ Character names and aliases are stored with every part capitalized, whatever cas
 | ~clearcurrency <currency>         | This will clear user's provided currency from their wallet                                                                                                        |
 | ~checkwallet                      | This will display all the user's currencies and their amount in their wallet                                                                                      |
 | ~scoreboard <currency> [page]     | This will display a leaderboard of the provided currency, 10 users per page. Without a page number the first page is shown                                        |
+| ~resources                        | This will display the names of all resources                                                                                                                      |
+| ~<resource>                       | This will post the provided resource, e.g. ~hof                                                                                                                   |
+| ~setresource <resource> <link>    | This will save a resource. A Discord message link saves the text of that message, a website link saves the link                                                   |
+| ~removeresource <resource>        | This will remove the provided resource                                                                                                                            |
 | ~help                             | This will display an overview of all the available commands                                                                                                       |
 
 # Local setup
@@ -52,4 +56,5 @@ The defaults are in `config.example.ini`, which is committed. `config.ini` is no
  * The database is stored at the path in the property "database.path". A database that doesn't exist yet is created on startup
  * The property "art_ping.cooldown_seconds" (default 1) is how many seconds a user has to wait after using ~artping before they can use it again. Admins don't have to wait, and 0 turns the cooldown off
  * The properties "character_vote.votes_needed" (default 5) and "character_vote.emoji" (default ⭐) control voting: a non-admin's ~addcharacter posts a vote message, and the character is added once that many users (bots excluded) have reacted to it with that emoji, or as soon as an admin has. With fewer than 2 votes needed there are no votes: non-admins add characters directly, like admins. A custom server emoji is written as `<:name:id>`. Open votes are stored in the database, so they survive restarts and don't expire. The bot needs the "Add Reactions" and "Read Message History" permissions in the channels where votes are started
+ * Resources copy the text of a Discord message when they are set, so the bot needs "Read Message History" in the channel of that message. Later edits of the message are not followed: set the resource again to refresh it
  * Optionally, you can provide the ID of a channel to property "coliseum_notification_channel_id". The FEH coliseum notifications are sent to this channel, otherwise no notifications will be sent. To copy a channel's ID, enable Developer Mode in Discord (User Settings > Advanced), then right-click the channel and choose "Copy Channel ID"

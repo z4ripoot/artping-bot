@@ -78,10 +78,17 @@ class FakeChannel:
         self.forbidden = forbidden
         self.guild = guild or FakeGuild()
         self.sent = []
+        # The allowed_mentions each message was sent with, None for the client's default
+        self.sent_allowed_mentions = []
         self.messages = {}
 
-    async def send(self, content):
+    async def send(self, content, allowed_mentions=None):
         self.sent.append(content)
+        self.sent_allowed_mentions.append(allowed_mentions)
+        return self.post(content)
+
+    def post(self, content):
+        # A message in the channel, e.g. one a user wrote earlier
         message = FakeSentMessage(content, self.guild)
         self.messages[message.id] = message
         return message
@@ -125,6 +132,10 @@ class FakeClient:
         if channel_id not in self.channels:
             raise http_error(discord.NotFound, 404)
         return self.channels[channel_id]
+
+    def get_partial_messageable(self, channel_id):
+        # Like Discord's, it exists for any ID; fetching from an unknown channel fails
+        return self.channels.get(channel_id) or FakeChannel(channel_id)
 
     def get_user(self, user_id):
         if user_id not in self.cached_users:

@@ -15,7 +15,9 @@ table entry, and `~help` stays in step with the table automatically.
    make this one spam or ping users. Messages without text are ignored too.
 2. Easter eggs are answered first (see the easter eggs spec); this doesn't stop dispatch.
 3. A message is a command when it starts with `~` and its first word, lowercased, is exactly a command name
-   (`~CheckPing` works, `~checkpingx` doesn't). Anything else gets no reply.
+   (`~CheckPing` works, `~checkpingx` doesn't). Otherwise, a resource of that name (ignoring case) is posted
+   with no mentions allowed (resources spec); commands are looked up first, so a resource never hides one.
+   Anything else gets no reply.
 4. An `admin_only` command from a non-admin gets **no reply at all**, so the commands can't be used to make
    the bot spam. An admin is a member with the server's Administrator permission; in DMs nobody is an admin.
 5. The cooldown is checked, the handler runs, and its reply is sent.
@@ -81,7 +83,7 @@ each section together and admin-only commands last.
 
 - No slash commands, quoted arguments or typed argument conversion; migrating to `discord.ext.commands` is a
   noted TODO in `commands.py`.
-- No reply to unknown commands or to admin commands from non-admins.
+- No reply to unknown commands (that aren't a resource either) or to admin commands from non-admins.
 
 ## Tests
 
