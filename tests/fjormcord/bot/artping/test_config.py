@@ -20,14 +20,16 @@ def test_defaults_come_from_the_example(directory):
     assert settings.database_path == directory / "test.db"
     assert settings.art_ping_cooldown_seconds == 1
     assert settings.coliseum_channel_id is None
+    assert settings.guild_id is None
+    assert settings.art_ping_slash_max_characters == 10
     assert settings.character_votes_needed == 5
     assert settings.character_vote_emoji == "⭐"
     assert settings.emoji['lorenz_smile'].startswith("<:LorenzSmile:")
 
 
 def test_config_ini_overrides_the_example(directory):
-    (directory / "config.ini").write_text("[discord]\ntoken=secret\n\n"
-                                          "[art_ping]\ncooldown_seconds=2.5\n\n"
+    (directory / "config.ini").write_text("[discord]\ntoken=secret\nguild_id=456\n\n"
+                                          "[art_ping]\ncooldown_seconds=2.5\nslash_max_characters=3\n\n"
                                           "[tasks]\ncoliseum_notification_channel_id=123\n\n"
                                           "[character_vote]\nvotes_needed=3\nemoji=<:Vote:123>\n")
 
@@ -36,9 +38,19 @@ def test_config_ini_overrides_the_example(directory):
     assert settings.discord_token == "secret"
     assert settings.art_ping_cooldown_seconds == 2.5
     assert settings.coliseum_channel_id == 123
+    assert settings.guild_id == 456
+    assert settings.art_ping_slash_max_characters == 3
     assert settings.character_votes_needed == 3
     assert settings.character_vote_emoji == "<:Vote:123>"
     assert settings.database_path == directory / "test.db"
+
+
+@pytest.mark.parametrize("value", ["0", "26"])
+def test_slash_max_characters_must_fit_discord_limit(directory, value):
+    (directory / "config.ini").write_text(f"[art_ping]\nslash_max_characters={value}\n")
+
+    with pytest.raises(ValueError, match="art_ping.slash_max_characters must be between 1 and 25"):
+        load_settings(directory)
 
 
 def test_missing_setting_fails_when_loading(tmp_path):
