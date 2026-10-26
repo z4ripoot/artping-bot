@@ -1,30 +1,13 @@
 import logging
 
-import discord
-
 from fjormcord.bot.artping.repository import alias_repository, character_repository
 from fjormcord.bot.artping.service.character_service import require_character, require_unused_name
-from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, CommandError, MissingArgument, \
-    get_entries, get_single_name
+from fjormcord.bot.artping.util.message_util import CommandError
 from fjormcord.bot.artping.util.name_util import normalize_name
 
 
-def _get_character_and_alias(content):
-    entries = get_entries(content)
-
-    if not entries:
-        raise MissingArgument("character name")
-    if len(entries) > 2:
-        raise CommandError(MESSAGE_ONE_NAME_ONLY)
-    if len(entries) == 1:
-        raise MissingArgument("alias")
-
-    name, alias = entries
-    return require_character(name), normalize_name(alias)
-
-
-def add_alias(client: discord.Client, message: discord.Message) -> str:
-    character, alias = _get_character_and_alias(message.content)
+def add_alias(name: str, alias: str) -> str:
+    character, alias = require_character(name), normalize_name(alias)
 
     require_unused_name(alias)
 
@@ -35,8 +18,8 @@ def add_alias(client: discord.Client, message: discord.Message) -> str:
     return out
 
 
-def remove_alias(client: discord.Client, message: discord.Message) -> str:
-    character, alias = _get_character_and_alias(message.content)
+def remove_alias(name: str, alias: str) -> str:
+    character, alias = require_character(name), normalize_name(alias)
 
     if not alias_repository.has_alias(character.id, alias):
         raise CommandError(f"{alias} is not an alias of {character.name}")
@@ -48,8 +31,8 @@ def remove_alias(client: discord.Client, message: discord.Message) -> str:
     return out
 
 
-def set_primary_name(client: discord.Client, message: discord.Message) -> str:
-    alias = normalize_name(get_single_name(message.content, "alias"))
+def set_primary_name(alias: str) -> str:
+    alias = normalize_name(alias)
     character = require_character(alias)
 
     if not alias_repository.has_alias(character.id, alias):

@@ -1,11 +1,9 @@
 import logging
 
-import discord
-
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.repository import art_ping_repository, character_repository
 from fjormcord.bot.artping.service.character_service import require_character
-from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, get_entries, get_single_name
+from fjormcord.bot.artping.util.message_util import CommandError
 from fjormcord.bot.artping.util.name_util import normalize_name
 
 
@@ -35,16 +33,11 @@ def _ping(characters: list[Character]) -> str:
     return f"{character_names}: " + " ".join(f"<@{user_id}>" for user_id in user_ids)
 
 
-def do_art_ping(client: discord.Client, message: discord.Message) -> str:
-    entries = get_entries(message.content)
-
-    if not entries:
-        raise MissingArgument("character name")
-
+def do_art_ping(names: list[str]) -> str:
     # Unknown characters are reported in the same reply as the ping for the rest
     lines = []
 
-    characters, missing_names = _find_characters(entries)
+    characters, missing_names = _find_characters(names)
     if missing_names:
         lines.append(f"No character entry for {', '.join(missing_names)}")
 
@@ -55,9 +48,8 @@ def do_art_ping(client: discord.Client, message: discord.Message) -> str:
     return "\n".join(lines)
 
 
-def add_ping(client: discord.Client, message: discord.Message) -> str:
-    character = require_character(get_single_name(message.content, "character name"))
-    user_id = str(message.author.id)
+def add_ping(user_id: str, name: str) -> str:
+    character = require_character(name)
 
     if art_ping_repository.has_ping(character.id, user_id):
         raise CommandError(f"Ping for {character.name} already exists")
@@ -69,9 +61,8 @@ def add_ping(client: discord.Client, message: discord.Message) -> str:
     return out
 
 
-def remove_ping(client: discord.Client, message: discord.Message) -> str:
-    character = require_character(get_single_name(message.content, "character name"))
-    user_id = str(message.author.id)
+def remove_ping(user_id: str, name: str) -> str:
+    character = require_character(name)
 
     if not art_ping_repository.has_ping(character.id, user_id):
         raise CommandError(f"Ping for {character.name} doesn't exist")
@@ -83,8 +74,8 @@ def remove_ping(client: discord.Client, message: discord.Message) -> str:
     return out
 
 
-def check_ping(client: discord.Client, message: discord.Message) -> str:
-    characters = art_ping_repository.get_pings_from_user(str(message.author.id))
+def check_ping(user_id: str) -> str:
+    characters = art_ping_repository.get_pings_from_user(user_id)
 
     if not characters:
         return "You are not subscribed to any characters"

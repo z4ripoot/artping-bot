@@ -1,6 +1,6 @@
 from fjormcord.bot.artping.repository.art_ping_repository import add_ping as insert_ping
 from fjormcord.bot.artping.repository.character_repository import add_character, get_character
-from fjormcord.bot.artping.service.art_ping_service import do_art_ping, add_ping, remove_ping, check_ping
+from fjormcord.bot.artping.legacy.art_ping_handlers import do_art_ping, add_ping, remove_ping, check_ping
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
 from tests.fakes import make_message, reply
 

@@ -3,10 +3,11 @@ import logging
 import discord
 
 from fjormcord.bot.artping.model.character import Character
+from fjormcord.bot.artping.model.character_vote import VoteChannel
 from fjormcord.bot.artping.repository import alias_repository, art_ping_repository, character_repository
 # Imported as a module, since character_vote_service imports this one too
 from fjormcord.bot.artping.service import character_vote_service
-from fjormcord.bot.artping.util.message_util import CommandError, get_single_name
+from fjormcord.bot.artping.util.message_util import CommandError
 from fjormcord.bot.artping.util.name_util import normalize_name
 from fjormcord.bot.artping.util.user_util import get_username, is_administrator
 
@@ -28,14 +29,14 @@ def require_unused_name(name: str):
     raise CommandError(f"Character {existing.name} already exists")
 
 
-async def add_character(client: discord.Client, message: discord.Message) -> str:
-    entry = normalize_name(get_single_name(message.content, "character name"))
+async def add_character(client: discord.Client, user: discord.abc.User, name: str, vote_channel: VoteChannel) -> str:
+    entry = normalize_name(name)
 
     require_unused_name(entry)
 
     # Non-admins start a vote instead; the character is added once enough users, or an admin, react to it
-    if not is_administrator(message.author) and character_vote_service.is_voting_enabled():
-        return await character_vote_service.start_vote(message, entry)
+    if not is_administrator(user) and character_vote_service.is_voting_enabled():
+        return await character_vote_service.start_vote(vote_channel, str(user.id), entry)
 
     character_repository.add_character(entry)
     await character_vote_service.close_votes(client, entry)
@@ -45,8 +46,8 @@ async def add_character(client: discord.Client, message: discord.Message) -> str
     return out
 
 
-def remove_character(client: discord.Client, message: discord.Message) -> str:
-    character = require_character(get_single_name(message.content, "character name"))
+def remove_character(name: str) -> str:
+    character = require_character(name)
 
     character_repository.remove_character(character.id)
 
@@ -55,8 +56,8 @@ def remove_character(client: discord.Client, message: discord.Message) -> str:
     return out
 
 
-async def check_character(client: discord.Client, message: discord.Message) -> str:
-    character = require_character(get_single_name(message.content, "character name"))
+async def check_character(client: discord.Client, name: str) -> str:
+    character = require_character(name)
 
     lines = [f"Character entry found for {character.name}"]
 

@@ -82,7 +82,7 @@ class FakeChannel:
         self.sent_allowed_mentions = []
         self.messages = {}
 
-    async def send(self, content, allowed_mentions=None):
+    async def send(self, content, allowed_mentions=None, view=None):
         self.sent.append(content)
         self.sent_allowed_mentions.append(allowed_mentions)
         return self.post(content)

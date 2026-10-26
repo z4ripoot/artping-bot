@@ -8,7 +8,7 @@ from fjormcord.bot.artping.model.character_vote import CharacterVote
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users
 from fjormcord.bot.artping.repository.character_repository import get_character
 from fjormcord.bot.artping.repository.character_vote_repository import get_votes
-from fjormcord.bot.artping.service.character_service import add_character
+from fjormcord.bot.artping.legacy.character_handlers import add_character
 from fjormcord.bot.artping.service.character_vote_service import check_open_votes, check_vote, drop_deleted_vote
 from tests.fakes import BOT_USER, FakeChannel, FakeClient, FakeGuild, make_member, make_message, make_user, reply
 

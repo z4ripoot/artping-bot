@@ -4,7 +4,7 @@ from collections.abc import Iterable
 import discord
 
 from fjormcord.bot.artping import config
-from fjormcord.bot.artping.model.character_vote import CharacterVote
+from fjormcord.bot.artping.model.character_vote import CharacterVote, VoteChannel
 from fjormcord.bot.artping.repository import character_vote_repository
 # Imported as a module, since character_service imports this one too
 from fjormcord.bot.artping.service import character_service
@@ -17,16 +17,16 @@ def is_voting_enabled() -> bool:
     return config.read_settings().character_votes_needed >= 2
 
 
-async def start_vote(message: discord.Message, name: str) -> str:
+async def start_vote(vote_channel: VoteChannel, proposer_id: str, name: str) -> str:
     # The vote message is sent here instead of being the reply, since the vote is stored by its ID
-    if message.guild is None:
+    if not vote_channel.in_guild:
         raise CommandError("Votes can only be started in a server")
 
     settings = config.read_settings()
-    vote_message = await message.channel.send(f"Vote to add {name}: react with {settings.character_vote_emoji}. "
-                                              f"Votes needed: {settings.character_votes_needed}")
+    vote_message = await vote_channel.send(f"Vote to add {name}: react with {settings.character_vote_emoji}. "
+                                           f"Votes needed: {settings.character_votes_needed}", None)
     character_vote_repository.add_vote(
-        CharacterVote(str(vote_message.id), str(message.channel.id), name, str(message.author.id)))
+        CharacterVote(str(vote_message.id), vote_channel.channel_id, name, proposer_id))
 
     try:
         await vote_message.add_reaction(settings.character_vote_emoji)
