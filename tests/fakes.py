@@ -25,7 +25,8 @@ def make_user(user_id, bot=False):
 
 
 def make_member(user_id, administrator=False):
-    return SimpleNamespace(id=user_id, bot=False, guild_permissions=SimpleNamespace(administrator=administrator))
+    return SimpleNamespace(id=user_id, bot=False, display_name=f"user{user_id}",
+                           guild_permissions=SimpleNamespace(administrator=administrator))
 
 
 def http_error(error, status):
