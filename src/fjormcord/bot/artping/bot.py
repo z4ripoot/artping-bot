@@ -12,6 +12,7 @@ from fjormcord.bot.artping.slash.character_cog import CharacterCog
 from fjormcord.bot.artping.slash.character_vote_cog import CharacterVoteCog
 from fjormcord.bot.artping.slash.currency_cog import CurrencyCog
 from fjormcord.bot.artping.slash.easter_egg_cog import EasterEggCog
+from fjormcord.bot.artping.slash.resource_cog import ResourceCog
 from fjormcord.bot.artping.slash.sync import sync_commands
 from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS
 
@@ -30,6 +31,7 @@ class ArtPingClient(commands.Bot):
         await self.add_cog(ArtPingCog(self))
         await self.add_cog(CharacterCog(self))
         await self.add_cog(CurrencyCog(self))
+        await self.add_cog(ResourceCog(self))
         await self.add_cog(EasterEggCog(self))
         await sync_commands(self.tree, config.read_settings().guild_id)
 
