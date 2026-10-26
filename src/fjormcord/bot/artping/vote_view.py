@@ -18,5 +18,8 @@ class VoteView(discord.ui.View):
 
     @discord.ui.button(custom_id=VOTE_BUTTON_ID, style=discord.ButtonStyle.primary)
     async def vote(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Deferred first: passing a vote edits every vote message for the name, which may take longer than the
+        # 3 seconds Discord waits for an answer
+        await interaction.response.defer(ephemeral=True, thinking=True)
         reply = await character_vote_service.toggle_vote(interaction.client, interaction.message, interaction.user)
-        await interaction.response.send_message(reply, ephemeral=True)
+        await interaction.followup.send(reply, ephemeral=True)

@@ -169,6 +169,34 @@ def click(client, message, user_id, administrator=False):
     return asyncio.run(character_vote_service.toggle_vote(client, message, make_member(user_id, administrator)))
 
 
+class FakeInteractionResponse:
+    def __init__(self):
+        # The keyword arguments of each defer
+        self.deferred = []
+
+    async def defer(self, **options):
+        self.deferred.append(options)
+
+
+class FakeFollowup:
+    def __init__(self):
+        # (content, ephemeral) of each follow-up message
+        self.sent = []
+
+    async def send(self, content, ephemeral=False):
+        self.sent.append((content, ephemeral))
+
+
+class FakeInteraction:
+    # A click on a component of message by user
+    def __init__(self, client, message, user):
+        self.client = client
+        self.message = message
+        self.user = user
+        self.response = FakeInteractionResponse()
+        self.followup = FakeFollowup()
+
+
 def reply(handler, client, message):
     # Runs a handler as the bot does: awaited when it is async, and a CommandError's message is the reply
     try:
