@@ -5,8 +5,7 @@ import discord
 
 from fjormcord.bot.artping.model.resource import Resource
 from fjormcord.bot.artping.repository import resource_repository
-from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, CommandError, MissingArgument, \
-    get_entries, get_single_name
+from fjormcord.bot.artping.util.message_util import CommandError
 
 # Plain ASCII, so names are easy to type and can't hold mention syntax
 _RESOURCE_NAME = re.compile(r"[A-Za-z0-9_-]+")
@@ -53,20 +52,11 @@ async def _get_content(client: discord.Client, link: str) -> str:
     raise CommandError("That isn't a link to a Discord message or a website")
 
 
-async def set_resource(client: discord.Client, message: discord.Message) -> str:
-    entries = get_entries(message.content)
-
-    if not entries:
-        raise MissingArgument("resource name")
-    if len(entries) > 2:
-        raise CommandError(MESSAGE_ONE_NAME_ONLY)
-    if len(entries) == 1:
-        raise MissingArgument("link")
-
-    name = _parse_name(entries[0])
+async def set_resource(client: discord.Client, name: str, link: str) -> str:
+    name = _parse_name(name)
     _require_not_a_command(name)
     # <link> keeps Discord from showing a preview of the link in the admin's own message
-    link = entries[1].removeprefix("<").removesuffix(">")
+    link = link.removeprefix("<").removesuffix(">")
 
     resource_repository.set_resource(Resource(name, await _get_content(client, link), link))
 
@@ -75,8 +65,8 @@ async def set_resource(client: discord.Client, message: discord.Message) -> str:
     return out
 
 
-def remove_resource(client: discord.Client, message: discord.Message) -> str:
-    name = _parse_name(get_single_name(message.content, "resource name"))
+def remove_resource(name: str) -> str:
+    name = _parse_name(name)
 
     resource = resource_repository.get_resource(name)
     if resource is None:
@@ -89,13 +79,22 @@ def remove_resource(client: discord.Client, message: discord.Message) -> str:
     return out
 
 
-def list_resources(client: discord.Client, message: discord.Message) -> str:
+def list_resources(slash: bool = False) -> str:
     names = resource_repository.get_resource_names()
 
     if not names:
         return "No resources have been set yet"
 
+    if slash:
+        return "Resources: " + ", ".join(names) + " (post one with /resource)"
     return "Resources: " + ", ".join(f"~{name}" for name in names)
+
+
+def post_resource(name: str) -> str:
+    content = get_resource_content(name)
+    if content is None:
+        raise CommandError(f"Resource {name} doesn't exist")
+    return content
 
 
 def get_resource_content(name: str) -> str | None:

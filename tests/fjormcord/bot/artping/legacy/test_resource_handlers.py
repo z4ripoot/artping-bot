@@ -2,8 +2,8 @@ import pytest
 
 from fjormcord.bot.artping.model.resource import Resource
 from fjormcord.bot.artping.repository.resource_repository import get_resource, get_resource_names
-from fjormcord.bot.artping.service.resource_service import get_resource_content, list_resources, remove_resource, \
-    set_resource
+from fjormcord.bot.artping.legacy.resource_handlers import list_resources, remove_resource, set_resource
+from fjormcord.bot.artping.service.resource_service import get_resource_content
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, MissingArgument
 from tests.fakes import FakeChannel, FakeClient, make_message, reply
 

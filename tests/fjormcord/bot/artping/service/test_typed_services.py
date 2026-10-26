@@ -8,6 +8,7 @@ from fjormcord.bot.artping.service import character_vote_service
 from fjormcord.bot.artping.service.alias_service import add_alias
 from fjormcord.bot.artping.service.art_ping_service import add_ping, do_art_ping
 from fjormcord.bot.artping.service.currency_service import add_currency, check_wallet, get_scoreboard, set_currency
+from fjormcord.bot.artping.service.resource_service import list_resources, post_resource, set_resource
 from fjormcord.bot.artping.util.message_util import CommandError
 from tests.fakes import FakeClient
 
@@ -61,3 +62,19 @@ def test_set_currency_takes_an_int():
     add_currency("Orbs")
 
     assert set_currency("5", "Orbs", 3) == "Your Orbs has been set to 3"
+
+
+def test_list_resources_in_slash_syntax():
+    asyncio.run(set_resource(FakeClient(), "hof", "https://example.com/hof"))
+    asyncio.run(set_resource(FakeClient(), "faq", "https://example.com/faq"))
+
+    assert list_resources(slash=True) == "Resources: faq, hof (post one with /resource)"
+
+
+def test_post_resource_refuses_unknown():
+    with pytest.raises(CommandError, match="Resource hof doesn't exist"):
+        post_resource("hof")
+
+
+def test_set_resource_takes_name_and_link():
+    assert asyncio.run(set_resource(FakeClient(), "hof", "https://example.com/hof")) == "Resource hof has been set"
