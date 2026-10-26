@@ -31,6 +31,35 @@ def test_check_character_lists_usernames_and_survives_unknown_users(client):
     assert out == "Character entry found for Lucina\nUsers: Alice, Unknown user (99)"
 
 
+def test_add_character_rejects_an_alias(client, database):
+    add_character(client, make_message("~addcharacter Furina"))
+    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+
+    assert reply(add_character, client, make_message("~addcharacter focalors")) == \
+        "focalors is already an alias of Furina"
+
+
+def test_remove_character_by_alias_cascades_to_aliases(client, database):
+    add_character(client, make_message("~addcharacter Furina"))
+    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+
+    assert reply(remove_character, client, make_message("~removecharacter Focalors")) == \
+        "Character Furina has been removed"
+    assert database.execute("SELECT COUNT(*) FROM ALIAS").fetchone()[0] == 0
+
+
+def test_check_character_lists_aliases(client, database):
+    add_character(client, make_message("~addcharacter Furina"))
+    character_id = get_character("Furina").id
+    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (character_id,))
+    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Archon')", (character_id,))
+    add_ping(character_id, "1")
+
+    out = reply(check_character, client, make_message("~checkcharacter focalors"))
+
+    assert out == "Character entry found for Furina\nAliases: Archon, Focalors\nUsers: Alice"
+
+
 def test_add_character_rejects_spaces_with_underscore_hint(client):
     assert reply(add_character, client, make_message("~addcharacter Black Knight")) == MESSAGE_ONE_NAME_ONLY
     assert get_character("Black") is None

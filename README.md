@@ -11,6 +11,7 @@ A Discord bot that provides various features to your community:
 # Commands
 You have to type these commands in the channel chat to perform them.
 Arguments are separated by spaces, so character and currency names cannot contain spaces. Use underscores for multi-word names, e.g. `Black_Knight`.
+A character can also have aliases, other names that work in every command that takes a character, e.g. `Focalors` for `Furina`. Replies always show the character's name.
 
 | Command                           | Description                                                                                                                                                       |
 |-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -20,7 +21,10 @@ Arguments are separated by spaces, so character and currency names cannot contai
 | ~checkping                        | This will display all the characters that the user is subscribed to                                                                                               |
 | ~addcharacter <character>         | This will add the provided character to the pings. Other users can now subscribe to the provided character with the ~addping command                              |
 | ~removecharacter <character>      | This will remove the provided character from the pings. All subscribed users will be unsubscribed from the provided character                                     |
-| ~checkcharacter <character>       | This will display all the subscribed users of the provided character                                                                                              |
+| ~checkcharacter <character>       | This will display the aliases and all the subscribed users of the provided character                                                                              |
+| ~addalias <character> <alias>     | This will add another name for the provided character. The alias can be used everywhere the character's name can                                                  |
+| ~removealias <character> <alias>  | This will remove the provided alias from the provided character                                                                                                   |
+| ~setprimaryname <alias>           | This will make the provided alias the character's name. The old name becomes an alias, and all subscriptions and other aliases are kept                           |
 | ~addcurrency <currency>           | This will add the provided currency. Other users can set this currency if they have it.                                                                           |
 | ~removecurrency <currency>        | This will remove the provided currency. All users' wallets will be clear when the currency is removed                                                             |
 | ~setcurrency <currency> <amount>  | This will set user's provided currency to provided amount                                                                                                         |

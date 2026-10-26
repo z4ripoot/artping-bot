@@ -57,6 +57,17 @@ def test_names_are_unique_regardless_of_case(tmp_path):
     connection.close()
 
 
+def test_aliases_are_unique_regardless_of_case(tmp_path):
+    connection = connect(tmp_path / "new.db")
+    connection.execute("INSERT INTO CHARACTERS (CHARACTER_ID, NAME) VALUES (1, 'Furina')")
+    connection.execute("INSERT INTO CHARACTERS (CHARACTER_ID, NAME) VALUES (2, 'Lucina')")
+    connection.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (1, 'Focalors')")
+
+    with pytest.raises(sqlite3.IntegrityError):
+        connection.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (2, 'FOCALORS')")
+    connection.close()
+
+
 def test_unversioned_database_is_migrated_without_losing_data(tmp_path):
     path = tmp_path / "live.db"
     old = unversioned_database(path)

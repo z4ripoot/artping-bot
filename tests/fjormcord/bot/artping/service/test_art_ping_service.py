@@ -64,3 +64,36 @@ def test_check_ping_without_pings_is_not_empty(client):
 def test_add_and_remove_ping_hint_at_underscores_for_several_words(client):
     assert reply(add_ping, client, make_message("~addping Black Knight")) == MESSAGE_ONE_NAME_ONLY
     assert reply(remove_ping, client, make_message("~removeping Black Knight")) == MESSAGE_ONE_NAME_ONLY
+
+
+def test_art_ping_by_alias_uses_the_character_name(client, database):
+    add_character("Furina")
+    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+    subscribe("Furina", 1)
+
+    assert reply(do_art_ping, client, make_message("~artping focalors")) == "Furina: <@1>"
+
+
+def test_art_ping_by_name_and_alias_pings_once(client, database):
+    add_character("Furina")
+    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+    subscribe("Furina", 1)
+
+    assert reply(do_art_ping, client, make_message("~artping Furina Focalors")) == "Furina: <@1>"
+
+
+def test_add_ping_by_alias(client, database):
+    add_character("Furina")
+    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+
+    assert reply(add_ping, client, make_message("~addping Focalors")) == "Ping for Furina has been added"
+    assert reply(remove_ping, client, make_message("~removeping Furina")) == "Ping for Furina has been removed"
+
+
+def test_art_ping_lists_characters_alphabetically(client):
+    add_character("Marth")
+    add_character("lucina")
+    add_character("Chrom")
+    subscribe("Marth", 1)
+
+    assert reply(do_art_ping, client, make_message("~artping Marth lucina Chrom")) == "Chrom, lucina, Marth: <@1>"

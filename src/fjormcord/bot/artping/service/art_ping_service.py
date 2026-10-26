@@ -9,10 +9,18 @@ from fjormcord.bot.artping.util.message_util import CommandError, MissingArgumen
 
 
 def _find_characters(names: list[str]) -> tuple[list[Character], list[str]]:
-    # Returns the characters that exist, and the names that matched none
-    characters = character_repository.get_characters(names)
-    found_names = {character.name.lower() for character in characters}
-    return characters, [name for name in names if name.lower() not in found_names]
+    # Returns the characters that exist, alphabetically and each once even when named by several aliases,
+    # and the names that matched none
+    characters = []
+    missing_names = []
+    for name in names:
+        character = character_repository.get_character(name)
+        if character is None:
+            missing_names.append(name)
+        elif character not in characters:
+            characters.append(character)
+    characters.sort(key=lambda character: character.name.casefold())
+    return characters, missing_names
 
 
 def _ping(characters: list[Character]) -> str:
