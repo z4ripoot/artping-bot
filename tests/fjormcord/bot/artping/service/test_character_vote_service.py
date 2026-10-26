@@ -7,6 +7,7 @@ from fjormcord.bot.artping import config
 from fjormcord.bot.artping.model.character_vote import CharacterVote
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users
 from fjormcord.bot.artping.repository.character_repository import get_character
+from fjormcord.bot.artping.repository import character_vote_repository
 from fjormcord.bot.artping.repository.character_vote_repository import get_votes
 from fjormcord.bot.artping.legacy.character_handlers import add_character
 from fjormcord.bot.artping.service.character_vote_service import check_open_votes, check_vote, drop_deleted_vote
@@ -231,3 +232,25 @@ def test_reaction_of_a_user_who_left_the_server_still_counts_as_a_vote(client, c
     vote(client, vote_message, 1, 42)
 
     assert subscribers("Lucina") == {"1", "42"}
+
+
+# The repository: the stored voters
+
+def test_removing_a_vote_removes_its_voters():
+    character_vote_repository.add_vote(CharacterVote("5", "10", "Lucina", "7"))
+    character_vote_repository.add_voter("5", "1")
+
+    character_vote_repository.remove_vote("5")
+
+    assert character_vote_repository.count_voters("5") == 0
+
+
+def test_pass_vote_subscribes_the_stored_voters():
+    character_vote_repository.add_vote(CharacterVote("5", "10", "Lucina", "7"))
+    character_vote_repository.add_voter("5", "1")
+    character_vote_repository.add_voter("5", "2")
+
+    character_vote_repository.pass_vote("5", "Lucina")
+
+    assert subscribers("Lucina") == {"1", "2"}
+    assert get_votes() == []

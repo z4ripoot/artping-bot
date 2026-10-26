@@ -79,7 +79,9 @@ async def check_vote(client: discord.Client, message_id: str):
 
     other_votes = [other for other in character_vote_repository.get_votes_for(vote.character_name)
                    if other.message_id != message_id]
-    character_vote_repository.pass_vote(vote.character_name, [str(voter.id) for voter in voters])
+    for voter in voters:
+        character_vote_repository.add_voter(message_id, str(voter.id))
+    character_vote_repository.pass_vote(message_id, vote.character_name)
     await _edit(vote_message, f"Character {vote.character_name} has been added")
     await _close(client, other_votes, vote.character_name)
 
