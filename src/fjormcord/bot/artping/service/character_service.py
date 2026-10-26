@@ -4,9 +4,11 @@ import discord
 
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.repository import alias_repository, art_ping_repository, character_repository
+# Imported as a module, since character_vote_service imports this one too
+from fjormcord.bot.artping.service import character_vote_service
 from fjormcord.bot.artping.util.message_util import CommandError, get_single_name
 from fjormcord.bot.artping.util.name_util import normalize_name
-from fjormcord.bot.artping.util.user_util import get_username
+from fjormcord.bot.artping.util.user_util import get_username, is_administrator
 
 
 def require_character(name: str) -> Character:
@@ -26,12 +28,17 @@ def require_unused_name(name: str):
     raise CommandError(f"Character {existing.name} already exists")
 
 
-def add_character(client: discord.Client, message: discord.Message) -> str:
+async def add_character(client: discord.Client, message: discord.Message) -> str:
     entry = normalize_name(get_single_name(message.content, "character name"))
 
     require_unused_name(entry)
 
+    # Non-admins start a vote instead; the character is added once enough users, or an admin, react to it
+    if not is_administrator(message.author) and character_vote_service.is_voting_enabled():
+        return await character_vote_service.start_vote(message, entry)
+
     character_repository.add_character(entry)
+    await character_vote_service.close_votes(client, entry)
 
     out = f"Character {entry} has been added"
     logging.info(out)

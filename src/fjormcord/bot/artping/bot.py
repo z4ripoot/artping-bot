@@ -4,10 +4,12 @@ import math
 
 import discord
 
+from fjormcord.bot.artping import config
 from fjormcord.bot.artping.coliseum import start_coliseum_notification
 from fjormcord.bot.artping.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, format_usage, Command
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.easter_eggs import get_easter_egg_reply
+from fjormcord.bot.artping.service.character_vote_service import check_open_votes, check_vote, drop_deleted_vote
 from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
 
@@ -25,6 +27,23 @@ class ArtPingClient(discord.Client):
         logging.info("Initiating tasks")
         start_coliseum_notification(self)
         logging.info("Tasks are initiated")
+        # Also runs after a reconnect, which is harmless: a vote is only added once
+        await check_open_votes(self)
+
+    # The raw events also fire for messages sent before the bot started, such as older vote messages
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        if payload.user_id == self.user.id or str(payload.emoji) != config.read_settings().character_vote_emoji:
+            return
+        try:
+            await check_vote(self, str(payload.message_id))
+        except Exception:
+            logging.exception("Checking vote %s failed", payload.message_id)
+
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+        try:
+            drop_deleted_vote(str(payload.message_id))
+        except Exception:
+            logging.exception("Dropping vote %s failed", payload.message_id)
 
     async def on_message(self, message: discord.Message):
         if message.author == self.user:
@@ -53,7 +72,7 @@ class ArtPingClient(discord.Client):
 
         out = await self.get_message(command, message)
 
-        # Replies longer than Discord allows are sent as several messages
+        # Replies longer than Discord allows are sent as several messages; an empty reply sends nothing
         for chunk in split_message(out):
             await message.channel.send(chunk)
 

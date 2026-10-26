@@ -27,7 +27,8 @@ def unversioned_database(path):
 def test_new_database_gets_schema(tmp_path):
     connection = connect(tmp_path / "new.db")
 
-    assert {"CHARACTERS", "PINGS", "GACHA_CURRENCY", "GACHA_CURRENCY_WALLET"} <= table_names(connection)
+    assert {"CHARACTERS", "PINGS", "GACHA_CURRENCY", "GACHA_CURRENCY_WALLET", "CHARACTER_VOTE"} <= \
+        table_names(connection)
     assert user_version(connection) == latest_version()
     connection.close()
 

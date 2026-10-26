@@ -32,7 +32,13 @@ def test_command_must_match_exactly(bot):
 
 
 def test_admin_command_ignored_for_non_admin(bot):
-    assert dispatch(bot, make_message("~addcharacter Lucina")) == []
+    assert dispatch(bot, make_message("~removecharacter Lucina")) == []
+
+
+def test_add_character_by_non_admin_posts_a_vote(bot):
+    [vote] = dispatch(bot, make_message("~addcharacter Lucina"))
+
+    assert vote.startswith("Vote to add Lucina: react with ")
 
 
 def test_admin_command_allowed_for_admin(bot):
@@ -41,7 +47,7 @@ def test_admin_command_allowed_for_admin(bot):
 
 
 def test_admin_command_ignored_in_dms(bot):
-    message = make_message("~addcharacter Lucina")
+    message = make_message("~removecharacter Lucina")
     message.author = SimpleNamespace(id=1, display_name="user1")
 
     assert dispatch(bot, message) == []

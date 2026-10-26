@@ -23,7 +23,7 @@ def reset_recording_client(monkeypatch):
 
 def use_token(monkeypatch, token):
     settings = Settings(discord_token=token, database_path=Path("test.db"), art_ping_cooldown_seconds=1,
-                        coliseum_channel_id=None, emoji={})
+                        coliseum_channel_id=None, character_votes_needed=5, character_vote_emoji="⭐", emoji={})
     monkeypatch.setattr(config, "read_settings", lambda: settings)
 
 

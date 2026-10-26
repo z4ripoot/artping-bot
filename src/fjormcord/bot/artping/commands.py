@@ -72,6 +72,9 @@ COMMANDS = [
     Command("~removeping", remove_ping, "Remove yourself from the ping list of this character",
             usage=("character name",)),
     Command("~checkping", check_ping, "See which characters you are being pinged for"),
+    Command("~addcharacter", add_character,
+            "Add a character that users can be pinged for; for non-admins this starts a vote, and everyone who "
+            "votes is subscribed once it passes", usage=("character name",)),
     Command("~checkcharacter", check_character, "See which users are pinged for this character",
             usage=("character name",)),
     Command("~help", show_help, "Shows this overview of all the available commands"),
@@ -85,8 +88,6 @@ COMMANDS = [
     Command("~scoreboard", get_scoreboard, "Shows a leaderboard of the specified currency, 10 users per page",
             usage=("currency name", "optional page number"), section=SECTION_CURRENCY),
 
-    Command("~addcharacter", add_character, "Add a character that users can be pinged for",
-            usage=("character name",), admin_only=True),
     Command("~removecharacter", remove_character, "Remove a character and unsubscribe all its users",
             usage=("character name",), admin_only=True),
     Command("~addalias", add_alias, "Add an alias to a character", usage=("character name", "alias"),
