@@ -295,11 +295,10 @@ needed), and the manual test plan are updated to the button.
 
 ## Cooldowns
 
-One `Cooldowns` on the client serves both syntaxes. The key becomes the command name without prefix
-(`artping`), so a cooldown started with `~artping` also holds back `/artping`, and the other way around.
-The cooldown time comes from the same setting. Admins are exempt, and only a successful command starts the
-cooldown. The legacy message keeps saying `You used ~artping recently...`. The slash message says
-`/artping` and is ephemeral.
+One `Cooldowns` on the client serves both syntaxes. It holds one cooldown per user for every command, so
+any command started with `~` also holds back every slash command, and the other way around. Admins are
+exempt, and only a successful command starts the cooldown. Both syntaxes answer `You used a command
+recently...`; the slash reply is ephemeral.
 
 ## Command sync
 

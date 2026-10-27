@@ -77,24 +77,24 @@ def test_admin_only_allows_admin():
 
 def test_cooldown_turns_down_and_is_shared_with_legacy():
     interaction = FakeInteraction()
-    # The key the ~ commands use for ~artping
-    interaction.client.cooldowns.start("artping", 1, 1)
+    # As a ~ command of the same user does
+    interaction.client.cooldowns.start(interaction.user.id)
     calls = []
 
-    run_command(interaction, lambda: calls.append(1) or "pinged", "artping", cooldown_seconds=1)
+    run_command(interaction, lambda: calls.append(1) or "pinged", "artping")
 
-    assert replies(interaction) == [("You used /artping recently. Try again in 1 second", True)]
+    assert replies(interaction) == [("You used a command recently. Try again in 1 second", True)]
     assert calls == []
 
 
-def test_success_starts_cooldown():
+def test_success_starts_cooldown_for_every_command():
     interaction = FakeInteraction()
-    run_command(interaction, lambda: "pinged", "artping", cooldown_seconds=5)
+    run_command(interaction, lambda: "pinged", "artping")
 
-    run_command(interaction, lambda: "pinged", "artping", cooldown_seconds=5)
+    run_command(interaction, lambda: "subscribed", "checkping")
 
     assert replies(interaction) == [
-        ("pinged", False), ("You used /artping recently. Try again in 5 seconds", True)]
+        ("pinged", False), ("You used a command recently. Try again in 1 second", True)]
 
 
 def test_failure_does_not_start_cooldown():
@@ -103,8 +103,8 @@ def test_failure_does_not_start_cooldown():
     def call():
         raise CommandError("Nope")
 
-    run_command(interaction, call, "artping", cooldown_seconds=5)
-    run_command(interaction, lambda: "pinged", "artping", cooldown_seconds=5)
+    run_command(interaction, call, "artping")
+    run_command(interaction, lambda: "pinged", "artping")
 
     assert interaction.sent[-1] == ("pinged", False, ALLOWED_MENTIONS)
 
@@ -112,8 +112,8 @@ def test_failure_does_not_start_cooldown():
 def test_admins_skip_cooldown():
     interaction = FakeInteraction(administrator=True)
 
-    run_command(interaction, lambda: "one", "artping", cooldown_seconds=5)
-    run_command(interaction, lambda: "two", "artping", cooldown_seconds=5)
+    run_command(interaction, lambda: "one", "artping")
+    run_command(interaction, lambda: "two", "checkping")
 
     assert [content for content, _, _ in interaction.sent] == ["one", "two"]
 

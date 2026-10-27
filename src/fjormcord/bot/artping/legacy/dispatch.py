@@ -1,12 +1,10 @@
 import inspect
 import logging
-import math
 
 import discord
 
 from fjormcord.bot.artping.easter_eggs import get_easter_egg_reply
-from fjormcord.bot.artping.legacy.commands import (COMMAND_PREFIX, COMMANDS_BY_NAME, Command, cooldown_key,
-                                                   format_usage)
+from fjormcord.bot.artping.legacy.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, Command, format_usage
 from fjormcord.bot.artping.service.resource_service import get_resource_content
 from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
@@ -32,7 +30,7 @@ async def handle_message(client: discord.Client, message: discord.Message):
     command = COMMANDS_BY_NAME.get(word.lower())
     if command is None:
         # Commands are looked up first, so a resource never hides one
-        await send_resource(message, word.removeprefix(COMMAND_PREFIX))
+        await send_resource(client, message, word.removeprefix(COMMAND_PREFIX))
         return
 
     logging.info("Received message from %s: %s", message.author.display_name, content)
@@ -48,25 +46,34 @@ async def handle_message(client: discord.Client, message: discord.Message):
         await message.channel.send(chunk)
 
 
-async def send_resource(message: discord.Message, name: str):
+async def send_resource(client: discord.Client, message: discord.Message, name: str):
     content = get_resource_content(name)
     if content is None:
+        return
+
+    # Posting a resource is a command too, so it has the cooldown
+    try:
+        client.cooldowns.check(message.author.id)
+    except CommandError as e:
+        logging.warning(str(e))
+        await message.channel.send(str(e))
         return
 
     logging.info("Posting resource %s for %s", name, message.author.display_name)
     # The copied text may mention users or roles; posting it again must not ping them
     for chunk in split_message(content):
         await message.channel.send(chunk, allowed_mentions=discord.AllowedMentions.none())
+    _start_cooldown(client, message.author)
 
 
 async def get_message(client: discord.Client, command: Command, message: discord.Message) -> str:
     try:
-        _check_cooldown(client, command, message.author)
+        client.cooldowns.check(message.author.id)
         out = command.handler(client, message)
         if inspect.isawaitable(out):
             out = await out
         # Only a command that succeeded starts the cooldown, so a mistake can be corrected right away
-        _start_cooldown(client, command, message.author)
+        _start_cooldown(client, message.author)
     except MissingArgument as e:
         out = f"{e.argument.capitalize()} is missing. Usage: {format_usage(command)}"
         logging.warning(out)
@@ -79,16 +86,7 @@ async def get_message(client: discord.Client, command: Command, message: discord
     return out
 
 
-def _check_cooldown(client: discord.Client, command: Command, author: discord.abc.User):
-    # Turns the command down while the user's cooldown for it runs
-    remaining = client.cooldowns.remaining(cooldown_key(command), author.id)
-    if remaining > 0:
-        seconds = math.ceil(remaining)
-        raise CommandError(
-            f"You used {command.name} recently. Try again in {seconds} second{'' if seconds == 1 else 's'}")
-
-
-def _start_cooldown(client: discord.Client, command: Command, author: discord.abc.User):
-    # Admins never get a cooldown, so _check_cooldown doesn't have to exempt them
-    if command.cooldown_seconds > 0 and not is_administrator(author):
-        client.cooldowns.start(cooldown_key(command), author.id, command.cooldown_seconds)
+def _start_cooldown(client: discord.Client, author: discord.abc.User):
+    # Admins never get a cooldown, so checking it doesn't have to exempt them
+    if not is_administrator(author):
+        client.cooldowns.start(author.id)

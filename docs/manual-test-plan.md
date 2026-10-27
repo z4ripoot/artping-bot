@@ -13,7 +13,7 @@ slash command, and sections 7 and 12 cover the vote button.
   [discord]
   token=<test bot token>
   guild_id=<test server id>   ; the slash commands then appear at once, in that server only
-  [art_ping]
+  [commands]
   cooldown_seconds=10      ; long enough to test the cooldown by hand
   [character_vote]
   votes_needed=2           ; the smallest value that still has votes
@@ -59,19 +59,21 @@ Some steps need the bot's log to check the result: 1.8, 2.16, 7.12, 7.14, 7.15, 
 | 2.16 | A | Lock the DB: `sqlite3 test.db` → `BEGIN EXCLUSIVE;` (keep it open), then `~addcurrency Lock` | After about 5 s: `Something went wrong while running ~addcurrency`, with a traceback in the log. Then run `ROLLBACK;` |
 | 2.17 | U1 | `~artping` followed by about 1900 characters of made-up names (`aaaaaaaaa bbbbbbbbb …`) | The reply (`No character entry for …`) arrives as **2 messages**, split under 2000 characters |
 
-## 3. Cooldown (`~artping` only, cooldown 10 s)
+## 3. Cooldown (every command, cooldown 10 s)
 
 Do these after creating the character `Lucina` (step 5.4).
 
 | # | Who | Action | Expected |
 |---|---|---|---|
-| 3.1 | U1 | `~artping Lucina` twice quickly | 2nd: `You used ~artping recently. Try again in N seconds` |
+| 3.1 | U1 | `~artping Lucina` twice quickly | 2nd: `You used a command recently. Try again in N seconds` |
+| 3.1a | U1 | `~artping Lucina`, then `~checkping` and `~hof` straight away | Both turned down the same way: the cooldown holds back every command |
 | 3.2 | U1 | Wait about 9.5 s and retry | `… Try again in 1 second` (singular) |
 | 3.3 | U2 | `~artping Lucina` during U1's cooldown | Works (the cooldown is per user) |
 | 3.4 | U1 | `~artping Nobody`, then `~artping Lucina` straight away | The 2nd works (a failed command doesn't start the cooldown) |
 | 3.5 | U1 | `~artping`, then `~artping Lucina` | The 2nd works (a missing argument doesn't start it either) |
 | 3.6 | A | `~artping Lucina` twice quickly | Both work (admins are exempt) |
 | 3.7 | U1 | `~artping Lucina`, restart the bot, repeat | Works (cooldowns are in memory) |
+| 3.7a | U1 | `Thanks Lorenz` twice quickly | Both answered (easter egg replies are not commands) |
 | 3.8 | — | Set `cooldown_seconds=0`, restart, U1 spams `~artping Lucina` | Never turned down |
 
 ## 4. Art pings
@@ -264,7 +266,7 @@ database. Run each command as the account named in the section it comes from.
 | 11.9 | U1 | `/artping character:Lucina` | `Lucina: <@U1> <@U2>`, the subscribers are pinged |
 | 11.10 | U1 | `/artping character:Lucina character2:Chrom character3:Luci` | One line per character, sorted, Lucina once; U1 mentioned once |
 | 11.11 | U1 | `/artping character:Lucina character2:Marth` | The ping and the line `No character entry for Marth` |
-| 11.12 | U1 | `/artping` and `~artping` in a row (cooldown 10 s) | The 2nd: ephemeral `You used /artping recently. Try again in N seconds` (or `~artping` for the `~` one): the cooldown is shared. A failed attempt doesn't start it, and A is never held back |
+| 11.12 | U1 | `/artping`, then `~checkping` or `/checkping` (cooldown 10 s) | The 2nd: `You used a command recently. Try again in N seconds` (ephemeral for the slash one): one cooldown for every command of both syntaxes. A failed attempt doesn't start it, and A is never held back |
 | 11.13 | U1 | `/artping` | The options go up to `character10` (`slash_max_characters=10`), and there is no `character11`. Set it to 2 and restart: only `character` and `character2` |
 | 11.14 | A | `/addcharacter character:black knight` | `Character Black_Knight has been added` (deferred, so the reply may take a moment) |
 | 11.15 | A | `/addcharacter character:Black_Knight` | `Character Black_Knight already exists`. The deferred reply follows the defer, so it is public rather than ephemeral |
@@ -296,7 +298,7 @@ database. Run each command as the account named in the section it comes from.
 | 11.41 | A | A resource whose source message contains `@everyone` and `<@U2>`; U1 runs `/resource` | The text is shown, **nobody is pinged** |
 | 11.42 | U1 | `/resources`, with none and with some | `No resources have been set yet` / `Resources: guide, HOF (post one with /resource)` |
 | 11.43 | A | `/removeresource name:guide`, then again | `Resource guide has been removed`, then ephemeral `Resource guide doesn't exist` |
-| 11.44 | U1 | `/lorenz`, `/chromk` | The LorenzSmile emoji, the 3×4 chromk grid; public, no cooldown |
+| 11.44 | U1 | `/lorenz`, wait out the cooldown, `/chromk` | The LorenzSmile emoji, the 3×4 chromk grid; public. Like every command they start the cooldown |
 | 11.45 | A | Lock the DB as in 2.16, then `/addcurrency currency:Lock` | After about 5 s: ephemeral `Something went wrong while running /addcurrency`, with a traceback in the log. Then `ROLLBACK;` |
 | 11.46 | U1 | `/resource` on a resource of over 2000 characters (9.16) | Posted as 2 or more messages |
 

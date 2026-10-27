@@ -139,7 +139,7 @@ class FakeClient:
         self.channels = {channel.id: channel for channel in channels}
         self.fetched = []
         self.user = BOT_USER
-        self.cooldowns = Cooldowns(FakeClock())
+        self.cooldowns = Cooldowns(1, FakeClock())
 
     def get_channel(self, channel_id):
         return self.channels.get(channel_id)

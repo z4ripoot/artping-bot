@@ -18,7 +18,7 @@ def test_defaults_come_from_the_example(directory):
 
     assert settings.discord_token == ""
     assert settings.database_path == directory / "test.db"
-    assert settings.art_ping_cooldown_seconds == 1
+    assert settings.cooldown_seconds == 1
     assert settings.coliseum_channel_id is None
     assert settings.guild_id is None
     assert settings.art_ping_slash_max_characters == 10
@@ -29,14 +29,15 @@ def test_defaults_come_from_the_example(directory):
 
 def test_config_ini_overrides_the_example(directory):
     (directory / "config.ini").write_text("[discord]\ntoken=secret\nguild_id=456\n\n"
-                                          "[art_ping]\ncooldown_seconds=2.5\nslash_max_characters=3\n\n"
+                                          "[commands]\ncooldown_seconds=2.5\n\n"
+                                          "[art_ping]\nslash_max_characters=3\n\n"
                                           "[tasks]\ncoliseum_notification_channel_id=123\n\n"
                                           "[character_vote]\nvotes_needed=3\nemoji=<:Vote:123>\n")
 
     settings = load_settings(directory)
 
     assert settings.discord_token == "secret"
-    assert settings.art_ping_cooldown_seconds == 2.5
+    assert settings.cooldown_seconds == 2.5
     assert settings.coliseum_channel_id == 123
     assert settings.guild_id == 456
     assert settings.art_ping_slash_max_characters == 3

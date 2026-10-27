@@ -17,7 +17,10 @@ from tests.fakes import FakeClock, make_message
 
 @pytest.fixture
 def bot():
-    return ArtPingClient(intents=discord.Intents.default())
+    client = ArtPingClient(intents=discord.Intents.default())
+    # No cooldown, whatever a local config.ini sets, so a test can send one user's commands in a row
+    client.cooldowns = Cooldowns(0)
+    return client
 
 
 def dispatch(bot, message):
@@ -165,21 +168,16 @@ def test_easter_egg_is_answered(bot):
 @pytest.fixture
 def clock(bot):
     clock = FakeClock()
-    bot.cooldowns = Cooldowns(clock)
+    bot.cooldowns = Cooldowns(1, clock)
     return clock
 
 
-def set_art_ping_cooldown(monkeypatch, seconds):
-    command = commands.COMMANDS_BY_NAME["~artping"]
-    monkeypatch.setitem(commands.COMMANDS_BY_NAME, "~artping", replace(command, cooldown_seconds=seconds))
-
-
 @pytest.fixture
-def lucina(bot, monkeypatch):
-    # Lucina with user 1 subscribed, and the default cooldown whatever a local config.ini sets
-    set_art_ping_cooldown(monkeypatch, 1)
+def lucina(bot, clock):
+    # Lucina with user 1 subscribed; the admin starts no cooldown, and user 1's has run out
     dispatch(bot, make_message("~addcharacter Lucina", administrator=True))
     dispatch(bot, make_message("~addping Lucina", user_id=1))
+    clock.advance(1)
 
 
 def test_command_is_turned_down_during_cooldown(bot, clock, lucina):
@@ -188,7 +186,7 @@ def test_command_is_turned_down_during_cooldown(bot, clock, lucina):
     clock.advance(0.5)
 
     assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == \
-        ["You used ~artping recently. Try again in 1 second"]
+        ["You used a command recently. Try again in 1 second"]
 
 
 def test_command_is_allowed_after_cooldown(bot, clock, lucina):
@@ -205,10 +203,21 @@ def test_cooldown_only_holds_back_that_user(bot, clock, lucina):
     assert dispatch(bot, make_message("~artping Lucina", user_id=3)) == ["Lucina: <@1>"]
 
 
-def test_cooldown_only_holds_back_that_command(bot, clock, lucina):
+def test_cooldown_holds_back_every_command(bot, clock, lucina):
     dispatch(bot, make_message("~artping Lucina", user_id=1))
 
-    assert dispatch(bot, make_message("~checkping", user_id=1)) == ["Lucina"]
+    assert dispatch(bot, make_message("~checkping", user_id=1)) == \
+        ["You used a command recently. Try again in 1 second"]
+
+
+def test_resource_has_the_cooldown(bot, clock, lucina):
+    set_hof(bot)
+    dispatch(bot, make_message("~hof", user_id=2))
+
+    assert dispatch(bot, make_message("~checkping", user_id=2)) == \
+        ["You used a command recently. Try again in 1 second"]
+    clock.advance(1)
+    assert dispatch(bot, make_message("~hof", user_id=2)) == ["https://example.com/hof"]
 
 
 def test_turned_down_command_does_not_start_cooldown(bot, clock, lucina):
@@ -223,14 +232,14 @@ def test_admins_are_not_held_back_by_cooldown(bot, clock, lucina):
     assert dispatch(bot, make_message("~artping Lucina", administrator=True)) == ["Lucina: <@1>"]
 
 
-def test_cooldown_follows_the_configured_length(bot, clock, lucina, monkeypatch):
-    set_art_ping_cooldown(monkeypatch, 30)
-    dispatch(bot, make_message("~artping Lucina", user_id=2))
+def test_cooldown_follows_the_configured_length(monkeypatch):
+    settings = replace(config.read_settings(), cooldown_seconds=30)
+    monkeypatch.setattr(config, "read_settings", lambda: settings)
+    bot = ArtPingClient(intents=discord.Intents.default())
+    dispatch(bot, make_message("~checkping", user_id=2))
 
-    clock.advance(10)
-
-    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == \
-        ["You used ~artping recently. Try again in 20 seconds"]
+    assert dispatch(bot, make_message("~checkping", user_id=2)) == \
+        ["You used a command recently. Try again in 30 seconds"]
 
 
 def test_client_is_a_bot_without_prefix_commands(bot):

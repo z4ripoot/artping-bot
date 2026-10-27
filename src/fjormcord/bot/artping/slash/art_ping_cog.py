@@ -19,8 +19,7 @@ def build_art_ping_command(max_characters: int) -> app_commands.Command:
 
     async def art_ping(interaction: discord.Interaction, **characters: str | None):
         values = [value for value in characters.values() if value is not None]
-        await run(interaction, "artping", lambda: art_ping_service.do_art_ping([to_name(value) for value in values]),
-                  cooldown_seconds=config.read_settings().art_ping_cooldown_seconds)
+        await run(interaction, "artping", lambda: art_ping_service.do_art_ping([to_name(value) for value in values]))
 
     parameters = [inspect.Parameter("interaction", inspect.Parameter.POSITIONAL_OR_KEYWORD,
                                     annotation=discord.Interaction)]

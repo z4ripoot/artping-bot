@@ -1,6 +1,5 @@
 import inspect
 import logging
-import math
 from collections.abc import Awaitable, Callable
 
 import discord
@@ -10,14 +9,15 @@ from fjormcord.bot.artping.util.user_util import is_administrator
 
 
 async def run(interaction: discord.Interaction, command_name: str, call: Callable[[], str | Awaitable[str]], *,
-              admin_only: bool = False, cooldown_seconds: float = 0, defer: bool = False,
+              admin_only: bool = False, defer: bool = False,
               allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS) -> None:
     # Runs a slash command the way legacy.dispatch runs a ~ command: checks, the call, and the reply. call does the
     # command's work and returns the reply, directly or as a coroutine; it raises CommandError to turn the user down.
     try:
         if admin_only and not is_administrator(interaction.user):
             raise CommandError("This command is for admins only")
-        _check_cooldown(interaction, command_name)
+        # One cooldown per user, shared with the ~ commands
+        interaction.client.cooldowns.check(interaction.user.id)
 
         if defer:
             await interaction.response.defer()
@@ -25,7 +25,7 @@ async def run(interaction: discord.Interaction, command_name: str, call: Callabl
         if inspect.isawaitable(out):
             out = await out
         # Only a command that succeeded starts the cooldown, so a mistake can be corrected right away
-        _start_cooldown(interaction, command_name, cooldown_seconds)
+        _start_cooldown(interaction)
     except CommandError as e:
         logging.warning(str(e))
         await _send(interaction, str(e), ephemeral=True)
@@ -49,16 +49,7 @@ async def _send(interaction: discord.Interaction, text: str, ephemeral: bool = F
         await interaction.response.send_message(text, ephemeral=ephemeral, allowed_mentions=allowed_mentions)
 
 
-def _check_cooldown(interaction: discord.Interaction, command_name: str):
-    # Turns the command down while the user's cooldown for it runs; shared with the ~ command of the same name
-    remaining = interaction.client.cooldowns.remaining(command_name, interaction.user.id)
-    if remaining > 0:
-        seconds = math.ceil(remaining)
-        raise CommandError(
-            f"You used /{command_name} recently. Try again in {seconds} second{'' if seconds == 1 else 's'}")
-
-
-def _start_cooldown(interaction: discord.Interaction, command_name: str, cooldown_seconds: float):
-    # Admins never get a cooldown, so _check_cooldown doesn't have to exempt them
-    if cooldown_seconds > 0 and not is_administrator(interaction.user):
-        interaction.client.cooldowns.start(command_name, interaction.user.id, cooldown_seconds)
+def _start_cooldown(interaction: discord.Interaction):
+    # Admins never get a cooldown, so checking it doesn't have to exempt them
+    if not is_administrator(interaction.user):
+        interaction.client.cooldowns.start(interaction.user.id)

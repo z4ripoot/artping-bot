@@ -67,7 +67,7 @@ searching for the original message or link.
   stay: unknown names still get no reply.
 - **Mentions:** resource replies are sent with no mentions allowed at all (`discord.AllowedMentions.none()`),
   instead of the client's default that allows user mentions.
-- **Cooldown:** none, like every command except `~artping`.
+- **Cooldown:** the one every command has, posting a resource included.
 - **Bots:** ignored, as for all messages.
 
 ## Database

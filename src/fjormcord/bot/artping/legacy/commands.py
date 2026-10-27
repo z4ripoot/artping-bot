@@ -3,7 +3,6 @@ from typing import Awaitable, Callable
 
 import discord
 
-from fjormcord.bot.artping import config
 from fjormcord.bot.artping.legacy.alias_handlers import add_alias, remove_alias, set_primary_name
 from fjormcord.bot.artping.legacy.art_ping_handlers import do_art_ping, add_ping, remove_ping, check_ping
 from fjormcord.bot.artping.legacy.character_handlers import add_character, remove_character, check_character
@@ -32,8 +31,6 @@ class Command:
     usage: tuple[str, ...] = ()
     section: str = SECTION_ART_PING
     admin_only: bool = False
-    # Seconds a user has to wait before using the command again, except admins; 0 means no cooldown
-    cooldown_seconds: float = 0
 
 
 def format_usage(command):
@@ -65,8 +62,7 @@ def show_help(client: discord.Client, message: discord.Message) -> str:
 # The ~ commands; slash commands are in fjormcord.bot.artping.slash (docs/superpowers/specs/2026-10-26-slash-commands-design.md)
 # Commands are listed in ~help order; keep each section together and admin-only commands last.
 COMMANDS = [
-    Command("~artping", do_art_ping, "Ping users for art of this character", usage=("character name",),
-            cooldown_seconds=config.read_settings().art_ping_cooldown_seconds),
+    Command("~artping", do_art_ping, "Ping users for art of this character", usage=("character name",)),
     Command("~addping", add_ping, "Call to add yourself to the ping list when this character is pinged",
             usage=("character name",)),
     Command("~removeping", remove_ping, "Remove yourself from the ping list of this character",
@@ -109,7 +105,3 @@ COMMANDS = [
 
 COMMANDS_BY_NAME = {command.name: command for command in COMMANDS}
 
-
-def cooldown_key(command: Command) -> str:
-    # The bare name, so a ~ command and its slash command share one cooldown
-    return command.name.removeprefix(COMMAND_PREFIX)

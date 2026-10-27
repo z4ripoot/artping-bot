@@ -20,7 +20,8 @@ class Settings:
     # None syncs the slash commands globally instead of to one server
     guild_id: int | None
     database_path: Path
-    art_ping_cooldown_seconds: float
+    # Seconds a user has to wait after a command before using another one, except admins; 0 means no cooldown
+    cooldown_seconds: float
     # None disables the Coliseum reminders
     coliseum_channel_id: int | None
     # How many characters the /artping command takes, between 1 and MAX_SLASH_OPTIONS
@@ -60,7 +61,7 @@ def load_settings(directory: Path) -> Settings:
         guild_id=int(guild_id) if guild_id else None,
         # Relative paths are relative to the directory of the config files, not the working directory
         database_path=directory / config.get('database', 'path'),
-        art_ping_cooldown_seconds=config.getfloat('art_ping', 'cooldown_seconds'),
+        cooldown_seconds=config.getfloat('commands', 'cooldown_seconds'),
         coliseum_channel_id=int(channel_id) if channel_id else None,
         art_ping_slash_max_characters=slash_max_characters,
         character_votes_needed=config.getint('character_vote', 'votes_needed'),

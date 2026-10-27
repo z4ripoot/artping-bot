@@ -29,7 +29,8 @@ All are open to everyone. Every character name may be an alias and any casing; a
   `No character entry for Marth\nLucina: <@1>`. When none of the names exist, that first line is the whole
   reply (sent as a refusal, so no cooldown starts).
 - A reply with many mentions is split into several messages under Discord's limit (command handling spec).
-- Cooldown: `art_ping.cooldown_seconds` per user (default 1); admins exempt (command handling spec).
+- Cooldown: the per-user cooldown of every command, `commands.cooldown_seconds` (default 1); admins exempt
+  (command handling spec).
 
 ## `~checkping`
 

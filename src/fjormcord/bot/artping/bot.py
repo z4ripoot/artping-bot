@@ -24,7 +24,7 @@ class ArtPingClient(commands.Bot):
         options.setdefault('help_command', None)
         options.setdefault('allowed_mentions', ALLOWED_MENTIONS)
         super().__init__(**options)
-        self.cooldowns = Cooldowns()
+        self.cooldowns = Cooldowns(config.read_settings().cooldown_seconds)
 
     async def setup_hook(self):
         await self.add_cog(CharacterVoteCog(self))

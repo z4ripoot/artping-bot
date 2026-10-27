@@ -53,10 +53,10 @@ Black_Knight`.
 
 ## Cooldowns (`cooldowns.py`)
 
-- A command can have `cooldown_seconds`; only `~artping` has one (`art_ping.cooldown_seconds`, default 1).
-- The cooldown is per command and per user: other users, and the same user's other commands, are not held
-  back. The key is the name without `~` (`legacy.commands.cooldown_key`), so `/artping` shares it.
-- A user still cooling down is answered `You used ~artping recently. Try again in 3 seconds` (rounded up,
+- One cooldown per user for every command (`commands.cooldown_seconds`, default 1): after a command, the
+  user can't use any other command, `~` or slash, until it runs out. Other users are not held back. Posting a
+  resource (`~hof`) counts as a command; easter egg replies and vote clicks don't.
+- A user still cooling down is answered `You used a command recently. Try again in 3 seconds` (rounded up,
   `1 second` singular).
 - Only a command that **succeeded** starts the cooldown, so a typo can be corrected right away.
 - Admins never get a cooldown.

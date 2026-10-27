@@ -83,7 +83,7 @@ pings. Admins keep adding characters directly.
 - **The proposer** counts only if they react, like everyone else.
 - **DMs:** a non-admin `~addcharacter` in a DM is turned down with a `CommandError` ("Votes can only be
   started in a server"), because votes belong in a shared channel.
-- **Cooldown:** none; there is none for other commands either except `~artping`.
+- **Cooldown:** the one every command has; a click on the Vote button is not a command and has none.
 - **`~help`:** `~addcharacter` moves out of the admin section into the art ping section, with a description
   like "Add a character that users can be pinged for; for non-admins this starts a vote". `README.md` is
   updated to match.
