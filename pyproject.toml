@@ -31,8 +31,9 @@ line-length = 120
 target-version = "py310"
 
 [tool.ruff.lint]
-# Import order, double quotes and the line length; the formatter handles the rest
-select = ["I", "Q", "E501"]
+# Pyflakes (unused imports and variables, undefined names), import order, double quotes and the line length; the
+# formatter handles the rest
+select = ["F", "I", "Q", "E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["fjormcord", "tests"]

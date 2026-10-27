@@ -18,7 +18,7 @@ Discord bot for the Fjormcord community, built on discord.py (2.x) with a SQLite
 
 To reset a local database, delete the file; it is recreated on the next start.
 
-Without the editable install, run with `PYTHONPATH=src`. Use `-e` rather than a plain `pip install .`: `config.py` locates the config files relative to its own file in `src/`, which breaks once the code is copied into `site-packages`. Code is formatted with ruff (`pyproject.toml`: line length 120, imports sorted, double quotes); run it before committing. The formatter wraps code but not comments or strings, so keep those within 120 characters by hand.
+Without the editable install, run with `PYTHONPATH=src`. Use `-e` rather than a plain `pip install .`: `config.py` locates the config files relative to its own file in `src/`, which breaks once the code is copied into `site-packages`. Code is formatted and checked with ruff (`pyproject.toml`: line length 120, imports sorted, double quotes, Pyflakes for unused imports and variables); run it before committing. The formatter wraps code but not comments or strings, so keep those within 120 characters by hand.
 
 ## Layout
 
