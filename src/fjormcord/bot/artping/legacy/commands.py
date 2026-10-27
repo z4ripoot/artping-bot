@@ -1,5 +1,5 @@
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Awaitable, Callable
 
 import discord
 
@@ -39,7 +39,7 @@ class Command:
     admin_only: bool = False
 
 
-def format_usage(command):
+def format_usage(command: Command) -> str:
     # ~setcurrency (currency name) (amount)
     return " ".join([command.name] + [f"({argument})" for argument in command.usage])
 

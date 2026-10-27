@@ -12,7 +12,7 @@ from fjormcord.bot.artping.util.user_util import is_administrator
 def admin_command(name: str, description: str):
     # An admin command: Discord hides it from non-admins and outside servers, and run checks it again, since server
     # admins can change who sees a command
-    def decorator(callback) -> app_commands.Command:
+    def decorator(callback: Callable) -> app_commands.Command:
         command = app_commands.command(name=name, description=description)(callback)
         return app_commands.guild_only()(app_commands.default_permissions(administrator=True)(command))
 

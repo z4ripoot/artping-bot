@@ -16,6 +16,6 @@ EASTER_EGG_REPLIES = {
 }
 
 
-def get_easter_egg_reply(content):
+def get_easter_egg_reply(content: str) -> str | None:
     # Returns None when the message isn't an easter egg
     return EASTER_EGG_REPLIES.get(content.lower())

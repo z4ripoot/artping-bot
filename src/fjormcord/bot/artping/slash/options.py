@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import discord
 from discord import app_commands
 
@@ -21,7 +23,7 @@ def to_name(value: str) -> str:
     return name
 
 
-def _choices(get_names, current: str) -> list[app_commands.Choice[str]]:
+def _choices(get_names: Callable[[str, int], list[str]], current: str) -> list[app_commands.Choice[str]]:
     # get_names(prefix, limit) is a repository query; current is what the user typed so far
     names = get_names(_underscore_spaces(current), config.read_settings().autocomplete_max_choices)
     return [app_commands.Choice(name=name, value=name) for name in names]

@@ -1,7 +1,8 @@
 import logging
 import sqlite3
-from collections.abc import Callable
-from typing import TypeVar
+from collections.abc import Callable, Sequence
+from pathlib import Path
+from typing import Any, TypeVar
 
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.util.name_util import normalize_name
@@ -11,43 +12,43 @@ Model = TypeVar("Model")
 # Numbered scripts (001_initial_schema.sql, ...); a database's user_version is the number of the last one applied to it
 MIGRATIONS_PATH = config.PROJECT_ROOT / "db" / "migrations"
 
-_connection = None
+_connection: sqlite3.Connection | None = None
 
 
-def get_database_connection():
+def get_database_connection() -> sqlite3.Connection:
     if _connection is None:
         set_database_connection(connect(config.read_settings().database_path))
     return _connection
 
 
-def execute(sql, parameters=()):
+def execute(sql: str, parameters: Sequence = ()):
     # A single write, committed on its own
     with get_database_connection() as conn:
         conn.execute(sql, parameters)
 
 
-def exists(sql, parameters=()) -> bool:
+def exists(sql: str, parameters: Sequence = ()) -> bool:
     # Whether the query finds a row
     return get_database_connection().execute(sql, parameters).fetchone() is not None
 
 
-def fetch_one(model: Callable[..., Model], sql, parameters=()) -> Model | None:
+def fetch_one(model: Callable[..., Model], sql: str, parameters: Sequence = ()) -> Model | None:
     # The row found as a model, its columns aliased to the model's fields; None when there is none
     row = get_database_connection().execute(sql, parameters).fetchone()
     return model(**row) if row else None
 
 
-def fetch_all(model: Callable[..., Model], sql, parameters=()) -> list[Model]:
+def fetch_all(model: Callable[..., Model], sql: str, parameters: Sequence = ()) -> list[Model]:
     # Every row found as a model, its columns aliased to the model's fields
     return [model(**row) for row in get_database_connection().execute(sql, parameters)]
 
 
-def fetch_column(sql, parameters=()) -> list:
+def fetch_column(sql: str, parameters: Sequence = ()) -> list[Any]:
     # The values of a query that selects one column
     return [value for (value,) in get_database_connection().execute(sql, parameters)]
 
 
-def fetch_value(sql, parameters=()):
+def fetch_value(sql: str, parameters: Sequence = ()) -> Any:
     # The first column of the first row found; None when there is none
     row = get_database_connection().execute(sql, parameters).fetchone()
     return row[0] if row else None
@@ -67,7 +68,7 @@ def fetch_names(names_sql: str, prefix: str = "", limit: int = -1) -> list[str]:
     return fetch_column(sql, (prefix, prefix, limit))
 
 
-def connect(path):
+def connect(path: str | Path) -> sqlite3.Connection:
     connection = sqlite3.connect(path)
     # Lets migrations normalize names the same way the commands do
     connection.create_function("NORMALIZE_NAME", 1, normalize_name, deterministic=True)
@@ -76,7 +77,7 @@ def connect(path):
     return connection
 
 
-def migrate(connection):
+def migrate(connection: sqlite3.Connection):
     # A new database and one created before versioning are both at 0; 001 only creates tables that don't exist yet
     version = connection.execute("PRAGMA user_version").fetchone()[0]
 
@@ -99,7 +100,7 @@ def migrate(connection):
             raise
 
 
-def set_database_connection(connection):
+def set_database_connection(connection: sqlite3.Connection):
     global _connection
     connection.row_factory = sqlite3.Row
     # SQLite only enforces foreign keys (and their ON DELETE CASCADE) when enabled per connection
