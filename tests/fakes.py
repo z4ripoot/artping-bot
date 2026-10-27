@@ -224,6 +224,8 @@ class FakeInteraction:
         self.message = message
         self.response = FakeInteractionResponse(self)
         self.followup = FakeFollowup(self)
+        # The app command being run, set by invoke; None for a component click
+        self.command = None
         # (content, ephemeral, allowed_mentions) of everything sent, as response or follow-up
         self.sent = []
 
@@ -234,6 +236,7 @@ class FakeInteraction:
 
 def invoke(command, interaction, cog=None, **options):
     # Runs an app command's callback as discord.py does after parsing the options
+    interaction.command = command
     arguments = (interaction,) if cog is None else (cog, interaction)
     return asyncio.run(command.callback(*arguments, **options))
 

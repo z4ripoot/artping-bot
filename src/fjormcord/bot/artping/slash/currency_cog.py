@@ -4,7 +4,7 @@ from discord.ext import commands
 
 from fjormcord.bot.artping.service import currency_service
 from fjormcord.bot.artping.slash.options import currency_choices, to_name
-from fjormcord.bot.artping.slash.runner import run
+from fjormcord.bot.artping.slash.runner import admin_command, run
 
 CURRENCY_DESCRIPTION = "The currency's name; spaces are fine"
 
@@ -44,19 +44,13 @@ class CurrencyCog(commands.Cog):
                   lambda: currency_service.get_scoreboard(interaction.client, to_name(currency), page, slash=True),
                   defer=True)
 
-    @app_commands.command(name="addcurrency", description="Add a currency that users can track")
+    @admin_command(name="addcurrency", description="Add a currency that users can track")
     @app_commands.describe(currency="The new currency's name; spaces are fine")
-    @app_commands.default_permissions(administrator=True)
-    @app_commands.guild_only()
     async def add_currency(self, interaction: discord.Interaction, currency: str):
-        await run(interaction, "addcurrency", lambda: currency_service.add_currency(to_name(currency)),
-                  admin_only=True)
+        await run(interaction, "addcurrency", lambda: currency_service.add_currency(to_name(currency)))
 
-    @app_commands.command(name="removecurrency", description="Remove a currency and clear it from all wallets")
+    @admin_command(name="removecurrency", description="Remove a currency and clear it from all wallets")
     @app_commands.describe(currency=CURRENCY_DESCRIPTION)
     @app_commands.autocomplete(currency=currency_choices)
-    @app_commands.default_permissions(administrator=True)
-    @app_commands.guild_only()
     async def remove_currency(self, interaction: discord.Interaction, currency: str):
-        await run(interaction, "removecurrency", lambda: currency_service.remove_currency(to_name(currency)),
-                  admin_only=True)
+        await run(interaction, "removecurrency", lambda: currency_service.remove_currency(to_name(currency)))

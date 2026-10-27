@@ -4,7 +4,7 @@ from discord.ext import commands
 
 from fjormcord.bot.artping.service import resource_service
 from fjormcord.bot.artping.slash.options import resource_choices
-from fjormcord.bot.artping.slash.runner import run
+from fjormcord.bot.artping.slash.runner import admin_command, run
 
 RESOURCE_DESCRIPTION = "The resource's name"
 
@@ -25,20 +25,16 @@ class ResourceCog(commands.Cog):
     async def resources(self, interaction: discord.Interaction):
         await run(interaction, "resources", lambda: resource_service.list_resources(slash=True))
 
-    @app_commands.command(name="setresource",
-                          description="Save the text of a Discord message, or a website link, to post with /resource")
+    @admin_command(name="setresource",
+                   description="Save the text of a Discord message, or a website link, to post with /resource")
     @app_commands.describe(name="The new resource's name: letters, digits, _ and -",
                            link="A Discord message link or a website")
-    @app_commands.default_permissions(administrator=True)
-    @app_commands.guild_only()
     async def set_resource(self, interaction: discord.Interaction, name: str, link: str):
         await run(interaction, "setresource", lambda: resource_service.set_resource(interaction.client, name, link),
-                  admin_only=True, defer=True)
+                  defer=True)
 
-    @app_commands.command(name="removeresource", description="Remove a resource")
+    @admin_command(name="removeresource", description="Remove a resource")
     @app_commands.describe(name=RESOURCE_DESCRIPTION)
     @app_commands.autocomplete(name=resource_choices)
-    @app_commands.default_permissions(administrator=True)
-    @app_commands.guild_only()
     async def remove_resource(self, interaction: discord.Interaction, name: str):
-        await run(interaction, "removeresource", lambda: resource_service.remove_resource(name), admin_only=True)
+        await run(interaction, "removeresource", lambda: resource_service.remove_resource(name))

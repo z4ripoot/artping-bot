@@ -6,7 +6,7 @@ from fjormcord.bot.artping.model.character_vote import VoteChannel
 from fjormcord.bot.artping.service import alias_service, character_service
 from fjormcord.bot.artping.slash.art_ping_cog import CHARACTER_DESCRIPTION
 from fjormcord.bot.artping.slash.options import character_choices, to_name
-from fjormcord.bot.artping.slash.runner import run
+from fjormcord.bot.artping.slash.runner import admin_command, run
 
 ALIAS_DESCRIPTION = "The alias; spaces are fine"
 
@@ -35,39 +35,27 @@ class CharacterCog(commands.Cog):
         await run(interaction, "checkcharacter",
                   lambda: character_service.check_character(interaction.client, to_name(character)), defer=True)
 
-    @app_commands.command(name="removecharacter", description="Remove a character and unsubscribe all its users")
+    @admin_command(name="removecharacter", description="Remove a character and unsubscribe all its users")
     @app_commands.describe(character=CHARACTER_DESCRIPTION)
     @app_commands.autocomplete(character=character_choices)
-    @app_commands.default_permissions(administrator=True)
-    @app_commands.guild_only()
     async def remove_character(self, interaction: discord.Interaction, character: str):
-        await run(interaction, "removecharacter", lambda: character_service.remove_character(to_name(character)),
-                  admin_only=True)
+        await run(interaction, "removecharacter", lambda: character_service.remove_character(to_name(character)))
 
-    @app_commands.command(name="addalias", description="Add an alias to a character")
+    @admin_command(name="addalias", description="Add an alias to a character")
     @app_commands.describe(character=CHARACTER_DESCRIPTION, alias=ALIAS_DESCRIPTION)
     @app_commands.autocomplete(character=character_choices)
-    @app_commands.default_permissions(administrator=True)
-    @app_commands.guild_only()
     async def add_alias(self, interaction: discord.Interaction, character: str, alias: str):
-        await run(interaction, "addalias", lambda: alias_service.add_alias(to_name(character), to_name(alias)),
-                  admin_only=True)
+        await run(interaction, "addalias", lambda: alias_service.add_alias(to_name(character), to_name(alias)))
 
-    @app_commands.command(name="removealias", description="Remove an alias from a character")
+    @admin_command(name="removealias", description="Remove an alias from a character")
     @app_commands.describe(character=CHARACTER_DESCRIPTION, alias=ALIAS_DESCRIPTION)
     @app_commands.autocomplete(character=character_choices)
-    @app_commands.default_permissions(administrator=True)
-    @app_commands.guild_only()
     async def remove_alias(self, interaction: discord.Interaction, character: str, alias: str):
-        await run(interaction, "removealias", lambda: alias_service.remove_alias(to_name(character), to_name(alias)),
-                  admin_only=True)
+        await run(interaction, "removealias", lambda: alias_service.remove_alias(to_name(character), to_name(alias)))
 
-    @app_commands.command(name="setprimaryname",
-                          description="Make an alias the character's name; the old name becomes an alias")
+    @admin_command(name="setprimaryname",
+                   description="Make an alias the character's name; the old name becomes an alias")
     @app_commands.describe(alias=ALIAS_DESCRIPTION)
     @app_commands.autocomplete(alias=character_choices)
-    @app_commands.default_permissions(administrator=True)
-    @app_commands.guild_only()
     async def set_primary_name(self, interaction: discord.Interaction, alias: str):
-        await run(interaction, "setprimaryname", lambda: alias_service.set_primary_name(to_name(alias)),
-                  admin_only=True)
+        await run(interaction, "setprimaryname", lambda: alias_service.set_primary_name(to_name(alias)))

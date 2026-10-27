@@ -1,7 +1,9 @@
 import asyncio
 import logging
 
-from fjormcord.bot.artping.slash.runner import run
+import discord
+
+from fjormcord.bot.artping.slash.runner import admin_command, run
 from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS, CommandError
 from tests.fakes import FakeInteraction
 
@@ -57,20 +59,32 @@ def test_unexpected_error_is_logged_and_ephemeral(caplog):
     assert "boom" in caplog.text
 
 
-def test_admin_only_refuses_non_admin():
+@admin_command(name="removecurrency", description="An admin command")
+async def admin_only(interaction: discord.Interaction):
+    pass
+
+
+def test_admin_command_is_hidden_from_non_admins_and_dms():
+    assert admin_only.default_permissions.administrator
+    assert admin_only.guild_only
+
+
+def test_admin_command_refuses_non_admin():
     interaction = FakeInteraction()
+    interaction.command = admin_only
     calls = []
 
-    run_command(interaction, lambda: calls.append(1) or "done", admin_only=True)
+    run_command(interaction, lambda: calls.append(1) or "done")
 
     assert replies(interaction) == [("This command is for admins only", True)]
     assert calls == []
 
 
-def test_admin_only_allows_admin():
+def test_admin_command_allows_admin():
     interaction = FakeInteraction(administrator=True)
+    interaction.command = admin_only
 
-    run_command(interaction, lambda: "done", admin_only=True)
+    run_command(interaction, lambda: "done")
 
     assert interaction.sent == [("done", False, ALLOWED_MENTIONS)]
 

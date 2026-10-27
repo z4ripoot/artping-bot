@@ -3,18 +3,32 @@ import logging
 from collections.abc import Awaitable, Callable
 
 import discord
+from discord import app_commands
 
 from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS, CommandError, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 
+def admin_command(name: str, description: str):
+    # An admin command: Discord hides it from non-admins and outside servers, and run checks it again, since server
+    # admins can change who sees a command
+    def decorator(callback) -> app_commands.Command:
+        command = app_commands.command(name=name, description=description)(callback)
+        return app_commands.guild_only()(app_commands.default_permissions(administrator=True)(command))
+    return decorator
+
+
+def _is_admin_command(interaction: discord.Interaction) -> bool:
+    permissions = getattr(interaction.command, "default_permissions", None)
+    return permissions is not None and permissions.administrator
+
+
 async def run(interaction: discord.Interaction, command_name: str, call: Callable[[], str | Awaitable[str]], *,
-              admin_only: bool = False, defer: bool = False,
-              allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS) -> None:
+              defer: bool = False, allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS) -> None:
     # Runs a slash command the way legacy.dispatch runs a ~ command: checks, the call, and the reply. call does the
     # command's work and returns the reply, directly or as a coroutine; it raises CommandError to turn the user down.
     try:
-        if admin_only and not is_administrator(interaction.user):
+        if _is_admin_command(interaction) and not is_administrator(interaction.user):
             raise CommandError("This command is for admins only")
         # One cooldown per user, shared with the ~ commands
         interaction.client.cooldowns.check(interaction.user.id)
