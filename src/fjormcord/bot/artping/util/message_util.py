@@ -52,8 +52,8 @@ def get_two_entries(content: str, first: str, second: str) -> tuple[str, str]:
     return entries[0], entries[1]
 
 
-# Splits text into chunks within Discord's message length limit; each chunk is sent as a separate message
 def split_message(text: str, limit: int = MAX_MESSAGE_LENGTH) -> list[str]:
+    # Splits text into chunks within Discord's message length limit; each chunk is sent as a separate message
     chunks = []
     current = ""
 
