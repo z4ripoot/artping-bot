@@ -6,10 +6,8 @@ from discord.ext import commands
 
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.service import art_ping_service
-from fjormcord.bot.artping.slash.options import character_choices, to_name
+from fjormcord.bot.artping.slash.options import CHARACTER_DESCRIPTION, character_choices, to_name
 from fjormcord.bot.artping.slash.runner import run
-
-CHARACTER_DESCRIPTION = "The character's name or an alias; spaces are fine"
 
 
 def build_art_ping_command(max_characters: int) -> app_commands.Command:

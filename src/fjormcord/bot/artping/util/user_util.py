@@ -9,6 +9,11 @@ def is_administrator(author):
     return permissions is not None and permissions.administrator
 
 
+def mentions(user_ids) -> str:
+    # The users as mentions, which ping them, separated by spaces
+    return " ".join(f"<@{user_id}>" for user_id in user_ids)
+
+
 async def get_username(client: discord.Client, user_id):
     # The cache costs no request to Discord, but only holds users the bot has seen since it started
     user = client.get_user(int(user_id))

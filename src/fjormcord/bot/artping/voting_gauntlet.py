@@ -13,6 +13,7 @@ from fjormcord.bot.artping.model.voting_gauntlet import Entrant, Round
 from fjormcord.bot.artping.service import voting_gauntlet_service
 from fjormcord.bot.artping.util.message_util import split_message
 from fjormcord.bot.artping.util.task_util import get_task_channel, start_channel_task
+from fjormcord.bot.artping.util.user_util import mentions
 from fjormcord.bot.artping.voting_gauntlet_view import TrackView
 
 # Redirects to the page of the latest gauntlet, e.g. /voting_gauntlet/tournaments/112. There is no API, so the page's
@@ -155,7 +156,7 @@ def format_matchup(matchup: tuple[Entrant, Entrant], trackers: list[str]) -> str
     for entrant, opponent in (matchup, matchup[::-1]):
         lines += [f"{entrant.name} ({_status(entrant, opponent)})", f"{entrant.score:,}"]
     if trackers:
-        lines.append(" ".join(f"<@{user_id}>" for user_id in trackers))
+        lines.append(mentions(trackers))
     return "\n".join(lines)
 
 

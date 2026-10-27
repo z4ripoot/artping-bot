@@ -15,6 +15,13 @@ _DISCORD_MESSAGE_LINK = re.compile(r"https://(?:(?:ptb|canary)\.)?discord(?:app)
 _WEBSITE_LINK = re.compile(r"https?://\S+")
 
 
+def require_resource(name: str) -> Resource:
+    resource = resource_repository.get_resource(name)
+    if resource is None:
+        raise CommandError(f"Resource {name} doesn't exist")
+    return resource
+
+
 def _parse_name(entry: str) -> str:
     # ~setresource ~hof works too
     name = entry.removeprefix("~")
@@ -65,11 +72,7 @@ async def set_resource(client: discord.Client, name: str, link: str) -> str:
 
 
 def remove_resource(name: str) -> str:
-    name = _parse_name(name)
-
-    resource = resource_repository.get_resource(name)
-    if resource is None:
-        raise CommandError(f"Resource {name} doesn't exist")
+    resource = require_resource(_parse_name(name))
 
     resource_repository.remove_resource(resource.name)
 
@@ -88,10 +91,7 @@ def list_resources(slash: bool = False) -> str:
 
 
 def post_resource(name: str) -> str:
-    content = get_resource_content(name)
-    if content is None:
-        raise CommandError(f"Resource {name} doesn't exist")
-    return content
+    return require_resource(name).content
 
 
 def get_resource_content(name: str) -> str | None:
