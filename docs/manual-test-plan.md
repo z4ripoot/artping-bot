@@ -158,7 +158,7 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 | 7.14 | U1: `~addcharacter eirika`. Stop the bot, delete the vote message, start | Log: `The message of vote … is gone, dropping the vote` |
 | 7.15 | U1: `~addcharacter seliph`. Remove the bot's **Read Message History** in that channel, restart | Log warning `Can't read the message of vote …`; the vote is kept. Clicks still work. Restore the permission and restart: no warning |
 | 7.16 | U1: `~addcharacter alm`, U1 clicks. Stop the bot, set `votes_needed=1`, start | The vote passes at startup (`Character Alm has been added`) |
-| 7.17 | U1: `~addcharacter celica`. Stop the bot, set `votes_needed=3`, start | The message still says `Votes needed: 2` and `Vote (0/2)` until the next click, which then shows `Vote (1/3)` (known limitation). Put `votes_needed` back to 2 |
+| 7.17 | U1: `~addcharacter celica`. Stop the bot, set `votes_needed=3`, start | At startup the message is re-rendered: `Vote to add Celica. Votes needed: 3` and `Vote (0/3)`. Put `votes_needed` back to 2 |
 | 7.18 | Set `votes_needed=1`, restart. U1: `~addcharacter lucius` | `Character Lucius has been added` straight away (no vote). Put it back to 2 |
 | 7.19 | Set `emoji=<:yourEmoji:id>` (a custom emoji in the server), restart, start a vote | The button shows the custom emoji |
 | 7.20 | A clicks a vote button, then U1 starts another vote for the same name and A clicks that too | The 1st click passes the vote; the second vote was closed with it, so there is nothing to click |

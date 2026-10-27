@@ -113,9 +113,9 @@ Votes are cast with a **Vote button** on the vote message, for `~addcharacter` a
   message gets the new text and the button. If that reaches `votes_needed`, or a reactor is an admin, the vote
   passes during the conversion. A converted vote isn't converted again. This is the only place reactions are
   still read; `on_raw_reaction_add` is gone, `on_raw_message_delete` stays.
-- **Known limitation:** the startup check also compares each vote with `votes_needed`, but it only edits the
-  messages it converts. Raising `votes_needed` while the bot is offline leaves the open button votes showing
-  the old number until their next click.
+- **Re-rendering:** the startup check also compares each vote with `votes_needed`, and re-renders the message of
+  every vote that stays open with the current text and count. Open votes follow a `votes_needed` changed while
+  the bot was offline, and a converted vote whose edit failed gets its button on the next start.
 
 ## Configuration
 

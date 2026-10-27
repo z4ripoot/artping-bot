@@ -259,8 +259,8 @@ The button must keep working after a restart, since votes don't expire. It is a 
 `custom_id` and no timeout, registered with `bot.add_view` by `CharacterVoteCog` when it loads. The vote is found by
 `interaction.message.id`. Clicks made while the bot is offline fail on the user's side ("This interaction
 failed"), and the user can click again. At startup the open votes are checked as now, so a vote that already
-meets a lowered `votes_needed` passes, and one whose name got taken is dropped. Known limitation: raising
-`votes_needed` while the bot is offline leaves open button votes showing the old number until their next click.
+meets a lowered `votes_needed` passes, and one whose name got taken is dropped. The message of every vote that
+stays open is re-rendered with the current text and count, so it follows a changed `votes_needed`.
 
 ### Converting the open ⭐ votes
 
