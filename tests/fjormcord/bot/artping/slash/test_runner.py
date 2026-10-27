@@ -3,8 +3,9 @@ import logging
 
 import discord
 
+from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.slash.runner import admin_command, run
-from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS, CommandError
+from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS
 from tests.fakes import FakeInteraction
 
 

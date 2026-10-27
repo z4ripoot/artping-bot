@@ -3,9 +3,10 @@ import re
 
 import discord
 
+from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.resource import Resource
 from fjormcord.bot.artping.repository import resource_repository
-from fjormcord.bot.artping.util.message_util import CommandError, logged
+from fjormcord.bot.artping.util.message_util import logged
 
 # Plain ASCII, so names are easy to type and can't hold mention syntax
 _RESOURCE_NAME = re.compile(r"[A-Za-z0-9_-]+")

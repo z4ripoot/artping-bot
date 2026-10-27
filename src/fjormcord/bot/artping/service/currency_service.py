@@ -2,9 +2,10 @@ import math
 
 import discord
 
+from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.currency import Currency
 from fjormcord.bot.artping.repository import currency_repository
-from fjormcord.bot.artping.util.message_util import CommandError, logged
+from fjormcord.bot.artping.util.message_util import logged
 from fjormcord.bot.artping.util.user_util import get_username
 
 SCOREBOARD_PAGE_SIZE = 10

@@ -1,7 +1,8 @@
 import discord
 
+from fjormcord.bot.artping.exception.missing_argument import MissingArgument
 from fjormcord.bot.artping.service import art_ping_service
-from fjormcord.bot.artping.util.message_util import MissingArgument, get_entries, get_single_name
+from fjormcord.bot.artping.util.message_util import get_entries, get_single_name
 
 
 def do_art_ping(client: discord.Client, message: discord.Message) -> str:

@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character_vote import VoteChannel
 from fjormcord.bot.artping.repository.character_repository import add_character
 from fjormcord.bot.artping.service import character_vote_service
@@ -9,7 +10,6 @@ from fjormcord.bot.artping.service.alias_service import add_alias
 from fjormcord.bot.artping.service.art_ping_service import add_ping, do_art_ping
 from fjormcord.bot.artping.service.currency_service import add_currency, check_wallet, get_scoreboard, set_currency
 from fjormcord.bot.artping.service.resource_service import list_resources, post_resource, set_resource
-from fjormcord.bot.artping.util.message_util import CommandError
 from tests.fakes import FakeClient
 
 

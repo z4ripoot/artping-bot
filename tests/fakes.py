@@ -6,8 +6,8 @@ from types import SimpleNamespace
 import discord
 
 from fjormcord.bot.artping.cooldowns import Cooldowns
+from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.service import character_vote_service
-from fjormcord.bot.artping.util.message_util import CommandError
 
 
 # The bot's own user, e.g. on the reaction it added to vote messages before they had a button

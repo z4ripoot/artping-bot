@@ -1,9 +1,10 @@
 import logging
 
+from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.repository import art_ping_repository, character_repository
 from fjormcord.bot.artping.service.character_service import require_character
-from fjormcord.bot.artping.util.message_util import CommandError, logged
+from fjormcord.bot.artping.util.message_util import logged
 from fjormcord.bot.artping.util.name_util import normalize_name
 
 

@@ -1,7 +1,7 @@
 import pytest
 
 from fjormcord.bot.artping.cooldowns import Cooldowns
-from fjormcord.bot.artping.util.message_util import CommandError
+from fjormcord.bot.artping.exception.command_error import CommandError
 from tests.fakes import FakeClock
 
 

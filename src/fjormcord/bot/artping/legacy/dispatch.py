@@ -4,9 +4,11 @@ import logging
 import discord
 
 from fjormcord.bot.artping.easter_eggs import get_easter_egg_reply
+from fjormcord.bot.artping.exception.command_error import CommandError
+from fjormcord.bot.artping.exception.missing_argument import MissingArgument
 from fjormcord.bot.artping.legacy.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, Command, format_usage
 from fjormcord.bot.artping.service.resource_service import get_resource_content
-from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, split_message
+from fjormcord.bot.artping.util.message_util import split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 

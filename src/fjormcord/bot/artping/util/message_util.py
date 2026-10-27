@@ -2,6 +2,9 @@ import logging
 
 import discord
 
+from fjormcord.bot.artping.exception.command_error import CommandError
+from fjormcord.bot.artping.exception.missing_argument import MissingArgument
+
 # Arguments are split on whitespace, so names of several words are written with underscores
 MULTI_WORD_HINT = "Use underscores for multi-word names, e.g. Black_Knight"
 MESSAGE_ONE_NAME_ONLY = f"Only one name is allowed. {MULTI_WORD_HINT}"
@@ -9,18 +12,6 @@ MESSAGE_ONE_NAME_ONLY = f"Only one name is allowed. {MULTI_WORD_HINT}"
 ALLOWED_MENTIONS = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=True)
 # Discord rejects messages longer than this
 MAX_MESSAGE_LENGTH = 2000
-
-
-class MissingArgument(Exception):
-    # Raised by a handler; the client answers with what is missing and the command's usage from ~help
-    def __init__(self, argument):
-        super().__init__(f"{argument} is missing")
-        self.argument = argument
-
-
-class CommandError(Exception):
-    # Raised by a handler to turn a command down; the client logs the message and sends it as the reply
-    pass
 
 
 def logged(reply):

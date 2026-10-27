@@ -1,8 +1,9 @@
 import discord
 
+from fjormcord.bot.artping.exception.command_error import CommandError
+from fjormcord.bot.artping.exception.missing_argument import MissingArgument
 from fjormcord.bot.artping.service import currency_service
-from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, CommandError, MissingArgument, \
-    get_entries, get_single_name, get_two_entries
+from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, get_entries, get_single_name, get_two_entries
 
 
 def add_currency(client: discord.Client, message: discord.Message) -> str:

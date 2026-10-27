@@ -2,7 +2,7 @@ import math
 from collections.abc import Callable
 from time import monotonic
 
-from fjormcord.bot.artping.util.message_util import CommandError
+from fjormcord.bot.artping.exception.command_error import CommandError
 
 
 class Cooldowns:

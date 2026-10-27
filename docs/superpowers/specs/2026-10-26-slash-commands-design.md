@@ -89,7 +89,8 @@ The `~` path moves into `fjormcord.bot.artping.legacy`:
   lookup, admin silence, cooldown check, error-to-reply, splitting long replies, resource fallback).
   `on_message` calls it.
 - `MissingArgument`, `get_entries`, `get_single_name` and `MULTI_WORD_HINT` are legacy-only and may move with
-  it; `CommandError` and `split_message` are shared and stay in `util/message_util`.
+  it; `split_message` is shared and stays in `util/message_util`. (`CommandError` and `MissingArgument`
+  later moved to `exception/`.)
 
 The tests move to mirror the source tree (`tests/fjormcord/bot/artping/legacy/...`).
 

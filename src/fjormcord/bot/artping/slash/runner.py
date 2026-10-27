@@ -5,7 +5,8 @@ from collections.abc import Awaitable, Callable
 import discord
 from discord import app_commands
 
-from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS, CommandError, split_message
+from fjormcord.bot.artping.exception.command_error import CommandError
+from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 

@@ -4,12 +4,12 @@ from collections.abc import Iterable
 import discord
 
 from fjormcord.bot.artping import config
+from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character_vote import CharacterVote, VoteChannel
 from fjormcord.bot.artping.repository import character_vote_repository
 # Imported as modules, since character_service and vote_view import this one too
 from fjormcord.bot.artping import vote_view
 from fjormcord.bot.artping.service import character_service
-from fjormcord.bot.artping.util.message_util import CommandError
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 

@@ -1,8 +1,8 @@
 import discord
 from discord import app_commands
 
+from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.repository import character_repository, currency_repository, resource_repository
-from fjormcord.bot.artping.util.message_util import CommandError
 
 # Discord shows at most this many autocomplete choices
 MAX_CHOICES = 25
