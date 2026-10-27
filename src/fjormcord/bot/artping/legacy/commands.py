@@ -46,9 +46,11 @@ def format_usage(command: Command) -> str:
 
 def show_help(client: discord.Client, message: discord.Message) -> str:
     show_admin = is_administrator(message.author)
-    out = "Commands (content in brackets is what to add when using command):\n"
-    out += f"{MULTI_WORD_HINT}\n"
-    out += "All commands are also available as slash commands, type /\n"
+    lines = [
+        "Commands (content in brackets is what to add when using command):",
+        MULTI_WORD_HINT,
+        "All commands are also available as slash commands, type /",
+    ]
 
     current_section = SECTION_ART_PING
     for command in COMMANDS:
@@ -57,12 +59,12 @@ def show_help(client: discord.Client, message: discord.Message) -> str:
 
         section = SECTION_ADMIN if command.admin_only else command.section
         if section != current_section:
-            out += f"\n{section}\n"
+            lines += ["", section]
             current_section = section
 
-        out += f"{format_usage(command)}: {command.description}\n"
+        lines.append(f"{format_usage(command)}: {command.description}")
 
-    return out
+    return "\n".join(lines)
 
 
 # The ~ commands; slash commands are in fjormcord.bot.artping.slash

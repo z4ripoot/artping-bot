@@ -15,7 +15,7 @@ def test_set_currency_creates_then_updates_wallet(client):
 
     assert reply(set_currency, client, make_message("~setcurrency orbs 10")) == "Your Orbs has been set to 10"
     assert reply(set_currency, client, make_message("~setcurrency orbs 25")) == "Your Orbs has been set to 25"
-    assert reply(check_wallet, client, make_message("~checkwallet")) == "User user1's wallet:\nOrbs: 25\n"
+    assert reply(check_wallet, client, make_message("~checkwallet")) == "User user1's wallet:\nOrbs: 25"
 
 
 def test_set_currency_rejects_invalid_amount(client):
@@ -50,7 +50,7 @@ def test_scoreboard_orders_by_amount(client):
 
     out = reply(get_scoreboard, client, make_message("~scoreboard orbs"))
 
-    assert out == "Scoreboard for Orbs:\n1. Bob (30)\n2. Alice (10)\n"
+    assert out == "Scoreboard for Orbs:\n1. Bob (30)\n2. Alice (10)"
 
 
 def test_currency_commands_reject_spaces_in_names(client):
@@ -62,7 +62,7 @@ def test_currency_commands_reject_spaces_in_names(client):
     assert reply(clear_currency, client, make_message("~clearcurrency Fire Orbs")) == MESSAGE_ONE_NAME_ONLY
     assert reply(get_scoreboard, client, make_message("~scoreboard Fire Orbs")) == MESSAGE_ONE_NAME_ONLY
     assert reply(remove_currency, client, make_message("~removecurrency Fire Orbs")) == MESSAGE_ONE_NAME_ONLY
-    assert reply(check_wallet, client, make_message("~checkwallet")) == "User user1's wallet:\nFire: 10\n"
+    assert reply(check_wallet, client, make_message("~checkwallet")) == "User user1's wallet:\nFire: 10"
 
 
 def scoreboard_of_25_users():
@@ -79,11 +79,10 @@ def test_scoreboard_shows_first_page_of_ten(client):
 
     out = reply(get_scoreboard, client, make_message("~scoreboard orbs"))
 
-    assert (
-        out
-        == "Scoreboard for Orbs (page 1/3):\n"
-        + "".join(f"{rank}. User{26 - rank} ({(26 - rank) * 10})\n" for rank in range(1, 11))
-        + "Use ~scoreboard Orbs 2 for the next page"
+    assert out == "\n".join(
+        ["Scoreboard for Orbs (page 1/3):"]
+        + [f"{rank}. User{26 - rank} ({(26 - rank) * 10})" for rank in range(1, 11)]
+        + ["Use ~scoreboard Orbs 2 for the next page"]
     )
     assert len(client.fetched) == 10
 
@@ -93,8 +92,9 @@ def test_scoreboard_last_page_continues_ranking(client):
 
     out = reply(get_scoreboard, client, make_message("~scoreboard orbs 3"))
 
-    assert out == "Scoreboard for Orbs (page 3/3):\n" + "".join(
-        f"{rank}. User{26 - rank} ({(26 - rank) * 10})\n" for rank in range(21, 26)
+    assert out == "\n".join(
+        ["Scoreboard for Orbs (page 3/3):"]
+        + [f"{rank}. User{26 - rank} ({(26 - rank) * 10})" for rank in range(21, 26)]
     )
     assert len(client.fetched) == 5
 
