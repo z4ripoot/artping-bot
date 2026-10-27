@@ -1,0 +1,106 @@
+from fjormcord.bot.artping.repository.art_ping_repository import add_ping as insert_ping
+from fjormcord.bot.artping.repository.character_repository import add_character, get_character
+from fjormcord.bot.artping.legacy.handler.art_ping_handlers import do_art_ping, add_ping, remove_ping, check_ping
+from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
+from tests.fakes import make_message, reply
+
+
+def subscribe(character_name, user_id):
+    insert_ping(get_character(character_name).id, str(user_id))
+
+
+def test_art_ping_mentions_subscribers_case_insensitively(client):
+    add_character("Lucina")
+    subscribe("Lucina", 1)
+    subscribe("Lucina", 2)
+
+    assert reply(do_art_ping, client, make_message("~artping lucina")) == "Lucina: <@1> <@2>"
+
+
+def test_art_ping_reports_missing_characters_in_same_reply(client):
+    add_character("Lucina")
+    subscribe("Lucina", 1)
+
+    out = do_art_ping(client, make_message("~artping Lucina Marth"))
+
+    assert out == "No character entry for Marth\nLucina: <@1>"
+
+
+def test_art_ping_with_only_unknown_characters(client):
+    assert reply(do_art_ping, client, make_message("~artping Marth")) == "No character entry for Marth"
+
+
+def test_art_ping_without_subscribers(client):
+    add_character("Lucina")
+
+    assert reply(do_art_ping, client, make_message("~artping Lucina")) == "Nobody is subscribed to Lucina"
+
+
+def test_art_ping_ignores_repeated_spaces(client):
+    add_character("Lucina")
+    subscribe("Lucina", 1)
+
+    assert reply(do_art_ping, client, make_message("~artping  Lucina ")) == "Lucina: <@1>"
+
+
+def test_add_and_remove_ping(client):
+    add_character("Lucina")
+
+    assert reply(add_ping, client, make_message("~addping lucina")) == "Ping for Lucina has been added"
+    assert reply(add_ping, client, make_message("~addping lucina")) == "Ping for Lucina already exists"
+    assert reply(check_ping, client, make_message("~checkping")) == "Lucina"
+    assert reply(remove_ping, client, make_message("~removeping lucina")) == "Ping for Lucina has been removed"
+    assert reply(remove_ping, client, make_message("~removeping lucina")) == "Ping for Lucina doesn't exist"
+
+
+def test_add_ping_for_unknown_character(client):
+    assert reply(add_ping, client, make_message("~addping Marth")) == "Character Marth doesn't exist"
+
+
+def test_check_ping_without_pings_is_not_empty(client):
+    assert reply(check_ping, client, make_message("~checkping")) == "You are not subscribed to any characters"
+
+
+def test_add_and_remove_ping_hint_at_underscores_for_several_words(client):
+    assert reply(add_ping, client, make_message("~addping Black Knight")) == MESSAGE_ONE_NAME_ONLY
+    assert reply(remove_ping, client, make_message("~removeping Black Knight")) == MESSAGE_ONE_NAME_ONLY
+
+
+def test_art_ping_by_alias_uses_the_character_name(client, database):
+    add_character("Furina")
+    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+    subscribe("Furina", 1)
+
+    assert reply(do_art_ping, client, make_message("~artping focalors")) == "Furina: <@1>"
+
+
+def test_art_ping_by_name_and_alias_pings_once(client, database):
+    add_character("Furina")
+    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+    subscribe("Furina", 1)
+
+    assert reply(do_art_ping, client, make_message("~artping Furina Focalors")) == "Furina: <@1>"
+
+
+def test_add_ping_by_alias(client, database):
+    add_character("Furina")
+    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+
+    assert reply(add_ping, client, make_message("~addping Focalors")) == "Ping for Furina has been added"
+    assert reply(remove_ping, client, make_message("~removeping Furina")) == "Ping for Furina has been removed"
+
+
+def test_art_ping_lists_characters_alphabetically(client):
+    add_character("Marth")
+    add_character("lucina")
+    add_character("Chrom")
+    subscribe("Marth", 1)
+
+    assert reply(do_art_ping, client, make_message("~artping Marth lucina Chrom")) == "Chrom, lucina, Marth: <@1>"
+
+
+def test_art_ping_names_unknown_characters_normalized(client):
+    add_character("Lucina")
+    subscribe("Lucina", 1)
+
+    assert reply(do_art_ping, client, make_message("~artping lucina marth")) == "No character entry for Marth\nLucina: <@1>"

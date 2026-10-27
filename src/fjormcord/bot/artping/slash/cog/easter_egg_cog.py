@@ -1,0 +1,20 @@
+import discord
+from discord import app_commands
+from discord.ext import commands
+
+from fjormcord.bot.artping import easter_eggs
+from fjormcord.bot.artping.slash.runner import run
+
+
+class EasterEggCog(commands.Cog):
+    # The slash versions of the easter eggs that are triggered by words, such as "thanks lorenz"
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+
+    @app_commands.command(name="lorenz", description="Thank Lorenz")
+    async def lorenz(self, interaction: discord.Interaction):
+        await run(interaction, "lorenz", lambda: easter_eggs.LORENZ_SMILE)
+
+    @app_commands.command(name="chromk", description="Chromk")
+    async def chromk(self, interaction: discord.Interaction):
+        await run(interaction, "chromk", lambda: easter_eggs.CHROMK)

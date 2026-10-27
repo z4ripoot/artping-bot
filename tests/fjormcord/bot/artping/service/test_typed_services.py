@@ -1,0 +1,80 @@
+import asyncio
+
+import pytest
+
+from fjormcord.bot.artping.exception.command_error import CommandError
+from fjormcord.bot.artping.model.character_vote import VoteChannel
+from fjormcord.bot.artping.repository.character_repository import add_character
+from fjormcord.bot.artping.service import character_vote_service
+from fjormcord.bot.artping.service.alias_service import add_alias
+from fjormcord.bot.artping.service.art_ping_service import add_ping, do_art_ping
+from fjormcord.bot.artping.service.currency_service import add_currency, check_wallet, get_scoreboard, set_currency
+from fjormcord.bot.artping.service.resource_service import list_resources, post_resource, set_resource
+from tests.fakes import FakeClient
+
+
+def test_add_ping_takes_user_and_name():
+    add_character("Lucina")
+
+    assert add_ping("5", "lucina") == "Ping for Lucina has been added"
+
+
+def test_do_art_ping_takes_names():
+    add_character("Lucina")
+
+    with pytest.raises(CommandError) as error:
+        do_art_ping(["Nobody"])
+    assert str(error.value).startswith("No character entry for Nobody")
+    assert do_art_ping(["Lucina", "Nobody"]).startswith("No character entry for Nobody")
+
+
+def test_add_alias_normalizes():
+    add_character("Lucina")
+
+    assert add_alias("lucina", "marth_mask") == "Alias Marth_Mask has been added to Lucina"
+
+
+def test_start_vote_refuses_outside_a_server():
+    async def send(content, view):
+        raise AssertionError("nothing should be sent")
+
+    vote_channel = VoteChannel("1", False, send)
+
+    with pytest.raises(CommandError, match="Votes can only be started in a server"):
+        asyncio.run(character_vote_service.start_vote(vote_channel, "1", "Lucina"))
+
+
+def test_check_wallet_names_the_slash_command():
+    assert check_wallet("5", "user5", slash=True) == "Your wallet is empty. Use /setcurrency to add a currency"
+
+
+def test_scoreboard_hint_uses_slash_syntax():
+    add_currency("Orbs")
+    for user_id in range(1, 12):
+        set_currency(str(user_id), "Orbs", user_id)
+
+    out = asyncio.run(get_scoreboard(FakeClient(), "Orbs", slash=True))
+
+    assert out.endswith("Use /scoreboard currency:Orbs page:2 for the next page")
+
+
+def test_set_currency_takes_an_int():
+    add_currency("Orbs")
+
+    assert set_currency("5", "Orbs", 3) == "Your Orbs has been set to 3"
+
+
+def test_list_resources_in_slash_syntax():
+    asyncio.run(set_resource(FakeClient(), "hof", "https://example.com/hof"))
+    asyncio.run(set_resource(FakeClient(), "faq", "https://example.com/faq"))
+
+    assert list_resources(slash=True) == "Resources: faq, hof (post one with /resource)"
+
+
+def test_post_resource_refuses_unknown():
+    with pytest.raises(CommandError, match="Resource hof doesn't exist"):
+        post_resource("hof")
+
+
+def test_set_resource_takes_name_and_link():
+    assert asyncio.run(set_resource(FakeClient(), "hof", "https://example.com/hof")) == "Resource hof has been set"
