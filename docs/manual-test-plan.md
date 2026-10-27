@@ -2,7 +2,7 @@
 
 Commands to test every branch of the bot by hand in Discord. Expected replies are in `code`; "silence" means the bot
 sends nothing at all. Sections 1 to 10 are mostly about the `~` commands, section 11 repeats every command as a
-slash command, and sections 7 and 12 cover the vote button.
+slash command, sections 7 and 12 cover the vote button, and section 13 the Voting Gauntlet scores.
 
 ## Setup
 
@@ -19,10 +19,12 @@ slash command, and sections 7 and 12 cover the vote button.
   votes_needed=2           ; the smallest value that still has votes
   [tasks]
   coliseum_notification_channel_id=<test channel id>
+  voting_gauntlet_channel_id=<test channel id>
   ```
 - **Database:** start with a fresh one (delete `test.db`).
 
-Some steps need the bot's log to check the result: 1.8, 2.16, 7.12, 7.14, 7.15, 11.45 and 10.3.
+Some steps need the bot's log to check the result: 1.4, 1.8, 2.16, 7.12, 7.14, 7.15, 10.3, 11.45, 13.10, 13.11
+and 13.12.
 
 ## 1. Startup and config
 
@@ -30,11 +32,13 @@ Some steps need the bot's log to check the result: 1.8, 2.16, 7.12, 7.14, 7.15, 
 |---|---|---|
 | 1.1 | Empty `token` in config.ini, then start | Exits with `No Discord token configured. Create config.ini …` |
 | 1.2 | Delete `test.db`, then start from another directory (e.g. `cd ~`) | `test.db` is created in the repo root, migrations run, `Bot is running` |
-| 1.3 | Remove a key (e.g. `votes_needed`) from **both** ini files, then start | Crashes at startup (`NoOptionError`). Put the key back afterwards |
-| 1.4 | Start with `coliseum_notification_channel_id` empty | Log warning `No channel ID is configured for Coliseum notifications…` |
+| 1.3 | Remove a key (e.g. `votes_needed`) from config.ini, then start | Exits with `Invalid configuration: No option 'votes_needed' in section: 'character_vote'` (config.example.ini is not read, so it doesn't fill in the key). Put the key back afterwards |
+| 1.3a | Rename config.ini, then start | Exits with `Invalid configuration: … config.ini not found. Copy config.example.ini to config.ini and fill in your bot's token`. Rename it back |
+| 1.4 | Start with `coliseum_notification_channel_id` and `voting_gauntlet_channel_id` empty | Log warnings `No channel ID is configured for the Coliseum notification task, so it will not be initiated` and the same for the `Voting Gauntlet scores` task |
 | 1.5 | Start with `guild_id` set, then type `/` in the test server | All commands are listed (section 11) and each shows once |
 | 1.6 | Empty `guild_id`, restart | The commands are registered globally (they can take a while to show up). Guild commands left over from 1.5 show twice until cleared (README, local setup) |
-| 1.7 | Set `slash_max_characters=26`, then `0`, then start | Crashes at startup with `art_ping.slash_max_characters must be between 1 and 25`. Put it back afterwards |
+| 1.7 | Set `slash_max_characters=26`, then `0`, then start | Exits with `Invalid configuration: art_ping.slash_max_characters must be between 1 and 25`. Put it back afterwards |
+| 1.7a | Set `autocomplete_max_choices=26`, then `0`, then start | Exits with `Invalid configuration: commands.autocomplete_max_choices must be between 1 and 25`. Put it back afterwards |
 | 1.8 | Start with a wrong `guild_id`, or without network after login | Log `Syncing the slash commands failed`, the bot keeps running and `~help` still works |
 
 ## 2. Message dispatch (`on_message`)
@@ -241,7 +245,7 @@ FROM generate_series(1, 11);   -- older sqlite3: use 11 separate INSERTs
 | 10.1 | Channel ID set, bot running on a Monday through 18:00 or 22:00 UTC | Message in the channel: `Coliseum/Aether Raids closes <t:…:R> at <t:…:f>`. The timestamp shows 23:00 UTC in your local time |
 | 10.2 | Same, on a non-Monday at those times | Nothing |
 | 10.3 | Channel ID set to a channel the bot can't see (or a wrong ID) | At the trigger time, log error `Channel … not found. Task will be skipped` |
-| 10.4 | Disconnect the network briefly so `on_ready` fires again | No `RuntimeError` about the task already running, and no duplicate reminders |
+| 10.4 | Disconnect the network briefly so `on_ready` fires again | No `RuntimeError` about the task already running, and no duplicate reminders (nor duplicate Voting Gauntlet scores, section 13) |
 | 10.5 | Channel empty | See 1.4. No reminders |
 
 To test the reminder without waiting for Monday, temporarily change the time constants and the `weekday() == 0` check
@@ -258,6 +262,7 @@ database. Run each command as the account named in the section it comes from.
 | 11.1 | U1 | Type `/` | The admin commands (`removecharacter`, `addalias`, `removealias`, `setprimaryname`, `addcurrency`, `removecurrency`, `setresource` and `removeresource`) aren't listed for U1; A sees them all. There is no `/help` |
 | 11.2 | A | Type `/` | All commands of the README table, plus `/resource`, `/lorenz` and `/chromk`, each with a description |
 | 11.3 | U1 | `/addping character:Lucina` | Public `Ping for Lucina has been added`. Autocomplete suggested `Lucina` while typing `lu` (names and aliases) |
+| 11.3a | U1 | Set `autocomplete_max_choices=2`, restart, type `/addping character:` with more than 2 characters, then type `l` | At most 2 suggestions, the first names alphabetically; `l` (and `L`) narrows them to names starting with L. Put it back to 20 |
 | 11.4 | U1 | `/addping character:black knight` (with a space) | The name is `Black_Knight`: `Character Black_Knight doesn't exist` (or, if it exists, the ping is added) |
 | 11.5 | U1 | `/addping character:marth` | Ephemeral `Character Marth doesn't exist` |
 | 11.6 | U1 | `/addping character:Lucina` again | Ephemeral `Ping for Lucina already exists` |
@@ -317,6 +322,36 @@ vote row has `USES_BUTTON = 0` (`sqlite3 test.db "select message_id, uses_button
 | 12.5 | A ⭐ vote with a 👍 only, and with the bot's own ⭐ only | Converted with `Vote (0/2)`: other emoji and the bot's reaction don't count |
 | 12.6 | A ⭐ vote whose message was deleted while the bot was offline | Dropped with the log line of 7.14 |
 | 12.7 | A ⭐ vote and Read Message History removed | Log warning `Can't read the message of vote …`, kept unconverted; restored and restarted, it converts |
+
+## 13. Voting Gauntlet scores (hourly at 5 past, UTC, while a round runs)
+
+The bot reads the official page (https://support.fire-emblem-heroes.com/voting_gauntlet/current). A live gauntlet
+only runs a few days a month, so test with the saved pages instead: temporarily change `voting_gauntlet.py` so that
+
+- `POSTING_TIMES` is every minute: `[time(hour=h, minute=m, tzinfo=timezone.utc) for h in range(24) for m in range(60)]`
+- `fetch_page` returns `112, Path("tests/fjormcord/bot/artping/voting_gauntlet_112_round_3.html").read_text("utf-8")`
+  (an absolute path if the bot isn't started from the repository root)
+- `now` returns a fixed time: `datetime(2026, 10, 2, 12, tzinfo=timezone.utc)` is in round 1 (4 matchups),
+  `datetime(2026, 10, 6, 12, …)` in the final round (1 matchup, Edelgard against Dimitri) and
+  `datetime(2026, 10, 7, 5, …)` after the end
+
+and restart after each change. Don't commit that change. 13.1 needs a real gauntlet.
+
+| # | Setup | Expected |
+|---|---|---|
+| 13.1 | Unchanged code, during a real gauntlet round, at 5 past the hour | One message per matchup in the site's order, e.g. `Edelgard (Stronger)` / `123,456` / `Dimitri (Weaker)` / `98,765`, each with the buttons `Track Edelgard` and `Track Dimitri`. Outside a round: nothing |
+| 13.2 | `now` in round 1 | 4 matchup messages, labelled Stronger and Weaker (or Same for both when neither is behind), with a `Track <name>` button per character |
+| 13.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour Theodora is Weaker`. The next minute's message for that matchup ends with `<@U1>`, and U1 is pinged |
+| 13.4 | U1 clicks `Track Edelgard` under Theodora's matchup | Ephemeral `You now track Edelgard instead of Theodora`. The next messages no longer mention U1 there (Edelgard is Stronger) |
+| 13.5 | U1 clicks `Track Edelgard` again | Ephemeral `You no longer track Edelgard` |
+| 13.6 | U1 and U2 track the same Weaker character | The message mentions both, once each |
+| 13.7 | U1 tracks a Weaker character, stop the bot, U1 clicks a button (`This interaction failed`), start it, clicks again | The click works after the restart (the buttons are rebuilt from their `custom_id`), and the tracking survived it |
+| 13.8 | U1 tracks Dimitri, then `now` in the final round | The final round's single message mentions U1 under Dimitri (tracking lasts across rounds) |
+| 13.9 | Then `now` after the end | No messages. `sqlite3 test.db "select * from voting_gauntlet_tracker"` is empty, and clicks on the old buttons answer `This Voting Gauntlet has ended` |
+| 13.10 | `fetch_page` returns `113` with the same page, after U1 tracked something in 112 | The trackers of 112 are gone; old 112 buttons answer `This Voting Gauntlet has ended`, the new messages track in 113 |
+| 13.11 | `fetch_page` raises `aiohttp.ClientError()`, or returns a page with the `tournaments-art` classes changed (`normal` → `ahead`) | Log `Voting Gauntlet scores could not be read. Task will be skipped` with a traceback, no messages; the next minute tries again (the loop keeps running) |
+| 13.12 | `voting_gauntlet_channel_id` set to a channel the bot can't see | Log error `Channel … not found. Task will be skipped` |
+| 13.13 | U1 runs `~artping …` straight after clicking a Track button | Works: clicks are not commands and start no cooldown |
 
 ## Not testable by hand
 
