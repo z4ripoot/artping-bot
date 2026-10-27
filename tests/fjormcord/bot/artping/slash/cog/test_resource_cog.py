@@ -1,6 +1,6 @@
 from fjormcord.bot.artping.repository import resource_repository
 from fjormcord.bot.artping.model.resource import Resource
-from fjormcord.bot.artping.slash.resource_cog import ResourceCog
+from fjormcord.bot.artping.slash.cog.resource_cog import ResourceCog
 from tests.fakes import FakeInteraction, invoke
 
 

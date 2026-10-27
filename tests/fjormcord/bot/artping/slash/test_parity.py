@@ -1,9 +1,9 @@
 from fjormcord.bot.artping.legacy.commands import COMMANDS
-from fjormcord.bot.artping.slash.art_ping_cog import ArtPingCog, build_art_ping_command
-from fjormcord.bot.artping.slash.character_cog import CharacterCog
-from fjormcord.bot.artping.slash.currency_cog import CurrencyCog
-from fjormcord.bot.artping.slash.easter_egg_cog import EasterEggCog
-from fjormcord.bot.artping.slash.resource_cog import ResourceCog
+from fjormcord.bot.artping.slash.cog.art_ping_cog import ArtPingCog, build_art_ping_command
+from fjormcord.bot.artping.slash.cog.character_cog import CharacterCog
+from fjormcord.bot.artping.slash.cog.currency_cog import CurrencyCog
+from fjormcord.bot.artping.slash.cog.easter_egg_cog import EasterEggCog
+from fjormcord.bot.artping.slash.cog.resource_cog import ResourceCog
 
 # Slash-only: /resource posts a resource where ~(resource name) did, and the easter eggs are words in legacy
 SLASH_ONLY = {"resource", "lorenz", "chromk"}

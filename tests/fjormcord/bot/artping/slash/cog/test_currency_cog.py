@@ -1,5 +1,5 @@
 from fjormcord.bot.artping.repository import currency_repository
-from fjormcord.bot.artping.slash.currency_cog import CurrencyCog
+from fjormcord.bot.artping.slash.cog.currency_cog import CurrencyCog
 from tests.fakes import FakeClient, FakeInteraction, invoke
 
 

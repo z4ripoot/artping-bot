@@ -96,7 +96,7 @@ The tests move to mirror the source tree (`tests/fjormcord/bot/artping/legacy/..
 
 ### The slash package
 
-`fjormcord.bot.artping.slash`, one cog per feature:
+`fjormcord.bot.artping.slash`, one cog per feature (in `slash/cog/`, moved there later):
 
 | Cog | Commands |
 |---|---|

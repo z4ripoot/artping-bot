@@ -7,12 +7,12 @@ from fjormcord.bot.artping import config
 from fjormcord.bot.artping.coliseum import start_coliseum_notification
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.legacy.dispatch import handle_message
-from fjormcord.bot.artping.slash.art_ping_cog import ArtPingCog
-from fjormcord.bot.artping.slash.character_cog import CharacterCog
-from fjormcord.bot.artping.slash.character_vote_cog import CharacterVoteCog
-from fjormcord.bot.artping.slash.currency_cog import CurrencyCog
-from fjormcord.bot.artping.slash.easter_egg_cog import EasterEggCog
-from fjormcord.bot.artping.slash.resource_cog import ResourceCog
+from fjormcord.bot.artping.slash.cog.art_ping_cog import ArtPingCog
+from fjormcord.bot.artping.slash.cog.character_cog import CharacterCog
+from fjormcord.bot.artping.slash.cog.character_vote_cog import CharacterVoteCog
+from fjormcord.bot.artping.slash.cog.currency_cog import CurrencyCog
+from fjormcord.bot.artping.slash.cog.easter_egg_cog import EasterEggCog
+from fjormcord.bot.artping.slash.cog.resource_cog import ResourceCog
 from fjormcord.bot.artping.slash.sync import sync_commands
 from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS
 

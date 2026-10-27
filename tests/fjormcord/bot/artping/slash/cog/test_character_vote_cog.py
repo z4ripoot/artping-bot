@@ -5,7 +5,7 @@ from fjormcord.bot.artping import config
 from fjormcord.bot.artping.model.character_vote import CharacterVote
 from fjormcord.bot.artping.repository import character_vote_repository
 from fjormcord.bot.artping.service import character_vote_service
-from fjormcord.bot.artping.slash.character_vote_cog import CharacterVoteCog
+from fjormcord.bot.artping.slash.cog.character_vote_cog import CharacterVoteCog
 from fjormcord.bot.artping.vote_view import VOTE_BUTTON_ID, VoteView
 from tests.fakes import FakeChannel, FakeClient, FakeInteraction
 

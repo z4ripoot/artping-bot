@@ -1,5 +1,5 @@
 from fjormcord.bot.artping.easter_eggs import CHROMK, LORENZ_SMILE
-from fjormcord.bot.artping.slash.easter_egg_cog import EasterEggCog
+from fjormcord.bot.artping.slash.cog.easter_egg_cog import EasterEggCog
 from tests.fakes import FakeInteraction, invoke
 
 

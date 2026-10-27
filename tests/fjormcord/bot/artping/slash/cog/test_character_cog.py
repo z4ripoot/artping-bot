@@ -1,5 +1,5 @@
 from fjormcord.bot.artping.repository import alias_repository, character_repository, character_vote_repository
-from fjormcord.bot.artping.slash.character_cog import CharacterCog
+from fjormcord.bot.artping.slash.cog.character_cog import CharacterCog
 from fjormcord.bot.artping.vote_view import VoteView
 from tests.fakes import FakeInteraction, click, invoke
 

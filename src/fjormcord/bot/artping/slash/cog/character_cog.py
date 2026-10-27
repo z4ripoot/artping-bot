@@ -4,7 +4,7 @@ from discord.ext import commands
 
 from fjormcord.bot.artping.model.character_vote import VoteChannel
 from fjormcord.bot.artping.service import alias_service, character_service
-from fjormcord.bot.artping.slash.art_ping_cog import CHARACTER_DESCRIPTION
+from fjormcord.bot.artping.slash.cog.art_ping_cog import CHARACTER_DESCRIPTION
 from fjormcord.bot.artping.slash.options import character_choices, to_name
 from fjormcord.bot.artping.slash.runner import admin_command, run
 
