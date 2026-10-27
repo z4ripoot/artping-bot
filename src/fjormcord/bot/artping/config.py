@@ -28,6 +28,8 @@ class Settings:
     autocomplete_max_choices: int
     # None disables the Coliseum reminders
     coliseum_channel_id: int | None
+    # None disables the hourly Voting Gauntlet scores
+    voting_gauntlet_channel_id: int | None
     # How many characters the /artping command takes, between 1 and MAX_SLASH_OPTIONS
     art_ping_slash_max_characters: int
     # Reactions a non-admin's ~addcharacter vote needs before the character is added; below 2 there are no votes
@@ -57,6 +59,7 @@ def load_settings(path: Path) -> Settings:
 
     guild_id = config.get('discord', 'guild_id')
     channel_id = config.get('tasks', 'coliseum_notification_channel_id')
+    voting_gauntlet_channel_id = config.get('tasks', 'voting_gauntlet_channel_id')
     return Settings(
         discord_token=config.get('discord', 'token'),
         guild_id=int(guild_id) if guild_id else None,
@@ -65,6 +68,7 @@ def load_settings(path: Path) -> Settings:
         cooldown_seconds=config.getfloat('commands', 'cooldown_seconds'),
         autocomplete_max_choices=_get_between(config, 'commands', 'autocomplete_max_choices', MAX_AUTOCOMPLETE_CHOICES),
         coliseum_channel_id=int(channel_id) if channel_id else None,
+        voting_gauntlet_channel_id=int(voting_gauntlet_channel_id) if voting_gauntlet_channel_id else None,
         art_ping_slash_max_characters=_get_between(config, 'art_ping', 'slash_max_characters', MAX_SLASH_OPTIONS),
         character_votes_needed=config.getint('character_vote', 'votes_needed'),
         character_vote_emoji=config.get('character_vote', 'emoji'),

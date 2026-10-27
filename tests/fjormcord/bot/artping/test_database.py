@@ -142,8 +142,10 @@ def test_existing_votes_are_marked_as_reaction_votes(tmp_path):
     old = connect(path)
     old.close()
     old = sqlite3.connect(path)
-    # Back to version 6: drop what 007 added and rebuild the vote table as 005 made it
+    # Back to version 6: drop what 007 and later added and rebuild the vote table as 005 made it
     old.executescript("""
+        DROP TABLE VOTING_GAUNTLET_TRACKER;
+        DROP TABLE VOTING_GAUNTLET;
         DROP TABLE CHARACTER_VOTE_VOTER;
         DROP TABLE CHARACTER_VOTE;
         CREATE TABLE CHARACTER_VOTE (
@@ -156,7 +158,7 @@ def test_existing_votes_are_marked_as_reaction_votes(tmp_path):
 
     connection = connect(path)
 
-    assert user_version(connection) == 7
+    assert user_version(connection) == latest_version()
     assert connection.execute("SELECT USES_BUTTON FROM CHARACTER_VOTE").fetchall() == [(0,)]
     assert connection.execute("SELECT COUNT(*) FROM CHARACTER_VOTE_VOTER").fetchone() == (0,)
     connection.close()
