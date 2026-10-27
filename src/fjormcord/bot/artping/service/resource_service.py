@@ -5,7 +5,7 @@ import discord
 
 from fjormcord.bot.artping.model.resource import Resource
 from fjormcord.bot.artping.repository import resource_repository
-from fjormcord.bot.artping.util.message_util import CommandError
+from fjormcord.bot.artping.util.message_util import CommandError, logged
 
 # Plain ASCII, so names are easy to type and can't hold mention syntax
 _RESOURCE_NAME = re.compile(r"[A-Za-z0-9_-]+")
@@ -60,9 +60,7 @@ async def set_resource(client: discord.Client, name: str, link: str) -> str:
 
     resource_repository.set_resource(Resource(name, await _get_content(client, link), link))
 
-    out = f"Resource {name} has been set"
-    logging.info(out)
-    return out
+    return logged(f"Resource {name} has been set")
 
 
 def remove_resource(name: str) -> str:
@@ -74,9 +72,7 @@ def remove_resource(name: str) -> str:
 
     resource_repository.remove_resource(resource.name)
 
-    out = f"Resource {resource.name} has been removed"
-    logging.info(out)
-    return out
+    return logged(f"Resource {resource.name} has been removed")
 
 
 def list_resources(slash: bool = False) -> str:

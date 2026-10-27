@@ -1,3 +1,5 @@
+import logging
+
 import discord
 
 # Arguments are split on whitespace, so names of several words are written with underscores
@@ -19,6 +21,12 @@ class MissingArgument(Exception):
 class CommandError(Exception):
     # Raised by a handler to turn a command down; the client logs the message and sends it as the reply
     pass
+
+
+def logged(reply):
+    # Logs the reply of a command that changed something, and returns it
+    logging.info(reply)
+    return reply
 
 
 def get_entries(content):

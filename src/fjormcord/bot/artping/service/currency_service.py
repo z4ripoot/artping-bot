@@ -1,11 +1,10 @@
-import logging
 import math
 
 import discord
 
 from fjormcord.bot.artping.model.currency import Currency
 from fjormcord.bot.artping.repository import currency_repository
-from fjormcord.bot.artping.util.message_util import CommandError
+from fjormcord.bot.artping.util.message_util import CommandError, logged
 from fjormcord.bot.artping.util.user_util import get_username
 
 SCOREBOARD_PAGE_SIZE = 10
@@ -28,9 +27,7 @@ def add_currency(name: str) -> str:
 
     currency_repository.add_currency(name)
 
-    out = f"Currency {name} has been added"
-    logging.info(out)
-    return out
+    return logged(f"Currency {name} has been added")
 
 
 def remove_currency(name: str) -> str:
@@ -38,9 +35,7 @@ def remove_currency(name: str) -> str:
 
     currency_repository.remove_currency(currency.id)
 
-    out = f"Currency {currency.name} has been removed"
-    logging.info(out)
-    return out
+    return logged(f"Currency {currency.name} has been removed")
 
 
 def set_currency(user_id: str, name: str, amount: int) -> str:
@@ -53,9 +48,7 @@ def set_currency(user_id: str, name: str, amount: int) -> str:
 
     currency_repository.set_currency(user_id, currency.id, amount)
 
-    out = f"Your {currency.name} has been set to {amount}"
-    logging.info(out)
-    return out
+    return logged(f"Your {currency.name} has been set to {amount}")
 
 
 def clear_currency(user_id: str, name: str) -> str:
@@ -66,9 +59,7 @@ def clear_currency(user_id: str, name: str) -> str:
 
     currency_repository.clear_currency(user_id, currency.id)
 
-    out = f"Your {currency.name} has been cleared"
-    logging.info(out)
-    return out
+    return logged(f"Your {currency.name} has been cleared")
 
 
 def check_wallet(user_id: str, display_name: str, slash: bool = False) -> str:
