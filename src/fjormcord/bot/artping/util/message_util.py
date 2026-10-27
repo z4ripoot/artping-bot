@@ -1,4 +1,6 @@
+import inspect
 import logging
+from collections.abc import Awaitable
 
 import discord
 
@@ -18,6 +20,11 @@ def log_info(reply):
     # Logs the reply of a command that changed something, and returns it
     logging.info(reply)
     return reply
+
+
+async def await_reply(reply: str | Awaitable[str]) -> str:
+    # Handlers and services return their reply directly, or as a coroutine when they wait on Discord
+    return await reply if inspect.isawaitable(reply) else reply
 
 
 def get_entries(content):

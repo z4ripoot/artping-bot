@@ -1,8 +1,12 @@
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from time import monotonic
 
+import discord
+
 from fjormcord.bot.artping.exception.command_error import CommandError
+from fjormcord.bot.artping.util.user_util import is_administrator
 
 
 class Cooldowns:
@@ -32,3 +36,13 @@ class Cooldowns:
     def start(self, user_id: int):
         if self._seconds > 0:
             self._ends[user_id] = self._clock() + self._seconds
+
+    @contextmanager
+    def command(self, user: discord.abc.User) -> Iterator[None]:
+        # Runs the block as a command of user: turned down while their cooldown runs, and only a block that succeeds
+        # starts it, so a mistake can be corrected right away. Admins never get a cooldown, so checking it doesn't
+        # have to exempt them
+        self.check(user.id)
+        yield
+        if not is_administrator(user):
+            self.start(user.id)

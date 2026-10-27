@@ -1,4 +1,3 @@
-import inspect
 import logging
 from collections.abc import Awaitable, Callable
 
@@ -6,7 +5,7 @@ import discord
 from discord import app_commands
 
 from fjormcord.bot.artping.exception.command_error import CommandError
-from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS, split_message
+from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS, await_reply, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 
@@ -32,17 +31,10 @@ async def run(interaction: discord.Interaction, command_name: str, call: Callabl
         if _is_admin_command(interaction) and not is_administrator(interaction.user):
             raise CommandError("This command is for admins only")
         # One cooldown per user, shared with the ~ commands
-        interaction.client.cooldowns.check(interaction.user.id)
-
-        if defer:
-            await interaction.response.defer()
-
-        out = call()
-        if inspect.isawaitable(out):
-            out = await out
-
-        # Only a command that succeeded starts the cooldown, so a mistake can be corrected right away
-        _start_cooldown(interaction)
+        with interaction.client.cooldowns.command(interaction.user):
+            if defer:
+                await interaction.response.defer()
+            out = await await_reply(call())
     except CommandError as e:
         logging.warning(str(e))
         await _send(interaction, str(e), ephemeral=True)
@@ -64,9 +56,3 @@ async def _send(interaction: discord.Interaction, text: str, ephemeral: bool = F
         await interaction.followup.send(text, ephemeral=ephemeral, allowed_mentions=allowed_mentions)
     else:
         await interaction.response.send_message(text, ephemeral=ephemeral, allowed_mentions=allowed_mentions)
-
-
-def _start_cooldown(interaction: discord.Interaction):
-    # Admins never get a cooldown, so checking it doesn't have to exempt them
-    if not is_administrator(interaction.user):
-        interaction.client.cooldowns.start(interaction.user.id)
