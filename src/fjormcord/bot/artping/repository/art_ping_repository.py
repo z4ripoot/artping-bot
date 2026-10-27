@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 
-from fjormcord.bot.artping.database import execute, exists, get_database_connection
+from fjormcord.bot.artping.database import execute, exists, fetch_all, fetch_column
 from fjormcord.bot.artping.model.character import Character
 
 
@@ -23,8 +23,7 @@ def get_art_ping_users(character_ids: Sequence[int]) -> list[str]:
         WHERE P.CHARACTER_ID IN ({})
         """.format(','.join("?" * len(character_ids)))
 
-    # Each row holds just the one selected column
-    return [user_id for (user_id,) in get_database_connection().execute(sql, list(character_ids))]
+    return fetch_column(sql, list(character_ids))
 
 
 def add_ping(character_id: int, user_id: str):
@@ -58,4 +57,4 @@ def get_pings_from_user(user_id: str) -> list[Character]:
           ORDER BY C.NAME \
           """
 
-    return [Character(**row) for row in get_database_connection().execute(sql, (user_id,))]
+    return fetch_all(Character, sql, (user_id,))

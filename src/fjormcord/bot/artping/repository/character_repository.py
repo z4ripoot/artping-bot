@@ -1,4 +1,4 @@
-from fjormcord.bot.artping.database import execute, get_database_connection
+from fjormcord.bot.artping.database import execute, fetch_column, fetch_one
 from fjormcord.bot.artping.model.character import Character
 
 
@@ -11,8 +11,7 @@ def get_character(name: str) -> Character | None:
            OR C.CHARACTER_ID IN (SELECT A.CHARACTER_ID FROM ALIAS A WHERE A.ALIAS = ?)
         """
 
-    row = get_database_connection().execute(sql, (name, name)).fetchone()
-    return Character(**row) if row else None
+    return fetch_one(Character, sql, (name, name))
 
 
 def get_all_names(prefix: str = "", limit: int = -1) -> list[str]:
@@ -26,8 +25,7 @@ def get_all_names(prefix: str = "", limit: int = -1) -> list[str]:
         LIMIT ?
         """
 
-    # Each row holds just the one selected column
-    return [name for (name,) in get_database_connection().execute(sql, (prefix, prefix, limit))]
+    return fetch_column(sql, (prefix, prefix, limit))
 
 
 def add_character(character_name: str):

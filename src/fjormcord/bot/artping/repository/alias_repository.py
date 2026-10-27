@@ -1,4 +1,4 @@
-from fjormcord.bot.artping.database import execute, exists, get_database_connection
+from fjormcord.bot.artping.database import execute, exists, fetch_column, get_database_connection
 
 
 def has_alias(character_id: int, alias: str) -> bool:
@@ -20,8 +20,7 @@ def get_aliases(character_id: int) -> list[str]:
         ORDER BY A.ALIAS
         """
 
-    # Each row holds just the one selected column
-    return [alias for (alias,) in get_database_connection().execute(sql, (character_id,))]
+    return fetch_column(sql, (character_id,))
 
 
 def add_alias(character_id: int, alias: str):

@@ -1,7 +1,8 @@
 import logging
 from collections.abc import Iterable
 
-from fjormcord.bot.artping.database import execute, exists, get_database_connection
+from fjormcord.bot.artping.database import (execute, exists, fetch_all, fetch_one, fetch_value,
+                                            get_database_connection)
 from fjormcord.bot.artping.model.character_vote import CharacterVote
 
 _SELECT_VOTE = """
@@ -22,17 +23,15 @@ def add_vote(vote: CharacterVote):
 
 
 def get_vote(message_id: str) -> CharacterVote | None:
-    row = get_database_connection().execute(_SELECT_VOTE + "WHERE V.MESSAGE_ID = ?", (message_id,)).fetchone()
-    return CharacterVote(**row) if row else None
+    return fetch_one(CharacterVote, _SELECT_VOTE + "WHERE V.MESSAGE_ID = ?", (message_id,))
 
 
 def get_votes() -> list[CharacterVote]:
-    return [CharacterVote(**row) for row in get_database_connection().execute(_SELECT_VOTE)]
+    return fetch_all(CharacterVote, _SELECT_VOTE)
 
 
 def get_votes_for(character_name: str) -> list[CharacterVote]:
-    rows = get_database_connection().execute(_SELECT_VOTE + "WHERE V.CHARACTER_NAME = ?", (character_name,))
-    return [CharacterVote(**row) for row in rows]
+    return fetch_all(CharacterVote, _SELECT_VOTE + "WHERE V.CHARACTER_NAME = ?", (character_name,))
 
 
 def remove_vote(message_id: str):
@@ -90,7 +89,7 @@ def count_voters(message_id: str) -> int:
         WHERE MESSAGE_ID = ?
         """
 
-    return get_database_connection().execute(sql, (message_id,)).fetchone()[0]
+    return fetch_value(sql, (message_id,))
 
 
 def convert_vote(message_id: str, user_ids: Iterable[str]):

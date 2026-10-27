@@ -1,8 +1,12 @@
 import logging
 import sqlite3
+from collections.abc import Callable
+from typing import TypeVar
 
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.util.name_util import normalize_name
+
+Model = TypeVar("Model")
 
 # Numbered scripts (001_initial_schema.sql, ...); a database's user_version is the number of the last one applied to it
 MIGRATIONS_PATH = config.PROJECT_ROOT / 'db' / 'migrations'
@@ -25,6 +29,28 @@ def execute(sql, parameters=()):
 def exists(sql, parameters=()) -> bool:
     # Whether the query finds a row
     return get_database_connection().execute(sql, parameters).fetchone() is not None
+
+
+def fetch_one(model: Callable[..., Model], sql, parameters=()) -> Model | None:
+    # The row found as a model, its columns aliased to the model's fields; None when there is none
+    row = get_database_connection().execute(sql, parameters).fetchone()
+    return model(**row) if row else None
+
+
+def fetch_all(model: Callable[..., Model], sql, parameters=()) -> list[Model]:
+    # Every row found as a model, its columns aliased to the model's fields
+    return [model(**row) for row in get_database_connection().execute(sql, parameters)]
+
+
+def fetch_column(sql, parameters=()) -> list:
+    # The values of a query that selects one column
+    return [value for (value,) in get_database_connection().execute(sql, parameters)]
+
+
+def fetch_value(sql, parameters=()):
+    # The first column of the first row found; None when there is none
+    row = get_database_connection().execute(sql, parameters).fetchone()
+    return row[0] if row else None
 
 
 def connect(path):

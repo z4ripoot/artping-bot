@@ -1,11 +1,10 @@
 import logging
 
-from fjormcord.bot.artping.database import execute, exists, get_database_connection
+from fjormcord.bot.artping.database import execute, exists, fetch_column, fetch_value, get_database_connection
 
 
 def get_running_tournament() -> int | None:
-    row = get_database_connection().execute("SELECT TOURNAMENT_ID FROM VOTING_GAUNTLET").fetchone()
-    return row[0] if row else None
+    return fetch_value("SELECT TOURNAMENT_ID FROM VOTING_GAUNTLET")
 
 
 def set_running_tournament(tournament_id: int):
@@ -60,5 +59,4 @@ def get_trackers(tournament_id: int, character_name: str) -> list[str]:
         ORDER BY USER
         """
 
-    rows = get_database_connection().execute(sql, (tournament_id, character_name))
-    return [user_id for (user_id,) in rows]
+    return fetch_column(sql, (tournament_id, character_name))
