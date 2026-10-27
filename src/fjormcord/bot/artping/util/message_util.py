@@ -36,6 +36,16 @@ def get_single_name(content, argument):
     return entries[0]
 
 
+def get_two_entries(content, first, second):
+    # For commands that take exactly two arguments; first and second say what they are, e.g. "currency name", "amount"
+    entries = get_entries(content)
+    if len(entries) > 2:
+        raise CommandError(MESSAGE_ONE_NAME_ONLY)
+    if len(entries) < 2:
+        raise MissingArgument(second if entries else first)
+    return entries[0], entries[1]
+
+
 # Splits text into chunks within Discord's message length limit; each chunk is sent as a separate message
 def split_message(text, limit=MAX_MESSAGE_LENGTH):
     chunks = []

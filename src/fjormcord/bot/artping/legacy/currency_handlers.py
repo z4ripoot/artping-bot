@@ -2,7 +2,7 @@ import discord
 
 from fjormcord.bot.artping.service import currency_service
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, CommandError, MissingArgument, \
-    get_entries, get_single_name
+    get_entries, get_single_name, get_two_entries
 
 
 def add_currency(client: discord.Client, message: discord.Message) -> str:
@@ -14,16 +14,7 @@ def remove_currency(client: discord.Client, message: discord.Message) -> str:
 
 
 def set_currency(client: discord.Client, message: discord.Message) -> str:
-    entries = get_entries(message.content)
-
-    if not entries:
-        raise MissingArgument("currency name")
-    if len(entries) > 2:
-        raise CommandError(MESSAGE_ONE_NAME_ONLY)
-    if len(entries) == 1:
-        raise MissingArgument("amount")
-
-    entry, amount_entry = entries
+    entry, amount_entry = get_two_entries(message.content, "currency name", "amount")
 
     try:
         amount = int(amount_entry)
