@@ -3,6 +3,7 @@ import inspect
 import itertools
 from dataclasses import replace
 from types import SimpleNamespace
+from typing import NamedTuple
 
 import discord
 
@@ -192,6 +193,13 @@ def click(client, message, user_id, administrator=False):
     return asyncio.run(character_vote_service.toggle_vote(client, message, make_member(user_id, administrator)))
 
 
+class Sent(NamedTuple):
+    # A message sent in answer to an interaction; allowed_mentions is None for the client's default
+    content: str
+    ephemeral: bool
+    allowed_mentions: discord.AllowedMentions | None
+
+
 class FakeInteractionResponse:
     def __init__(self, interaction):
         self._interaction = interaction
@@ -241,11 +249,11 @@ class FakeInteraction:
         self.followup = FakeFollowup(self)
         # The app command being run, set by invoke; None for a component click
         self.command = None
-        # (content, ephemeral, allowed_mentions) of everything sent, as response or follow-up
-        self.sent = []
+        # Everything sent, as response or follow-up
+        self.sent: list[Sent] = []
 
     def record(self, content, ephemeral, allowed_mentions, view):
-        self.sent.append((content, ephemeral, allowed_mentions))
+        self.sent.append(Sent(content, ephemeral, allowed_mentions))
         return self.channel.post(content, view)
 
 

@@ -13,7 +13,7 @@ def test_admin_add_character():
     invoke(cog.add_character, interaction, cog, character="black knight")
 
     assert interaction.response.deferred == [{}]
-    assert interaction.sent[0][0] == "Character Black_Knight has been added"
+    assert interaction.sent[0].content == "Character Black_Knight has been added"
     assert character_repository.get_character("Black_Knight") is not None
 
 
@@ -38,7 +38,9 @@ def test_add_character_vote_refused_in_dms():
 
     invoke(cog.add_character, interaction, cog, character="Lucina")
 
-    assert interaction.sent == [("Votes can only be started in a server", True, interaction.sent[0][2])]
+    assert [(sent.content, sent.ephemeral) for sent in interaction.sent] == [
+        ("Votes can only be started in a server", True)
+    ]
     assert character_repository.get_character("Lucina") is None
 
 
@@ -53,7 +55,8 @@ def test_admin_commands_hidden_and_checked():
 
     invoke(cog.remove_character, interaction, cog, character="Lucina")
 
-    assert interaction.sent[0][:2] == ("This command is for admins only", True)
+    assert interaction.sent[0].content == "This command is for admins only"
+    assert interaction.sent[0].ephemeral is True
     assert character_repository.get_character("Lucina") is not None
 
 
@@ -66,7 +69,7 @@ def test_add_alias_with_spaces():
 
     character = character_repository.get_character("Black_Knight")
     assert alias_repository.has_alias(character.id, "Zelgius_The_Knight")
-    assert "Zelgius_The_Knight" in interaction.sent[0][0]
+    assert "Zelgius_The_Knight" in interaction.sent[0].content
 
 
 def test_check_remove_alias_and_primary_name():
@@ -80,6 +83,6 @@ def test_check_remove_alias_and_primary_name():
     invoke(cog.check_character, check, cog, character="Lucina")
     invoke(cog.remove_alias, remove, cog, character="Marth_Mask", alias="Lucina")
 
-    assert "Marth_Mask" in primary.sent[0][0]
-    assert check.sent[0][0].startswith("Character entry found for Marth_Mask")
-    assert "has been removed" in remove.sent[0][0]
+    assert "Marth_Mask" in primary.sent[0].content
+    assert check.sent[0].content.startswith("Character entry found for Marth_Mask")
+    assert "has been removed" in remove.sent[0].content

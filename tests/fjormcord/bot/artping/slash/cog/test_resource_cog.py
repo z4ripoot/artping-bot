@@ -24,7 +24,8 @@ def test_unknown_resource_is_refused():
 
     invoke(cog.resource, interaction, cog, name="hof")
 
-    assert interaction.sent[0][:2] == ("Resource hof doesn't exist", True)
+    assert interaction.sent[0].content == "Resource hof doesn't exist"
+    assert interaction.sent[0].ephemeral is True
 
 
 def test_long_resource_is_split():
@@ -44,7 +45,8 @@ def test_resource_name_with_space_is_refused():
 
     invoke(cog.set_resource, interaction, cog, name="hall of fame", link="https://example.com")
 
-    assert interaction.sent[0][:2] == ("Resource names can only contain letters, digits, _ and -", True)
+    assert interaction.sent[0].content == "Resource names can only contain letters, digits, _ and -"
+    assert interaction.sent[0].ephemeral is True
 
 
 def test_set_list_and_remove_resource():
@@ -61,11 +63,12 @@ def test_set_list_and_remove_resource():
     invoke(cog.resources, listed, cog)
     invoke(cog.remove_resource, removed, cog, name="HOF")
 
-    assert refused.sent[0][:2] == ("This command is for admins only", True)
+    assert refused.sent[0].content == "This command is for admins only"
+    assert refused.sent[0].ephemeral is True
     assert added.response.deferred == [{}]
-    assert added.sent[0][0] == "Resource hof has been set"
-    assert listed.sent[0][0] == "Resources: hof (post one with /resource)"
-    assert removed.sent[0][0] == "Resource hof has been removed"
+    assert added.sent[0].content == "Resource hof has been set"
+    assert listed.sent[0].content == "Resources: hof (post one with /resource)"
+    assert removed.sent[0].content == "Resource hof has been removed"
     for command in (cog.set_resource, cog.remove_resource):
         assert command.default_permissions.administrator
         assert command.guild_only

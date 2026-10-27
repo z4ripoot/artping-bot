@@ -11,7 +11,7 @@ def test_set_currency():
     invoke(cog.set_currency, interaction, cog, currency="orbs", amount=50)
 
     assert currency_repository.get_wallet("4")[0].amount == 50
-    assert interaction.sent[0][1] is False
+    assert interaction.sent[0].ephemeral is False
 
 
 def test_amount_too_large_is_refused_by_the_service():
@@ -21,7 +21,8 @@ def test_amount_too_large_is_refused_by_the_service():
 
     invoke(cog.set_currency, interaction, cog, currency="Orbs", amount=2**63)
 
-    assert interaction.sent[0][:2] == ("Failed to set currency. The amount is too large", True)
+    assert interaction.sent[0].content == "Failed to set currency. The amount is too large"
+    assert interaction.sent[0].ephemeral is True
 
 
 def test_clear_currency():
@@ -41,7 +42,7 @@ def test_empty_wallet_names_slash_command():
 
     invoke(cog.check_wallet, interaction, cog)
 
-    assert interaction.sent[0][0] == "Your wallet is empty. Use /setcurrency to add a currency"
+    assert interaction.sent[0].content == "Your wallet is empty. Use /setcurrency to add a currency"
 
 
 def test_wallet_names_the_member():
@@ -53,7 +54,7 @@ def test_wallet_names_the_member():
 
     invoke(cog.check_wallet, interaction, cog)
 
-    assert interaction.sent[0][0].startswith("User Lissa's wallet:")
+    assert interaction.sent[0].content.startswith("User Lissa's wallet:")
 
 
 def test_scoreboard_next_page_hint():
@@ -67,7 +68,7 @@ def test_scoreboard_next_page_hint():
     invoke(cog.scoreboard, interaction, cog, currency="Orbs", page=1)
 
     assert interaction.response.deferred == [{}]
-    assert interaction.sent[0][0].endswith("Use /scoreboard currency:Orbs page:2 for the next page")
+    assert interaction.sent[0].content.endswith("Use /scoreboard currency:Orbs page:2 for the next page")
 
 
 def test_admin_currency_commands_are_admin_only():
@@ -83,7 +84,8 @@ def test_admin_currency_commands_are_admin_only():
     removed = FakeInteraction(administrator=True)
     invoke(cog.remove_currency, removed, cog, currency="orbs")
 
-    assert refused.sent[0][:2] == ("This command is for admins only", True)
-    assert added.sent[0][0] == "Currency Orbs has been added"
-    assert removed.sent[0][0] == "Currency Orbs has been removed"
+    assert refused.sent[0].content == "This command is for admins only"
+    assert refused.sent[0].ephemeral is True
+    assert added.sent[0].content == "Currency Orbs has been added"
+    assert removed.sent[0].content == "Currency Orbs has been removed"
     assert currency_repository.get_currency_names() == []
