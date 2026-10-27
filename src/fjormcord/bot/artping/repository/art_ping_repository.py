@@ -7,11 +7,11 @@ from fjormcord.bot.artping.model.character import Character
 
 def has_ping(character_id: int, user_id: str) -> bool:
     sql = """
-          SELECT 1
-          FROM PINGS P
-          WHERE P.CHARACTER_ID = ?
-            AND P.USER = ? \
-          """
+        SELECT 1
+        FROM PINGS P
+        WHERE P.CHARACTER_ID = ?
+          AND P.USER = ?
+        """
 
     return exists(sql, (character_id, user_id))
 
@@ -21,16 +21,16 @@ def get_art_ping_users(character_ids: Sequence[int]) -> list[str]:
         SELECT DISTINCT P.USER
         FROM PINGS P
         WHERE P.CHARACTER_ID IN ({})
-        """.format(','.join("?" * len(character_ids)))
+        """.format(",".join("?" * len(character_ids)))
 
     return fetch_column(sql, list(character_ids))
 
 
 def add_ping(character_id: int, user_id: str):
     sql = """
-          INSERT INTO PINGS (CHARACTER_ID, USER)
-          VALUES (?, ?) \
-          """
+        INSERT INTO PINGS (CHARACTER_ID, USER)
+        VALUES (?, ?)
+        """
 
     logging.info("Adding ping for character %s and user %s", character_id, user_id)
     execute(sql, (character_id, user_id))
@@ -38,11 +38,10 @@ def add_ping(character_id: int, user_id: str):
 
 def remove_ping(character_id: int, user_id: str):
     sql = """
-          DELETE
-          FROM PINGS
-          WHERE CHARACTER_ID = ?
-            AND USER = ? \
-          """
+        DELETE FROM PINGS
+        WHERE CHARACTER_ID = ?
+          AND USER = ?
+        """
 
     logging.info("Removing ping for character %s and user %s", character_id, user_id)
     execute(sql, (character_id, user_id))
@@ -50,11 +49,11 @@ def remove_ping(character_id: int, user_id: str):
 
 def get_pings_from_user(user_id: str) -> list[Character]:
     sql = """
-          SELECT C.CHARACTER_ID AS id, C.NAME AS name
-          FROM PINGS P
-                   JOIN CHARACTERS C ON P.CHARACTER_ID = C.CHARACTER_ID
-          WHERE P.USER = ?
-          ORDER BY C.NAME \
-          """
+        SELECT C.CHARACTER_ID AS id, C.NAME AS name
+        FROM PINGS P
+        JOIN CHARACTERS C ON P.CHARACTER_ID = C.CHARACTER_ID
+        WHERE P.USER = ?
+        ORDER BY C.NAME
+        """
 
     return fetch_all(Character, sql, (user_id,))
