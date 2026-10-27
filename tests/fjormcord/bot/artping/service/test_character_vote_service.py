@@ -20,7 +20,6 @@ ADMIN_ID = 9
 
 
 def set_votes_needed(monkeypatch, votes_needed):
-    # Whatever a local config.ini sets
     monkeypatch.setattr(config, "_settings", replace(config.read_settings(), character_votes_needed=votes_needed,
                                                      character_vote_emoji=EMOJI))
 

@@ -1,3 +1,4 @@
+import configparser
 import logging
 import sys
 
@@ -14,7 +15,11 @@ def main():
         handlers=[logging.StreamHandler()]
     )
 
-    token = config.read_settings().discord_token
+    # A missing config.ini or setting stops the bot with what is wrong, see config.example.ini
+    try:
+        token = config.read_settings().discord_token
+    except (OSError, configparser.Error, ValueError) as e:
+        sys.exit(f"Invalid configuration: {e}")
     if not token:
         sys.exit("No Discord token configured. Create config.ini with your bot's token, see README.md")
 

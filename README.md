@@ -50,7 +50,7 @@ Every command above is also available as a slash command with the same name, e.g
 # Local setup
 1. Create a bot of your own in the [Discord developer portal](https://discord.com/developers/applications), enable the "Message Content Intent" and invite it to a test server with the `bot` and `applications.commands` scopes. The slash commands need the second one: a bot that was invited before they existed (such as the production bot) has to be invited again, which keeps its settings.
 2. Install the bot and its test dependencies: `python -m venv .venv`, then `.venv/Scripts/python -m pip install -e ".[dev]"` (use `.venv/bin/python` on Linux/macOS).
-3. Create `config.ini` in the repository root with your bot's token:
+3. Copy `config.example.ini` to `config.ini` in the repository root, and fill in your bot's token and your test server's ID:
    ```ini
    [discord]
    token=<your bot token>
@@ -62,12 +62,12 @@ Every command above is also available as a slash command with the same name, e.g
 Run the tests with `.venv/Scripts/python -m pytest`. They need neither a token nor `config.ini`.
 
 # Configuration
-The defaults are in `config.example.ini`, which is committed. `config.ini` is not committed: any property you put there overrides the default.
+The bot reads only `config.ini`, which is not committed. It must hold every property: the bot doesn't start when the file or a property is missing, and says which. `config.example.ini`, which is committed, is a complete example to copy; the values below in brackets are the example's.
  * You have to provide your token of Discord bot to the property "discord.token". Only put it in config.ini
  * The database is stored at the path in the property "database.path". A database that doesn't exist yet is created on startup
- * The property "discord.guild_id" (default empty) is for development, see Local setup. Leave it empty in production, which registers the slash commands globally
- * The property "commands.cooldown_seconds" (default 1) is how many seconds a user has to wait after using a command, `~` or slash, before they can use another one. Only a command that worked starts it, admins don't have to wait, and 0 turns the cooldown off
- * The property "art_ping.slash_max_characters" (default 10, between 1 and 25) is how many characters /artping takes. Changing it takes effect after a restart
+ * The property "discord.guild_id" (example: empty) is for development, see Local setup. Leave it empty in production, which registers the slash commands globally
+ * The property "commands.cooldown_seconds" (example: 1) is how many seconds a user has to wait after using a command, `~` or slash, before they can use another one. Only a command that worked starts it, admins don't have to wait, and 0 turns the cooldown off
+ * The property "art_ping.slash_max_characters" (example: 10, between 1 and 25) is how many characters /artping takes. Changing it takes effect after a restart
  * The properties "character_vote.votes_needed" (default 5) and "character_vote.emoji" (default ⭐) control voting: a non-admin's ~addcharacter or /addcharacter posts a vote message with a Vote button (showing the emoji and the count, e.g. "Vote (1/5)"), and the character is added once that many users have clicked it, or as soon as an admin does. Clicking again takes your vote back. With fewer than 2 votes needed there are no votes: non-admins add characters directly, like admins. A custom server emoji is written as `<:name:id>`. It must be a valid Unicode emoji or a custom emoji of a server the bot is in, or votes can't be started. Open votes and their voters are stored in the database, so they survive restarts and don't expire. Clicks made while the bot is offline fail and can be repeated. At every start the open votes are re-rendered, so they show the current "character_vote.votes_needed". Votes that were still counted by ⭐ reactions when the button came are converted at the first start: the users who reacted become voters. The bot needs the "Read Message History" permission in the channels where votes are started (to check open votes at startup and for the conversion; "Add Reactions" is no longer needed)
  * Resources copy the text of a Discord message when they are set, so the bot needs "Read Message History" in the channel of that message. Later edits of the message are not followed: set the resource again to refresh it
  * Optionally, you can provide the ID of a channel to property "coliseum_notification_channel_id". The FEH coliseum notifications are sent to this channel, otherwise no notifications will be sent. To copy a channel's ID, enable Developer Mode in Discord (User Settings > Advanced), then right-click the channel and choose "Copy Channel ID"

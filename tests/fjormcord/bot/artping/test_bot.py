@@ -18,7 +18,7 @@ from tests.fakes import FakeClock, make_message
 @pytest.fixture
 def bot():
     client = ArtPingClient(intents=discord.Intents.default())
-    # No cooldown, whatever a local config.ini sets, so a test can send one user's commands in a row
+    # No cooldown, so a test can send one user's commands in a row
     client.cooldowns = Cooldowns(0)
     return client
 

@@ -38,6 +38,16 @@ def test_missing_token_exits_with_setup_hint(monkeypatch):
     assert RecordingClient.started_with is None
 
 
+def test_missing_config_exits_with_setup_hint(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "read_settings", lambda: config.load_settings(tmp_path / "config.ini"))
+    monkeypatch.setattr(main_module, "ArtPingClient", RecordingClient)
+
+    with pytest.raises(SystemExit, match="Invalid configuration: .* Copy config.example.ini to config.ini"):
+        main_module.main()
+
+    assert RecordingClient.started_with is None
+
+
 def test_database_is_opened_before_connecting_to_discord(monkeypatch):
     # A failing migration then stops the bot at startup instead of failing every command
     use_token(monkeypatch, "secret")

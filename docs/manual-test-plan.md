@@ -8,7 +8,7 @@ slash command, and sections 7 and 12 cover the vote button.
 
 - **Invite:** the test bot is invited with the `applications.commands` scope as well as `bot`.
 - **Accounts:** **A** is a server admin, **U1** and **U2** are non-admins. A DM with the bot is used for the DM cases.
-- **Test `config.ini`:**
+- **Test `config.ini`:** a copy of `config.example.ini` with these changed:
   ```ini
   [discord]
   token=<test bot token>

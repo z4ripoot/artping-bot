@@ -19,18 +19,17 @@ start, without a separate migration step.
 
 ## Configuration (`config.py`)
 
-- `config.example.ini` (committed) holds a default for every setting; `config.ini` (gitignored, edited by hand
-  in production) is read after it and overrides any setting. Both are in the repository root and read as
-  UTF-8, with or without a byte order mark.
-- Both files, and relative paths in them, are located against the repository root, not the working
-  directory.
+- The bot reads only `config.ini` (gitignored, edited by hand in production), in the repository root, as
+  UTF-8 with or without a byte order mark. There are no defaults: it holds every setting.
+  `config.example.ini` (committed) is a complete example to copy.
+- The file, and relative paths in it, are located against the repository root, not the working directory.
 - They are read once into a frozen `Settings` dataclass (`config.read_settings()`); code uses its typed
   fields, not section and key names.
-- A setting missing from both files stops the bot at startup.
-- Adding a setting means a default in `config.example.ini`, a `Settings` field and its parsing in
-  `load_settings`. A token never goes in `config.example.ini`.
+- A missing `config.ini`, or a setting missing from it, stops the bot at startup with a message.
+- Adding a setting means the setting in `config.example.ini`, a `Settings` field and its parsing in
+  `load_settings`, and adding it to production's `config.ini`. A token never goes in `config.example.ini`.
 
-| Setting | Default | Meaning |
+| Setting | Example | Meaning |
 |---|---|---|
 | `discord.token` | empty | the bot's token; empty exits at startup |
 | `database.path` | `test.db` | the SQLite file, created when missing |
@@ -72,4 +71,5 @@ Resetting a local database means deleting the file; it is recreated on the next 
 ## Tests
 
 `tests/fjormcord/bot/artping/test_config.py`, `test_database.py`, `test_main.py`. Tests need neither
-`config.ini` nor a database file: an autouse fixture swaps in an in-memory database.
+`config.ini` nor a database file: they run with the settings of `config.example.ini`, and an autouse
+fixture swaps in an in-memory database.
