@@ -23,7 +23,7 @@ table entry, and `~help` stays in step with the table automatically.
    the bot spam. An admin is a member with the server's Administrator permission; in DMs nobody is an admin.
 5. The cooldown is checked, the handler runs, and its reply is sent.
 
-The table, the handlers (`legacy/*_handlers.py`, which only parse the message and call a service function) and
+The table, the handlers (`legacy/handler/*_handlers.py`, which only parse the message and call a service function) and
 the dispatch all live in the `legacy` package.
 
 ## Arguments

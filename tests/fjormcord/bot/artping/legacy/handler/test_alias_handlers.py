@@ -1,5 +1,5 @@
 from fjormcord.bot.artping.repository.character_repository import add_character, get_character
-from fjormcord.bot.artping.legacy.alias_handlers import add_alias, remove_alias, set_primary_name
+from fjormcord.bot.artping.legacy.handler.alias_handlers import add_alias, remove_alias, set_primary_name
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
 from tests.fakes import make_message, reply
 
