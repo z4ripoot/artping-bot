@@ -6,7 +6,7 @@ from fjormcord.bot.artping.service import currency_service
 from fjormcord.bot.artping.slash.options import currency_choices, to_name
 from fjormcord.bot.artping.slash.runner import admin_command, run
 
-CURRENCY_DESCRIPTION = "The currency's name; spaces are fine"
+CURRENCY_DESCRIPTION = "The currency's name"
 
 
 class CurrencyCog(commands.Cog):

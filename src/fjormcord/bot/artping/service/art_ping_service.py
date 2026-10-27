@@ -4,7 +4,7 @@ from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.repository import art_ping_repository, character_repository
 from fjormcord.bot.artping.service.character_service import require_character
-from fjormcord.bot.artping.util.message_util import logged
+from fjormcord.bot.artping.util.message_util import log_info
 from fjormcord.bot.artping.util.name_util import normalize_name
 
 
@@ -57,7 +57,7 @@ def add_ping(user_id: str, name: str) -> str:
 
     art_ping_repository.add_ping(character.id, user_id)
 
-    return logged(f"Ping for {character.name} has been added")
+    return log_info(f"Ping for {character.name} has been added")
 
 
 def remove_ping(user_id: str, name: str) -> str:
@@ -68,7 +68,7 @@ def remove_ping(user_id: str, name: str) -> str:
 
     art_ping_repository.remove_ping(character.id, user_id)
 
-    return logged(f"Ping for {character.name} has been removed")
+    return log_info(f"Ping for {character.name} has been removed")
 
 
 def check_ping(user_id: str) -> str:

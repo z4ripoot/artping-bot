@@ -11,7 +11,7 @@ class EasterEggCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="lorenz", description="Thank Lorenz")
+    @app_commands.command(name="lorenz")
     async def lorenz(self, interaction: discord.Interaction):
         await run(interaction, "lorenz", lambda: easter_eggs.LORENZ_SMILE)
 

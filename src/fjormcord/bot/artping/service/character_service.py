@@ -6,7 +6,7 @@ from fjormcord.bot.artping.model.character_vote import VoteChannel
 from fjormcord.bot.artping.repository import alias_repository, art_ping_repository, character_repository
 # Imported as a module, since character_vote_service imports this one too
 from fjormcord.bot.artping.service import character_vote_service
-from fjormcord.bot.artping.util.message_util import logged
+from fjormcord.bot.artping.util.message_util import log_info
 from fjormcord.bot.artping.util.name_util import normalize_name
 from fjormcord.bot.artping.util.user_util import get_username, is_administrator
 
@@ -40,7 +40,7 @@ async def add_character(client: discord.Client, user: discord.abc.User, name: st
     character_repository.add_character(entry)
     await character_vote_service.close_votes(client, entry)
 
-    return logged(f"Character {entry} has been added")
+    return log_info(f"Character {entry} has been added")
 
 
 def remove_character(name: str) -> str:
@@ -48,7 +48,7 @@ def remove_character(name: str) -> str:
 
     character_repository.remove_character(character.id)
 
-    return logged(f"Character {character.name} has been removed")
+    return log_info(f"Character {character.name} has been removed")
 
 
 async def check_character(client: discord.Client, name: str) -> str:

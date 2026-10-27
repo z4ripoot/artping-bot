@@ -14,7 +14,7 @@ ALLOWED_MENTIONS = discord.AllowedMentions(everyone=False, roles=False, users=Tr
 MAX_MESSAGE_LENGTH = 2000
 
 
-def logged(reply):
+def log_info(reply):
     # Logs the reply of a command that changed something, and returns it
     logging.info(reply)
     return reply

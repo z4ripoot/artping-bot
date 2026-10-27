@@ -36,9 +36,11 @@ async def run(interaction: discord.Interaction, command_name: str, call: Callabl
 
         if defer:
             await interaction.response.defer()
+
         out = call()
         if inspect.isawaitable(out):
             out = await out
+
         # Only a command that succeeded starts the cooldown, so a mistake can be corrected right away
         _start_cooldown(interaction)
     except CommandError as e:
