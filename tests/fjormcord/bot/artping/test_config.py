@@ -23,6 +23,7 @@ def test_example_is_a_complete_config():
     assert settings.discord_token == ""
     assert settings.database_path == EXAMPLE_CONFIG_FILE.parent / "test.db"
     assert settings.cooldown_seconds == 1
+    assert settings.autocomplete_max_choices == 20
     assert settings.coliseum_channel_id is None
     assert settings.guild_id is None
     assert settings.art_ping_slash_max_characters == 10
@@ -34,6 +35,7 @@ def test_example_is_a_complete_config():
 def test_settings_are_read_from_the_file(tmp_path):
     path = write_config(tmp_path, {("discord", "token"): "secret", ("discord", "guild_id"): "456",
                                    ("commands", "cooldown_seconds"): "2.5",
+                                   ("commands", "autocomplete_max_choices"): "7",
                                    ("art_ping", "slash_max_characters"): "3",
                                    ("tasks", "coliseum_notification_channel_id"): "123",
                                    ("character_vote", "votes_needed"): "3",
@@ -43,6 +45,7 @@ def test_settings_are_read_from_the_file(tmp_path):
 
     assert settings.discord_token == "secret"
     assert settings.cooldown_seconds == 2.5
+    assert settings.autocomplete_max_choices == 7
     assert settings.coliseum_channel_id == 123
     assert settings.guild_id == 456
     assert settings.art_ping_slash_max_characters == 3
@@ -52,11 +55,12 @@ def test_settings_are_read_from_the_file(tmp_path):
     assert settings.database_path == tmp_path / "test.db"
 
 
+@pytest.mark.parametrize("setting", [("art_ping", "slash_max_characters"), ("commands", "autocomplete_max_choices")])
 @pytest.mark.parametrize("value", ["0", "26"])
-def test_slash_max_characters_must_fit_discord_limit(tmp_path, value):
-    path = write_config(tmp_path, {("art_ping", "slash_max_characters"): value})
+def test_discord_limits_are_enforced(tmp_path, setting, value):
+    path = write_config(tmp_path, {setting: value})
 
-    with pytest.raises(ValueError, match="art_ping.slash_max_characters must be between 1 and 25"):
+    with pytest.raises(ValueError, match=f"{setting[0]}.{setting[1]} must be between 1 and 25"):
         load_settings(path)
 
 

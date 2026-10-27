@@ -47,11 +47,18 @@ def test_resource_choices_match_prefix():
     assert names(asyncio.run(resource_choices(None, "HO"))) == ["hof"]
 
 
-def test_choices_are_capped_at_25():
+def test_choices_are_the_first_20_matches():
+    character_repository.add_character("Lucina")
     for number in range(30):
         character_repository.add_character(f"Hero{number:02}")
 
     choices = asyncio.run(character_choices(None, "hero"))
 
-    assert len(choices) == 25
-    assert choices[0].value == "Hero00"
+    assert names(choices) == [f"Hero{number:02}" for number in range(20)]
+
+
+def test_underscore_in_prefix_is_not_a_wildcard():
+    character_repository.add_character("Black_Knight")
+    character_repository.add_character("Blackx")
+
+    assert names(asyncio.run(character_choices(None, "black_"))) == ["Black_Knight"]

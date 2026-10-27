@@ -87,12 +87,15 @@ def get_scoreboard(currency_id: int) -> list[ScoreboardEntry]:
     return [ScoreboardEntry(**row) for row in get_database_connection().execute(sql, (currency_id,))]
 
 
-def get_currency_names() -> list[str]:
+def get_currency_names(prefix: str = "", limit: int = -1) -> list[str]:
+    # The names starting with prefix, ignoring case; a limit of -1 means no limit
     sql = """
         SELECT C.NAME
         FROM GACHA_CURRENCY C
+        WHERE SUBSTR(C.NAME, 1, LENGTH(?)) = ? COLLATE NOCASE
         ORDER BY C.NAME
+        LIMIT ?
         """
 
     # Each row holds just the one selected column
-    return [name for (name,) in get_database_connection().execute(sql)]
+    return [name for (name,) in get_database_connection().execute(sql, (prefix, prefix, limit))]

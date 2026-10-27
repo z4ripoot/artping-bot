@@ -10,8 +10,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[4]
 CONFIG_FILE = PROJECT_ROOT / 'config.ini'
 EXAMPLE_CONFIG_FILE = PROJECT_ROOT / 'config.example.ini'
 
-# Discord allows at most 25 options per slash command
+# Discord allows at most 25 options per slash command, and shows at most 25 autocomplete choices
 MAX_SLASH_OPTIONS = 25
+MAX_AUTOCOMPLETE_CHOICES = 25
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,8 @@ class Settings:
     database_path: Path
     # Seconds a user has to wait after a command before using another one, except admins; 0 means no cooldown
     cooldown_seconds: float
+    # How many names an autocomplete offers at most, between 1 and MAX_AUTOCOMPLETE_CHOICES
+    autocomplete_max_choices: int
     # None disables the Coliseum reminders
     coliseum_channel_id: int | None
     # How many characters the /artping command takes, between 1 and MAX_SLASH_OPTIONS
@@ -54,18 +57,23 @@ def load_settings(path: Path) -> Settings:
 
     guild_id = config.get('discord', 'guild_id')
     channel_id = config.get('tasks', 'coliseum_notification_channel_id')
-    slash_max_characters = config.getint('art_ping', 'slash_max_characters')
-    if not 1 <= slash_max_characters <= MAX_SLASH_OPTIONS:
-        raise ValueError(f"art_ping.slash_max_characters must be between 1 and {MAX_SLASH_OPTIONS}")
     return Settings(
         discord_token=config.get('discord', 'token'),
         guild_id=int(guild_id) if guild_id else None,
         # Relative paths are relative to the directory of the config file, not the working directory
         database_path=path.parent / config.get('database', 'path'),
         cooldown_seconds=config.getfloat('commands', 'cooldown_seconds'),
+        autocomplete_max_choices=_get_between(config, 'commands', 'autocomplete_max_choices', MAX_AUTOCOMPLETE_CHOICES),
         coliseum_channel_id=int(channel_id) if channel_id else None,
-        art_ping_slash_max_characters=slash_max_characters,
+        art_ping_slash_max_characters=_get_between(config, 'art_ping', 'slash_max_characters', MAX_SLASH_OPTIONS),
         character_votes_needed=config.getint('character_vote', 'votes_needed'),
         character_vote_emoji=config.get('character_vote', 'emoji'),
         emoji=dict(config['emoji']),
     )
+
+
+def _get_between(config: configparser.ConfigParser, section: str, key: str, maximum: int) -> int:
+    value = config.getint(section, key)
+    if not 1 <= value <= maximum:
+        raise ValueError(f"{section}.{key} must be between 1 and {maximum}")
+    return value

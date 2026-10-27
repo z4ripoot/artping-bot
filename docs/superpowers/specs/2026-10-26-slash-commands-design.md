@@ -344,7 +344,7 @@ recently...`; the slash reply is ephemeral.
   - New tests cover converting a ⭐ vote, including one that passes during conversion and one that is
     converted only once over two starts.
   - Migration `007` is tested like the others.
-- Autocomplete callbacks are tested for prefix matching and the 25-choice limit.
+- Autocomplete callbacks are tested for prefix matching and the choice limit (25, later 20, applied in the query).
 
 ## Left to the builder
 

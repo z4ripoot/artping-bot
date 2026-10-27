@@ -34,6 +34,7 @@ start, without a separate migration step.
 | `discord.token` | empty | the bot's token; empty exits at startup |
 | `database.path` | `test.db` | the SQLite file, created when missing |
 | `commands.cooldown_seconds` | `1` | cooldown per user after any command; 0 turns it off |
+| `commands.autocomplete_max_choices` | `20` | most names an autocomplete offers, 1-25 |
 | `character_vote.votes_needed` | `5` | reactions a vote needs; below 2 turns voting off |
 | `character_vote.emoji` | `⭐` | the vote emoji, Unicode or `<:name:id>` |
 | `tasks.coliseum_notification_channel_id` | empty | Coliseum reminder channel; empty turns them off |

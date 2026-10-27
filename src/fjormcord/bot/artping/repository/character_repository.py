@@ -15,17 +15,19 @@ def get_character(name: str) -> Character | None:
     return Character(**row) if row else None
 
 
-def get_all_names() -> list[str]:
-    # The names of all characters and all aliases, for autocompletion
+def get_all_names(prefix: str = "", limit: int = -1) -> list[str]:
+    # The names of all characters and all aliases starting with prefix, ignoring case, for autocompletion; a limit
+    # of -1 means no limit
     sql = """
-        SELECT C.NAME FROM CHARACTERS C
-        UNION
-        SELECT A.ALIAS FROM ALIAS A
-        ORDER BY 1 COLLATE NOCASE
+        SELECT N.NAME
+        FROM (SELECT C.NAME FROM CHARACTERS C UNION SELECT A.ALIAS FROM ALIAS A) N
+        WHERE SUBSTR(N.NAME, 1, LENGTH(?)) = ? COLLATE NOCASE
+        ORDER BY N.NAME COLLATE NOCASE
+        LIMIT ?
         """
 
     # Each row holds just the one selected column
-    return [name for (name,) in get_database_connection().execute(sql)]
+    return [name for (name,) in get_database_connection().execute(sql, (prefix, prefix, limit))]
 
 
 def add_character(character_name: str):

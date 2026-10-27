@@ -13,15 +13,18 @@ def get_resource(name: str) -> Resource | None:
     return Resource(**row) if row else None
 
 
-def get_resource_names() -> list[str]:
+def get_resource_names(prefix: str = "", limit: int = -1) -> list[str]:
+    # The names starting with prefix, ignoring case; a limit of -1 means no limit
     sql = """
         SELECT R.NAME
         FROM RESOURCE R
+        WHERE SUBSTR(R.NAME, 1, LENGTH(?)) = ? COLLATE NOCASE
         ORDER BY R.NAME
+        LIMIT ?
         """
 
     # Each row holds just the one selected column
-    return [name for (name,) in get_database_connection().execute(sql)]
+    return [name for (name,) in get_database_connection().execute(sql, (prefix, prefix, limit))]
 
 
 def set_resource(resource: Resource):
