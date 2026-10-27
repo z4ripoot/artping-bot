@@ -1,5 +1,11 @@
 from fjormcord.bot.artping.database import execute, exists, fetch_column, get_database_connection
 
+_REMOVE_ALIAS = """
+    DELETE FROM ALIAS
+    WHERE CHARACTER_ID = ?
+      AND ALIAS = ?
+    """
+
 
 def has_alias(character_id: int, alias: str) -> bool:
     sql = """
@@ -33,13 +39,7 @@ def add_alias(character_id: int, alias: str):
 
 
 def remove_alias(character_id: int, alias: str):
-    sql = """
-        DELETE FROM ALIAS
-        WHERE CHARACTER_ID = ?
-          AND ALIAS = ?
-        """
-
-    execute(sql, (character_id, alias))
+    execute(_REMOVE_ALIAS, (character_id, alias))
 
 
 def set_primary_name(character_id: int, alias: str):
@@ -55,13 +55,8 @@ def set_primary_name(character_id: int, alias: str):
         SET NAME = (SELECT A.ALIAS FROM ALIAS A WHERE A.CHARACTER_ID = ? AND A.ALIAS = ?)
         WHERE CHARACTER_ID = ?
         """
-    remove = """
-        DELETE FROM ALIAS
-        WHERE CHARACTER_ID = ?
-          AND ALIAS = ?
-        """
 
     with get_database_connection() as conn:
         conn.execute(add_name_as_alias, (character_id,))
         conn.execute(rename, (character_id, alias, character_id))
-        conn.execute(remove, (character_id, alias))
+        conn.execute(_REMOVE_ALIAS, (character_id, alias))

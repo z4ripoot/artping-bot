@@ -10,6 +10,14 @@ _SELECT_VOTE = """
            V.PROPOSER AS proposer, V.USES_BUTTON AS uses_button
     FROM CHARACTER_VOTE V
     """
+_REMOVE_VOTES_FOR = """
+    DELETE FROM CHARACTER_VOTE
+    WHERE CHARACTER_NAME = ?
+    """
+_ADD_VOTER = """
+    INSERT OR IGNORE INTO CHARACTER_VOTE_VOTER (MESSAGE_ID, USER)
+    VALUES (?, ?)
+    """
 
 
 def add_vote(vote: CharacterVote):
@@ -45,22 +53,12 @@ def remove_vote(message_id: str):
 
 
 def remove_votes_for(character_name: str):
-    sql = """
-        DELETE FROM CHARACTER_VOTE
-        WHERE CHARACTER_NAME = ?
-        """
-
     logging.info("Removing votes for character %s", character_name)
-    execute(sql, (character_name,))
+    execute(_REMOVE_VOTES_FOR, (character_name,))
 
 
 def add_voter(message_id: str, user_id: str):
-    sql = """
-        INSERT OR IGNORE INTO CHARACTER_VOTE_VOTER (MESSAGE_ID, USER)
-        VALUES (?, ?)
-        """
-
-    execute(sql, (message_id, user_id))
+    execute(_ADD_VOTER, (message_id, user_id))
 
 
 def remove_voter(message_id: str, user_id: str):
@@ -94,10 +92,6 @@ def count_voters(message_id: str) -> int:
 
 def convert_vote(message_id: str, user_ids: Iterable[str]):
     # Stores the voters counted from the reactions and marks the vote as counting stored voters, all or nothing
-    add_voters = """
-        INSERT OR IGNORE INTO CHARACTER_VOTE_VOTER (MESSAGE_ID, USER)
-        VALUES (?, ?)
-        """
     mark_vote = """
         UPDATE CHARACTER_VOTE
         SET USES_BUTTON = 1
@@ -106,7 +100,7 @@ def convert_vote(message_id: str, user_ids: Iterable[str]):
 
     logging.info("Converting vote %s to a button vote", message_id)
     with get_database_connection() as conn:
-        conn.executemany(add_voters, [(message_id, user_id) for user_id in user_ids])
+        conn.executemany(_ADD_VOTER, [(message_id, user_id) for user_id in user_ids])
         conn.execute(mark_vote, (message_id,))
 
 
@@ -122,13 +116,9 @@ def pass_vote(message_id: str, character_name: str):
         FROM CHARACTER_VOTE_VOTER
         WHERE MESSAGE_ID = ?
         """
-    remove_votes = """
-        DELETE FROM CHARACTER_VOTE
-        WHERE CHARACTER_NAME = ?
-        """
 
     logging.info("Adding character %s by vote", character_name)
     with get_database_connection() as conn:
         character_id = conn.execute(add_character, (character_name,)).lastrowid
         conn.execute(add_pings, (character_id, message_id))
-        conn.execute(remove_votes, (character_name,))
+        conn.execute(_REMOVE_VOTES_FOR, (character_name,))
