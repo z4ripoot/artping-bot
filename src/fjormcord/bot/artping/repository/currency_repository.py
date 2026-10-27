@@ -21,7 +21,6 @@ def add_currency(currency_name: str):
         VALUES (?)
         """
 
-    logging.info("Adding currency %s", currency_name)
     execute(sql, (currency_name,))
 
 
@@ -31,7 +30,6 @@ def remove_currency(currency_id: int):
         WHERE GACHA_CURRENCY_ID = ?
         """
 
-    logging.info("Removing currency %s", currency_id)
     execute(sql, (currency_id,))
 
 

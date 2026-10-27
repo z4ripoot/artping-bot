@@ -1,5 +1,3 @@
-import logging
-
 from fjormcord.bot.artping.database import execute, exists, get_database_connection
 
 
@@ -32,7 +30,6 @@ def add_alias(character_id: int, alias: str):
         VALUES (?, ?)
         """
 
-    logging.info("Adding alias %s for character %s", alias, character_id)
     execute(sql, (character_id, alias))
 
 
@@ -43,7 +40,6 @@ def remove_alias(character_id: int, alias: str):
           AND ALIAS = ?
         """
 
-    logging.info("Removing alias %s for character %s", alias, character_id)
     execute(sql, (character_id, alias))
 
 
@@ -66,7 +62,6 @@ def set_primary_name(character_id: int, alias: str):
           AND ALIAS = ?
         """
 
-    logging.info("Making alias %s the name of character %s", alias, character_id)
     with get_database_connection() as conn:
         conn.execute(add_name_as_alias, (character_id,))
         conn.execute(rename, (character_id, alias, character_id))

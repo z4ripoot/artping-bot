@@ -1,5 +1,3 @@
-import logging
-
 from fjormcord.bot.artping.database import execute, get_database_connection
 from fjormcord.bot.artping.model.resource import Resource
 
@@ -34,7 +32,6 @@ def set_resource(resource: Resource):
         ON CONFLICT (NAME) DO UPDATE SET NAME = excluded.NAME, CONTENT = excluded.CONTENT, SOURCE = excluded.SOURCE
         """
 
-    logging.info("Setting resource %s from %s", resource.name, resource.source)
     execute(sql, (resource.name, resource.content, resource.source))
 
 
@@ -44,5 +41,4 @@ def remove_resource(name: str):
         WHERE NAME = ?
         """
 
-    logging.info("Removing resource %s", name)
     execute(sql, (name,))
