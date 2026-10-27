@@ -7,7 +7,7 @@ ADMIN_ONLY_COMMANDS = ["remove_character", "add_alias", "remove_alias", "set_pri
 
 
 def test_admin_add_character():
-    cog = CharacterCog(None)
+    cog = CharacterCog()
     interaction = FakeInteraction(administrator=True)
 
     invoke(cog.add_character, interaction, cog, character="black knight")
@@ -18,7 +18,7 @@ def test_admin_add_character():
 
 
 def test_non_admin_add_character_starts_a_button_vote():
-    cog = CharacterCog(None)
+    cog = CharacterCog()
     interaction = FakeInteraction(user_id=7)
 
     invoke(cog.add_character, interaction, cog, character="Lucina")
@@ -33,7 +33,7 @@ def test_non_admin_add_character_starts_a_button_vote():
 
 
 def test_add_character_vote_refused_in_dms():
-    cog = CharacterCog(None)
+    cog = CharacterCog()
     interaction = FakeInteraction(in_guild=False)
 
     invoke(cog.add_character, interaction, cog, character="Lucina")
@@ -43,7 +43,7 @@ def test_add_character_vote_refused_in_dms():
 
 
 def test_admin_commands_hidden_and_checked():
-    cog = CharacterCog(None)
+    cog = CharacterCog()
     for name in ADMIN_ONLY_COMMANDS:
         command = getattr(cog, name)
         assert command.default_permissions.administrator, name
@@ -59,7 +59,7 @@ def test_admin_commands_hidden_and_checked():
 
 def test_add_alias_with_spaces():
     character_repository.add_character("Black_Knight")
-    cog = CharacterCog(None)
+    cog = CharacterCog()
     interaction = FakeInteraction(administrator=True)
 
     invoke(cog.add_alias, interaction, cog, character="black knight", alias="zelgius the knight")
@@ -71,7 +71,7 @@ def test_add_alias_with_spaces():
 
 def test_check_remove_alias_and_primary_name():
     character_repository.add_character("Lucina")
-    cog = CharacterCog(None)
+    cog = CharacterCog()
     admin = FakeInteraction(administrator=True)
     invoke(cog.add_alias, admin, cog, character="Lucina", alias="Marth_Mask")
 

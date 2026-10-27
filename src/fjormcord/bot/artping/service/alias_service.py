@@ -6,7 +6,8 @@ from fjormcord.bot.artping.util.name_util import normalize_name
 
 
 def add_alias(name: str, alias: str) -> str:
-    character, alias = require_character(name), normalize_name(alias)
+    character = require_character(name)
+    alias = normalize_name(alias)
 
     require_unused_name(alias)
 
@@ -16,7 +17,8 @@ def add_alias(name: str, alias: str) -> str:
 
 
 def remove_alias(name: str, alias: str) -> str:
-    character, alias = require_character(name), normalize_name(alias)
+    character = require_character(name)
+    alias = normalize_name(alias)
 
     if not alias_repository.has_alias(character.id, alias):
         raise CommandError(f"{alias} is not an alias of {character.name}")

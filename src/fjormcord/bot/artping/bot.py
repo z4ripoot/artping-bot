@@ -31,10 +31,10 @@ class ArtPingClient(commands.Bot):
     async def setup_hook(self):
         await self.add_cog(CharacterVoteCog(self))
         await self.add_cog(ArtPingCog(self))
-        await self.add_cog(CharacterCog(self))
-        await self.add_cog(CurrencyCog(self))
-        await self.add_cog(ResourceCog(self))
-        await self.add_cog(EasterEggCog(self))
+        await self.add_cog(CharacterCog())
+        await self.add_cog(CurrencyCog())
+        await self.add_cog(ResourceCog())
+        await self.add_cog(EasterEggCog())
         # Clicks on the Track buttons of the Voting Gauntlet messages, also those sent before a restart
         self.add_dynamic_items(TrackButton)
         await sync_commands(self.tree, config.read_settings().guild_id)

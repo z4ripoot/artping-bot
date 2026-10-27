@@ -8,9 +8,6 @@ from fjormcord.bot.artping.slash.runner import run
 
 class EasterEggCog(commands.Cog):
     # The slash versions of the easter eggs that are triggered by words, such as "thanks lorenz"
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
-
     @app_commands.command(name="lorenz")
     async def lorenz(self, interaction: discord.Interaction):
         await run(interaction, lambda: easter_eggs.LORENZ_SMILE)

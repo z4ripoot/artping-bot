@@ -10,9 +10,6 @@ CURRENCY_DESCRIPTION = "The currency's name"
 
 
 class CurrencyCog(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
-
     @app_commands.command(
         name="setcurrency", description="Set the number of orbs, primos or any other currency you have"
     )

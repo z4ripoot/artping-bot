@@ -5,7 +5,7 @@ from tests.fakes import FakeClient, FakeInteraction, invoke
 
 def test_set_currency():
     currency_repository.add_currency("Orbs")
-    cog = CurrencyCog(None)
+    cog = CurrencyCog()
     interaction = FakeInteraction(user_id=4)
 
     invoke(cog.set_currency, interaction, cog, currency="orbs", amount=50)
@@ -16,7 +16,7 @@ def test_set_currency():
 
 def test_amount_too_large_is_refused_by_the_service():
     currency_repository.add_currency("Orbs")
-    cog = CurrencyCog(None)
+    cog = CurrencyCog()
     interaction = FakeInteraction()
 
     invoke(cog.set_currency, interaction, cog, currency="Orbs", amount=2**63)
@@ -26,7 +26,7 @@ def test_amount_too_large_is_refused_by_the_service():
 
 def test_clear_currency():
     currency_repository.add_currency("Orbs")
-    cog = CurrencyCog(None)
+    cog = CurrencyCog()
     invoke(cog.set_currency, FakeInteraction(user_id=4), cog, currency="Orbs", amount=5)
     interaction = FakeInteraction(user_id=4)
 
@@ -36,7 +36,7 @@ def test_clear_currency():
 
 
 def test_empty_wallet_names_slash_command():
-    cog = CurrencyCog(None)
+    cog = CurrencyCog()
     interaction = FakeInteraction()
 
     invoke(cog.check_wallet, interaction, cog)
@@ -46,7 +46,7 @@ def test_empty_wallet_names_slash_command():
 
 def test_wallet_names_the_member():
     currency_repository.add_currency("Orbs")
-    cog = CurrencyCog(None)
+    cog = CurrencyCog()
     invoke(cog.set_currency, FakeInteraction(user_id=4), cog, currency="Orbs", amount=5)
     interaction = FakeInteraction(user_id=4)
     interaction.user.display_name = "Lissa"
@@ -58,7 +58,7 @@ def test_wallet_names_the_member():
 
 def test_scoreboard_next_page_hint():
     currency_repository.add_currency("Orbs")
-    cog = CurrencyCog(None)
+    cog = CurrencyCog()
     client = FakeClient(users={user_id: f"user{user_id}" for user_id in range(1, 13)})
     for user_id in range(1, 13):
         invoke(cog.set_currency, FakeInteraction(user_id=user_id), cog, currency="Orbs", amount=user_id)
@@ -71,7 +71,7 @@ def test_scoreboard_next_page_hint():
 
 
 def test_admin_currency_commands_are_admin_only():
-    cog = CurrencyCog(None)
+    cog = CurrencyCog()
     for command in (cog.add_currency, cog.remove_currency):
         assert command.default_permissions.administrator
         assert command.guild_only

@@ -10,9 +10,6 @@ RESOURCE_DESCRIPTION = "The resource's name"
 
 
 class ResourceCog(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
-
     @app_commands.command(name="resource", description="Post a resource; /resources lists them")
     @app_commands.describe(name=RESOURCE_DESCRIPTION)
     @app_commands.autocomplete(name=resource_choices)

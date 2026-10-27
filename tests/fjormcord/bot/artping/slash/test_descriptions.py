@@ -9,7 +9,7 @@ MAX_DESCRIPTION = 100
 
 def test_descriptions_fit_discord():
     # Extend this as cogs are added
-    cogs = (ArtPingCog(None), CharacterCog(None), CurrencyCog(None), ResourceCog(None), EasterEggCog(None))
+    cogs = (ArtPingCog(None), CharacterCog(), CurrencyCog(), ResourceCog(), EasterEggCog())
     commands = [command for cog in cogs for command in cog.get_app_commands()]
     commands.append(build_art_ping_command(3))
 

@@ -21,7 +21,7 @@ async def get_username(client: discord.Client, user_id: str) -> str:
     if user is None:
         try:
             user = await client.fetch_user(int(user_id))
-        except (discord.NotFound, discord.HTTPException) as e:
+        except discord.HTTPException as e:
             logging.warning("Failed to fetch user %s. %s", user_id, e)
             return f"Unknown user ({user_id})"
 

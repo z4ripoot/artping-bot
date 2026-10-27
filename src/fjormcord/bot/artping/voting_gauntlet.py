@@ -56,7 +56,7 @@ async def task_voting_gauntlet_scores(client: discord.Client):
         logging.exception("Voting Gauntlet scores could not be read. Task will be skipped")
         return
 
-    running = next((r for r in rounds if r.start <= current_time < r.end), None)
+    running = next((round_ for round_ in rounds if round_.start <= current_time < round_.end), None)
     if running is None:
         # Rounds are listed once they start, latest first; the final one has a single matchup
         latest = rounds[0]

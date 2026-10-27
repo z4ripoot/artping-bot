@@ -4,7 +4,7 @@ from tests.fakes import FakeInteraction, invoke
 
 
 def test_lorenz_and_chromk_post_the_easter_eggs():
-    cog = EasterEggCog(None)
+    cog = EasterEggCog()
     lorenz, chromk = FakeInteraction(), FakeInteraction()
 
     invoke(cog.lorenz, lorenz, cog)

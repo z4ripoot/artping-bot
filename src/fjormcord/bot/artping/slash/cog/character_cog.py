@@ -11,9 +11,6 @@ ALIAS_DESCRIPTION = "The alias; spaces are fine"
 
 
 class CharacterCog(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
-
     @app_commands.command(
         name="addcharacter", description="Add a character to ping for; non-admins start a vote, voters get subscribed"
     )
