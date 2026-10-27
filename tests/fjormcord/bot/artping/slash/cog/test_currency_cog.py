@@ -19,7 +19,7 @@ def test_amount_too_large_is_refused_by_the_service():
     cog = CurrencyCog(None)
     interaction = FakeInteraction()
 
-    invoke(cog.set_currency, interaction, cog, currency="Orbs", amount=2 ** 63)
+    invoke(cog.set_currency, interaction, cog, currency="Orbs", amount=2**63)
 
     assert interaction.sent[0][:2] == ("Failed to set currency. The amount is too large", True)
 

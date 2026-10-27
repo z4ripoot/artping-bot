@@ -1,8 +1,7 @@
 import logging
 from collections.abc import Iterable
 
-from fjormcord.bot.artping.database import (execute, exists, fetch_all, fetch_one, fetch_value,
-                                            get_database_connection)
+from fjormcord.bot.artping.database import execute, exists, fetch_all, fetch_one, fetch_value, get_database_connection
 from fjormcord.bot.artping.model.character_vote import CharacterVote
 
 _SELECT_VOTE = """

@@ -5,7 +5,7 @@ import discord
 
 def is_administrator(author):
     # Users in DMs have no guild permissions
-    permissions = getattr(author, 'guild_permissions', None)
+    permissions = getattr(author, "guild_permissions", None)
     return permissions is not None and permissions.administrator
 
 

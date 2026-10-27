@@ -38,10 +38,13 @@ def add_tracker(tournament_id: int, user_id: str, character_name: str, opponent_
     # A user tracks one side of a matchup, so tracking a character stops tracking its opponent
     with get_database_connection() as conn:
         conn.execute(_REMOVE_TRACKER, (tournament_id, user_id, opponent_name))
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR IGNORE INTO VOTING_GAUNTLET_TRACKER (TOURNAMENT_ID, USER, CHARACTER_NAME)
             VALUES (?, ?, ?)
-            """, (tournament_id, user_id, character_name))
+            """,
+            (tournament_id, user_id, character_name),
+        )
 
 
 def remove_tracker(tournament_id: int, user_id: str, character_name: str):

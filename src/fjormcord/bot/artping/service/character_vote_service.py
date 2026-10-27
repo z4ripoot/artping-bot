@@ -3,13 +3,11 @@ from collections.abc import Iterable
 
 import discord
 
-from fjormcord.bot.artping import config
+from fjormcord.bot.artping import config, vote_view  # vote_view as a module: it imports this one too
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character_vote import CharacterVote, VoteChannel
 from fjormcord.bot.artping.repository import character_vote_repository
-# Imported as modules, since character_service and vote_view import this one too
-from fjormcord.bot.artping import vote_view
-from fjormcord.bot.artping.service import character_service
+from fjormcord.bot.artping.service import character_service  # A module: it imports this one too
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 
@@ -25,7 +23,8 @@ async def start_vote(vote_channel: VoteChannel, proposer_id: str, name: str) -> 
 
     vote_message = await vote_channel.send(_vote_text(name), vote_view.VoteView(0))
     character_vote_repository.add_vote(
-        CharacterVote(str(vote_message.id), vote_channel.channel_id, name, proposer_id, uses_button=True))
+        CharacterVote(str(vote_message.id), vote_channel.channel_id, name, proposer_id, uses_button=True)
+    )
 
     # An empty reply sends nothing more
     return ""
@@ -109,8 +108,8 @@ async def _check_open_vote(client: discord.Client, vote: CharacterVote):
     has_administrator = False
     if not vote.uses_button:
         voters = await _get_voters(vote_message, settings.character_vote_emoji)
-        has_administrator = (len(voters) < settings.character_votes_needed
-                             and await _has_administrator(vote_message.guild, voters))
+        short = len(voters) < settings.character_votes_needed
+        has_administrator = short and await _has_administrator(vote_message.guild, voters)
 
     # Another event may have closed the vote while the reactions and members were fetched, or another check
     # converted it; nothing awaits from here to the commit
@@ -143,8 +142,9 @@ async def _drop_if_name_taken(vote_message: discord.Message, vote: CharacterVote
     return None
 
 
-async def _pass_or_show_count(client: discord.Client, vote_message: discord.Message, vote: CharacterVote,
-                              by_administrator: bool):
+async def _pass_or_show_count(
+    client: discord.Client, vote_message: discord.Message, vote: CharacterVote, by_administrator: bool
+):
     # Adds the character when an admin voted or enough users did; otherwise renders the message with the current count
     count = character_vote_repository.count_voters(vote.message_id)
     if by_administrator or count >= config.read_settings().character_votes_needed:
@@ -155,8 +155,11 @@ async def _pass_or_show_count(client: discord.Client, vote_message: discord.Mess
 
 async def _pass(client: discord.Client, vote_message: discord.Message, vote: CharacterVote):
     # The caller has awaited nothing since it read the vote, so it is still open
-    other_votes = [other for other in character_vote_repository.get_votes_for(vote.character_name)
-                   if other.message_id != vote.message_id]
+    other_votes = [
+        other
+        for other in character_vote_repository.get_votes_for(vote.character_name)
+        if other.message_id != vote.message_id
+    ]
     character_vote_repository.pass_vote(vote.message_id, vote.character_name)
     await _edit(vote_message, content=f"Character {vote.character_name} has been added", view=None)
     await _close(client, other_votes, vote.character_name)
@@ -182,7 +185,7 @@ async def _has_administrator(guild: discord.Guild, voters: list[discord.abc.User
     # Only asked while a vote is short, so this costs fewer requests than the votes needed
     for voter in voters:
         # Reactions list a voter as a member, with permissions, only when the member is cached
-        if getattr(voter, 'guild_permissions', None) is None:
+        if getattr(voter, "guild_permissions", None) is None:
             try:
                 voter = await guild.fetch_member(voter.id)
             except discord.HTTPException as e:

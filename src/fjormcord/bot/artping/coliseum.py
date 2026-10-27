@@ -16,8 +16,9 @@ NOTIFICATION_CHANNEL_ID = config.read_settings().coliseum_channel_id
 
 
 def start_coliseum_notification(client: discord.Client):
-    start_channel_task(task_coliseum_before_closing_notification, client, NOTIFICATION_CHANNEL_ID,
-                       "Coliseum notification")
+    start_channel_task(
+        task_coliseum_before_closing_notification, client, NOTIFICATION_CHANNEL_ID, "Coliseum notification"
+    )
 
 
 @tasks.loop(time=[ONE_HOUR_BEFORE_CLOSING_TIME, FIVE_HOUR_BEFORE_CLOSING_TIME])

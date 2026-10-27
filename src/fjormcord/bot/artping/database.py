@@ -9,7 +9,7 @@ from fjormcord.bot.artping.util.name_util import normalize_name
 Model = TypeVar("Model")
 
 # Numbered scripts (001_initial_schema.sql, ...); a database's user_version is the number of the last one applied to it
-MIGRATIONS_PATH = config.PROJECT_ROOT / 'db' / 'migrations'
+MIGRATIONS_PATH = config.PROJECT_ROOT / "db" / "migrations"
 
 _connection = None
 
@@ -80,8 +80,8 @@ def migrate(connection):
     # A new database and one created before versioning are both at 0; 001 only creates tables that don't exist yet
     version = connection.execute("PRAGMA user_version").fetchone()[0]
 
-    for path in sorted(MIGRATIONS_PATH.glob('*.sql')):
-        number = int(path.name.split('_')[0])
+    for path in sorted(MIGRATIONS_PATH.glob("*.sql")):
+        number = int(path.name.split("_")[0])
         if number <= version:
             continue
 

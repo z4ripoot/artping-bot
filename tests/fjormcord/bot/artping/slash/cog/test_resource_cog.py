@@ -1,5 +1,5 @@
-from fjormcord.bot.artping.repository import resource_repository
 from fjormcord.bot.artping.model.resource import Resource
+from fjormcord.bot.artping.repository import resource_repository
 from fjormcord.bot.artping.slash.cog.resource_cog import ResourceCog
 from tests.fakes import FakeInteraction, invoke
 
@@ -13,8 +13,9 @@ def test_resource_is_posted_without_mentions():
 
     content, ephemeral, allowed_mentions = interaction.sent[0]
     assert (content, ephemeral) == ("Hello <@5>", False)
-    assert not (allowed_mentions.everyone or allowed_mentions.users or allowed_mentions.roles
-                or allowed_mentions.replied_user)
+    assert not (
+        allowed_mentions.everyone or allowed_mentions.users or allowed_mentions.roles or allowed_mentions.replied_user
+    )
 
 
 def test_unknown_resource_is_refused():
@@ -48,8 +49,12 @@ def test_resource_name_with_space_is_refused():
 
 def test_set_list_and_remove_resource():
     cog = ResourceCog(None)
-    refused, added, listed, removed = (FakeInteraction(administrator=False), FakeInteraction(administrator=True),
-                                       FakeInteraction(), FakeInteraction(administrator=True))
+    refused, added, listed, removed = (
+        FakeInteraction(administrator=False),
+        FakeInteraction(administrator=True),
+        FakeInteraction(),
+        FakeInteraction(administrator=True),
+    )
 
     invoke(cog.set_resource, refused, cog, name="hof", link="https://example.com")
     invoke(cog.set_resource, added, cog, name="hof", link="https://example.com")

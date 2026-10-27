@@ -4,15 +4,14 @@ from dataclasses import replace
 import pytest
 
 from fjormcord.bot.artping import config
+from fjormcord.bot.artping.legacy.handler.character_handlers import add_character
 from fjormcord.bot.artping.model.character_vote import CharacterVote
+from fjormcord.bot.artping.repository import character_vote_repository
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users
 from fjormcord.bot.artping.repository.character_repository import get_character
-from fjormcord.bot.artping.repository import character_vote_repository
 from fjormcord.bot.artping.repository.character_vote_repository import count_voters, get_votes
-from fjormcord.bot.artping.legacy.handler.character_handlers import add_character
 from fjormcord.bot.artping.service.character_vote_service import check_open_votes, drop_deleted_vote
-from tests.fakes import (BOT_USER, FakeChannel, FakeClient, FakeGuild, click, make_member, make_message, make_user,
-                         reply)
+from tests.fakes import BOT_USER, FakeChannel, FakeClient, FakeGuild, click, make_member, make_message, make_user, reply
 
 EMOJI = "⭐"
 # An administrator of the server the votes are in
@@ -20,8 +19,11 @@ ADMIN_ID = 9
 
 
 def set_votes_needed(monkeypatch, votes_needed):
-    monkeypatch.setattr(config, "_settings", replace(config.read_settings(), character_votes_needed=votes_needed,
-                                                     character_vote_emoji=EMOJI))
+    monkeypatch.setattr(
+        config,
+        "_settings",
+        replace(config.read_settings(), character_votes_needed=votes_needed, character_vote_emoji=EMOJI),
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -56,7 +58,8 @@ def reaction_vote(channel, name, *reactors):
     for reactor in reactors:
         vote_message.react(EMOJI, reactor)
     character_vote_repository.add_vote(
-        CharacterVote(str(vote_message.id), str(channel.id), name, "7", uses_button=False))
+        CharacterVote(str(vote_message.id), str(channel.id), name, "7", uses_button=False)
+    )
     return vote_message
 
 
@@ -95,8 +98,10 @@ def test_vote_button_shows_the_emoji(client, channel):
 def test_vote_is_not_started_for_a_name_in_use(client, channel):
     reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
 
-    assert reply(add_character, client, make_message("~addcharacter lucina", channel=channel)) == \
-        "Character Lucina already exists"
+    assert (
+        reply(add_character, client, make_message("~addcharacter lucina", channel=channel))
+        == "Character Lucina already exists"
+    )
     assert channel.sent == []
     assert get_votes() == []
 
@@ -182,8 +187,10 @@ def test_only_the_voters_of_the_passing_vote_are_subscribed(client, channel):
 def test_admin_add_closes_open_votes(client, channel):
     vote_message = start_vote(client, channel, "Lucina")
 
-    assert reply(add_character, client, make_message("~addcharacter Lucina", administrator=True)) == \
-        "Character Lucina has been added"
+    assert (
+        reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
+        == "Character Lucina has been added"
+    )
     assert vote_message.content == "Character Lucina has already been added"
     assert vote_message.view is None
     assert get_votes() == []
@@ -230,8 +237,10 @@ def test_clicking_a_passed_vote_again_is_harmless(client, channel, database):
 def test_non_admin_adds_directly_when_fewer_than_two_votes_are_needed(client, channel, monkeypatch):
     set_votes_needed(monkeypatch, 1)
 
-    assert reply(add_character, client, make_message("~addcharacter Lucina", channel=channel)) == \
-        "Character Lucina has been added"
+    assert (
+        reply(add_character, client, make_message("~addcharacter Lucina", channel=channel))
+        == "Character Lucina has been added"
+    )
     assert channel.sent == []
     assert get_votes() == []
 
@@ -245,6 +254,7 @@ def test_deleted_vote_message_drops_the_vote(client, channel):
 
 
 # At startup: the open votes are checked, and the votes counted by reactions get the button
+
 
 def test_open_votes_are_checked_at_startup(client, channel, monkeypatch):
     set_votes_needed(monkeypatch, 3)
@@ -392,6 +402,7 @@ def test_conversion_happens_once(client, channel):
 
 
 # The repository: the stored voters
+
 
 def test_removing_a_vote_removes_its_voters():
     character_vote_repository.add_vote(CharacterVote("5", "10", "Lucina", "7"))

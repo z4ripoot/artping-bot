@@ -11,7 +11,7 @@ from fjormcord.bot.artping.util.user_util import get_username
 SCOREBOARD_PAGE_SIZE = 10
 
 # The largest number SQLite can store in an INTEGER column
-MAX_AMOUNT = 2 ** 63 - 1
+MAX_AMOUNT = 2**63 - 1
 
 
 def require_currency(name: str) -> Currency:
@@ -98,7 +98,7 @@ async def get_scoreboard(client: discord.Client, name: str, page: int = 1, slash
 
     # Only the users on this page are looked up
     start = (page - 1) * SCOREBOARD_PAGE_SIZE
-    for rank, entry in enumerate(scoreboard[start:start + SCOREBOARD_PAGE_SIZE], start=start + 1):
+    for rank, entry in enumerate(scoreboard[start : start + SCOREBOARD_PAGE_SIZE], start=start + 1):
         out += f"{rank}. {await get_username(client, entry.user_id)} ({entry.amount})\n"
 
     if page < page_count:

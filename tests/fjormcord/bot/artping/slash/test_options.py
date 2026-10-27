@@ -4,8 +4,12 @@ import pytest
 
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.resource import Resource
-from fjormcord.bot.artping.repository import alias_repository, character_repository, currency_repository, \
-    resource_repository
+from fjormcord.bot.artping.repository import (
+    alias_repository,
+    character_repository,
+    currency_repository,
+    resource_repository,
+)
 from fjormcord.bot.artping.slash.options import character_choices, currency_choices, resource_choices, to_name
 
 

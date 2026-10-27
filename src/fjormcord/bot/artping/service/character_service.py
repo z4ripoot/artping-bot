@@ -4,8 +4,7 @@ from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.model.character_vote import VoteChannel
 from fjormcord.bot.artping.repository import alias_repository, art_ping_repository, character_repository
-# Imported as a module, since character_vote_service imports this one too
-from fjormcord.bot.artping.service import character_vote_service
+from fjormcord.bot.artping.service import character_vote_service  # A module: it imports this one too
 from fjormcord.bot.artping.util.message_util import log_info
 from fjormcord.bot.artping.util.name_util import normalize_name
 from fjormcord.bot.artping.util.user_util import get_username, is_administrator

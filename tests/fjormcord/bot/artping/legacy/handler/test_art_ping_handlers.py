@@ -1,6 +1,6 @@
+from fjormcord.bot.artping.legacy.handler.art_ping_handlers import add_ping, check_ping, do_art_ping, remove_ping
 from fjormcord.bot.artping.repository.art_ping_repository import add_ping as insert_ping
 from fjormcord.bot.artping.repository.character_repository import add_character, get_character
-from fjormcord.bot.artping.legacy.handler.art_ping_handlers import do_art_ping, add_ping, remove_ping, check_ping
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
 from tests.fakes import make_message, reply
 
@@ -103,4 +103,7 @@ def test_art_ping_names_unknown_characters_normalized(client):
     add_character("Lucina")
     subscribe("Lucina", 1)
 
-    assert reply(do_art_ping, client, make_message("~artping lucina marth")) == "No character entry for Marth\nLucina: <@1>"
+    assert (
+        reply(do_art_ping, client, make_message("~artping lucina marth"))
+        == "No character entry for Marth\nLucina: <@1>"
+    )

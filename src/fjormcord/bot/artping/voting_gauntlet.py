@@ -21,7 +21,7 @@ from fjormcord.bot.artping.voting_gauntlet_view import TrackView
 CURRENT_URL = "https://support.fire-emblem-heroes.com/voting_gauntlet/current"
 PAGE_QUERY = {"locale": "en-US", "timezone": "Etc/UTC"}
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=30)
-TOURNAMENT_PATTERN = re.compile(r'/tournaments/(\d+)$')
+TOURNAMENT_PATTERN = re.compile(r"/tournaments/(\d+)$")
 
 # The site counts the votes at the top of every hour; a few minutes later the new scores are on the page
 POSTING_TIMES = [time(hour=hour, minute=5, tzinfo=timezone.utc) for hour in range(24)]
@@ -29,11 +29,14 @@ POSTING_TIMES = [time(hour=hour, minute=5, tzinfo=timezone.utc) for hour in rang
 ROUND_PATTERN = re.compile(r'<article class="body-section-tournament">(.*?)</article>', re.DOTALL)
 WINDOW_PATTERN = re.compile(r'<div class="tournaments-date">([^<]*)</div>')
 # A character's picture, then its name and score. The picture's class ends in its status: normal or behind
-ENTRANT_PATTERN = re.compile(r'<div class="tournaments-art-(?:left|right) art-\d+-\d+-(\w+)">'
-                             r'.*?<p class="name">([^<]*)</p><p>([\d,]+)</p>', re.DOTALL)
+ENTRANT_PATTERN = re.compile(
+    r'<div class="tournaments-art-(?:left|right) art-\d+-\d+-(\w+)">'
+    r'.*?<p class="name">([^<]*)</p><p>([\d,]+)</p>',
+    re.DOTALL,
+)
 STATUSES = {"normal": False, "behind": True}
 # One end of a round's window, e.g. "10/5 at 7:00 a.m."
-TIME_PATTERN = re.compile(r'(\d{1,2})/(\d{1,2}) at (\d{1,2}):(\d{2}) ([ap])\.m\.')
+TIME_PATTERN = re.compile(r"(\d{1,2})/(\d{1,2}) at (\d{1,2}):(\d{2}) ([ap])\.m\.")
 
 NOTIFICATION_CHANNEL_ID = config.read_settings().voting_gauntlet_channel_id
 
@@ -66,8 +69,12 @@ async def task_voting_gauntlet_scores(client: discord.Client):
     if channel is None:
         return
     for matchup in running.matchups:
-        trackers = [user_id for entrant in matchup if entrant.behind
-                    for user_id in voting_gauntlet_service.get_trackers(tournament_id, entrant.name)]
+        trackers = [
+            user_id
+            for entrant in matchup
+            if entrant.behind
+            for user_id in voting_gauntlet_service.get_trackers(tournament_id, entrant.name)
+        ]
         try:
             *parts, last = split_message(format_matchup(matchup, trackers))
             for part in parts:

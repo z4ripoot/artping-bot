@@ -18,20 +18,22 @@ class ResourceCog(commands.Cog):
     @app_commands.autocomplete(name=resource_choices)
     async def resource(self, interaction: discord.Interaction, name: str):
         # The copied text may mention users
-        await run(interaction, lambda: resource_service.post_resource(name),
-                  allowed_mentions=discord.AllowedMentions.none())
+        await run(
+            interaction, lambda: resource_service.post_resource(name), allowed_mentions=discord.AllowedMentions.none()
+        )
 
     @app_commands.command(name="resources", description="See which resources there are; /resource posts one")
     async def resources(self, interaction: discord.Interaction):
         await run(interaction, lambda: resource_service.list_resources(slash=True))
 
-    @admin_command(name="setresource",
-                   description="Save the text of a Discord message, or a website link, to post with /resource")
-    @app_commands.describe(name="The new resource's name: letters, digits, _ and -",
-                           link="A Discord message link or a website")
+    @admin_command(
+        name="setresource", description="Save the text of a Discord message, or a website link, to post with /resource"
+    )
+    @app_commands.describe(
+        name="The new resource's name: letters, digits, _ and -", link="A Discord message link or a website"
+    )
     async def set_resource(self, interaction: discord.Interaction, name: str, link: str):
-        await run(interaction, lambda: resource_service.set_resource(interaction.client, name, link),
-                  defer=True)
+        await run(interaction, lambda: resource_service.set_resource(interaction.client, name, link), defer=True)
 
     @admin_command(name="removeresource", description="Remove a resource")
     @app_commands.describe(name=RESOURCE_DESCRIPTION)

@@ -81,4 +81,4 @@ def _pieces(text, limit):
         for word_index, word in enumerate(line.split(" ")):
             separator = " " if word_index else line_separator
             for start in range(0, len(word), limit):
-                yield separator if start == 0 else "", word[start:start + limit]
+                yield separator if start == 0 else "", word[start : start + limit]

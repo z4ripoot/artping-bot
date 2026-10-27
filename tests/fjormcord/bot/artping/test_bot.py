@@ -3,16 +3,16 @@ from dataclasses import replace
 from types import SimpleNamespace
 
 import discord
-from discord.ext import commands as discord_commands
 import pytest
+from discord.ext import commands as discord_commands
 
 from fjormcord.bot.artping import config
-from fjormcord.bot.artping.legacy import commands
 from fjormcord.bot.artping.bot import ArtPingClient
-from fjormcord.bot.artping.legacy.commands import Command
-from fjormcord.bot.artping.voting_gauntlet_view import TrackButton
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.easter_eggs import LORENZ_SMILE
+from fjormcord.bot.artping.legacy import commands
+from fjormcord.bot.artping.legacy.commands import Command
+from fjormcord.bot.artping.voting_gauntlet_view import TrackButton
 from tests.fakes import FakeClock, make_message
 
 
@@ -106,8 +106,9 @@ def test_setup_adds_the_vote_cog_and_the_buttons(bot, monkeypatch):
 
 
 def test_admin_command_allowed_for_admin(bot):
-    assert dispatch(bot, make_message("~addcharacter Lucina", administrator=True)) == \
-        ["Character Lucina has been added"]
+    assert dispatch(bot, make_message("~addcharacter Lucina", administrator=True)) == [
+        "Character Lucina has been added"
+    ]
 
 
 def test_admin_command_ignored_in_dms(bot):
@@ -128,8 +129,9 @@ def test_failing_command_still_replies(bot, monkeypatch):
 
 
 # The alias commands only reply that aliases aren't supported yet
-COMMANDS_WITH_ARGUMENTS = [command for command in commands.COMMANDS
-                           if command.usage and command.name not in ("~addalias", "~removealias")]
+COMMANDS_WITH_ARGUMENTS = [
+    command for command in commands.COMMANDS if command.usage and command.name not in ("~addalias", "~removealias")
+]
 
 
 @pytest.mark.parametrize("command", COMMANDS_WITH_ARGUMENTS, ids=lambda command: command.name)
@@ -140,10 +142,12 @@ def test_missing_argument_is_answered_with_usage(bot, command):
 
 
 def test_missing_argument_names_what_is_missing(bot):
-    assert dispatch(bot, make_message("~addcharacter", administrator=True)) == \
-        ["Character name is missing. Usage: ~addcharacter (character name)"]
-    assert dispatch(bot, make_message("~setcurrency Orbs")) == \
-        ["Amount is missing. Usage: ~setcurrency (currency name) (amount)"]
+    assert dispatch(bot, make_message("~addcharacter", administrator=True)) == [
+        "Character name is missing. Usage: ~addcharacter (character name)"
+    ]
+    assert dispatch(bot, make_message("~setcurrency Orbs")) == [
+        "Amount is missing. Usage: ~setcurrency (currency name) (amount)"
+    ]
 
 
 def test_replies_cannot_mention_everyone_or_roles(bot):
@@ -190,8 +194,9 @@ def test_command_is_turned_down_during_cooldown(bot, clock, lucina):
 
     clock.advance(0.5)
 
-    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == \
-        ["You used a command recently. Try again in 1 second"]
+    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == [
+        "You used a command recently. Try again in 1 second"
+    ]
 
 
 def test_command_is_allowed_after_cooldown(bot, clock, lucina):
@@ -211,16 +216,18 @@ def test_cooldown_only_holds_back_that_user(bot, clock, lucina):
 def test_cooldown_holds_back_every_command(bot, clock, lucina):
     dispatch(bot, make_message("~artping Lucina", user_id=1))
 
-    assert dispatch(bot, make_message("~checkping", user_id=1)) == \
-        ["You used a command recently. Try again in 1 second"]
+    assert dispatch(bot, make_message("~checkping", user_id=1)) == [
+        "You used a command recently. Try again in 1 second"
+    ]
 
 
 def test_resource_has_the_cooldown(bot, clock, lucina):
     set_hof(bot)
     dispatch(bot, make_message("~hof", user_id=2))
 
-    assert dispatch(bot, make_message("~checkping", user_id=2)) == \
-        ["You used a command recently. Try again in 1 second"]
+    assert dispatch(bot, make_message("~checkping", user_id=2)) == [
+        "You used a command recently. Try again in 1 second"
+    ]
     clock.advance(1)
     assert dispatch(bot, make_message("~hof", user_id=2)) == ["https://example.com/hof"]
 
@@ -243,8 +250,9 @@ def test_cooldown_follows_the_configured_length(monkeypatch):
     bot = ArtPingClient(intents=discord.Intents.default())
     dispatch(bot, make_message("~checkping", user_id=2))
 
-    assert dispatch(bot, make_message("~checkping", user_id=2)) == \
-        ["You used a command recently. Try again in 30 seconds"]
+    assert dispatch(bot, make_message("~checkping", user_id=2)) == [
+        "You used a command recently. Try again in 30 seconds"
+    ]
 
 
 def test_client_is_a_bot_without_prefix_commands(bot):

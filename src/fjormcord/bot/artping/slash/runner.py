@@ -15,6 +15,7 @@ def admin_command(name: str, description: str):
     def decorator(callback) -> app_commands.Command:
         command = app_commands.command(name=name, description=description)(callback)
         return app_commands.guild_only()(app_commands.default_permissions(administrator=True)(command))
+
     return decorator
 
 
@@ -23,8 +24,13 @@ def _is_admin_command(interaction: discord.Interaction) -> bool:
     return permissions is not None and permissions.administrator
 
 
-async def run(interaction: discord.Interaction, call: Callable[[], str | Awaitable[str]], *, defer: bool = False,
-              allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS) -> None:
+async def run(
+    interaction: discord.Interaction,
+    call: Callable[[], str | Awaitable[str]],
+    *,
+    defer: bool = False,
+    allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS,
+) -> None:
     # Runs a slash command the way legacy.dispatch runs a ~ command: checks, the call, and the reply. call does the
     # command's work and returns the reply, directly or as a coroutine; it raises CommandError to turn the user down.
     try:
@@ -50,8 +56,12 @@ async def run(interaction: discord.Interaction, call: Callable[[], str | Awaitab
         await _send(interaction, chunk, allowed_mentions=allowed_mentions)
 
 
-async def _send(interaction: discord.Interaction, text: str, ephemeral: bool = False,
-                allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS):
+async def _send(
+    interaction: discord.Interaction,
+    text: str,
+    ephemeral: bool = False,
+    allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS,
+):
     # The first message answers the interaction, or follows up on the defer; the rest are follow-ups
     if interaction.response.is_done():
         await interaction.followup.send(text, ephemeral=ephemeral, allowed_mentions=allowed_mentions)

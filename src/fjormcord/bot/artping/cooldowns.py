@@ -31,7 +31,8 @@ class Cooldowns:
         if remaining > 0:
             seconds = math.ceil(remaining)
             raise CommandError(
-                f"You used a command recently. Try again in {seconds} second{'' if seconds == 1 else 's'}")
+                f"You used a command recently. Try again in {seconds} second{'' if seconds == 1 else 's'}"
+            )
 
     def start(self, user_id: int):
         if self._seconds > 0:

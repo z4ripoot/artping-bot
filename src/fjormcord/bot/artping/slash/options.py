@@ -5,7 +5,6 @@ from fjormcord.bot.artping import config
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.repository import character_repository, currency_repository, resource_repository
 
-
 # The description of an option that takes a character
 CHARACTER_DESCRIPTION = "The character's name or an alias; spaces are fine"
 

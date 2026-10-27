@@ -9,7 +9,6 @@ from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.service import character_vote_service
 
-
 # The bot's own user, e.g. on the reaction it added to vote messages before they had a button
 BOT_USER = SimpleNamespace(id=999, bot=True)
 
@@ -25,8 +24,12 @@ def make_user(user_id, bot=False):
 
 
 def make_member(user_id, administrator=False):
-    return SimpleNamespace(id=user_id, bot=False, display_name=f"user{user_id}",
-                           guild_permissions=SimpleNamespace(administrator=administrator))
+    return SimpleNamespace(
+        id=user_id,
+        bot=False,
+        display_name=f"user{user_id}",
+        guild_permissions=SimpleNamespace(administrator=administrator),
+    )
 
 
 def http_error(error, status):
@@ -166,10 +169,15 @@ class FakeClient:
 
 
 def make_message(content, user_id=1, administrator=False, channel=None, bot=False):
-    author = SimpleNamespace(id=user_id, display_name=f"user{user_id}", bot=bot,
-                             guild_permissions=SimpleNamespace(administrator=administrator))
-    return SimpleNamespace(content=content, author=author, channel=channel or FakeChannel(),
-                           guild=SimpleNamespace(id=1))
+    author = SimpleNamespace(
+        id=user_id,
+        display_name=f"user{user_id}",
+        bot=bot,
+        guild_permissions=SimpleNamespace(administrator=administrator),
+    )
+    return SimpleNamespace(
+        content=content, author=author, channel=channel or FakeChannel(), guild=SimpleNamespace(id=1)
+    )
 
 
 def click(client, message, user_id, administrator=False):

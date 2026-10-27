@@ -22,9 +22,9 @@ from fjormcord.bot.artping.voting_gauntlet_view import TrackButton
 class ArtPingClient(commands.Bot):
     def __init__(self, **options):
         # The ~ commands are handled by legacy.dispatch, so the prefix is never used
-        options.setdefault('command_prefix', commands.when_mentioned)
-        options.setdefault('help_command', None)
-        options.setdefault('allowed_mentions', ALLOWED_MENTIONS)
+        options.setdefault("command_prefix", commands.when_mentioned)
+        options.setdefault("help_command", None)
+        options.setdefault("allowed_mentions", ALLOWED_MENTIONS)
         super().__init__(**options)
         self.cooldowns = Cooldowns(config.read_settings().cooldown_seconds)
 

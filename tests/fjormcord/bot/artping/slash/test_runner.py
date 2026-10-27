@@ -112,8 +112,7 @@ def test_success_starts_cooldown_for_every_command():
 
     run_command(interaction, lambda: "subscribed", "checkping")
 
-    assert replies(interaction) == [
-        ("pinged", False), ("You used a command recently. Try again in 1 second", True)]
+    assert replies(interaction) == [("pinged", False), ("You used a command recently. Try again in 1 second", True)]
 
 
 def test_failure_does_not_start_cooldown():

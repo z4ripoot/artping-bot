@@ -29,21 +29,27 @@ def test_rounds_are_read_from_the_page():
     rounds = voting_gauntlet.parse_rounds(ENDED_PAGE, utc(10, 6, 12))
 
     # Latest round first, as on the page
-    assert [(r.start, r.end) for r in rounds] == [(utc(10, 5, 7), utc(10, 7, 4)),
-                                                  (utc(10, 3, 7), utc(10, 5, 4)),
-                                                  (utc(10, 1, 7), utc(10, 3, 4))]
-    assert rounds[0].matchups == [(Entrant("Edelgard", 24_743_944_266, behind=False),
-                                   Entrant("Dimitri", 21_907_126_652, behind=True))]
+    assert [(r.start, r.end) for r in rounds] == [
+        (utc(10, 5, 7), utc(10, 7, 4)),
+        (utc(10, 3, 7), utc(10, 5, 4)),
+        (utc(10, 1, 7), utc(10, 3, 4)),
+    ]
+    assert rounds[0].matchups == [
+        (Entrant("Edelgard", 24_743_944_266, behind=False), Entrant("Dimitri", 21_907_126_652, behind=True))
+    ]
     assert len(rounds[2].matchups) == 4
-    assert rounds[2].matchups[1] == (Entrant("Cai", 1_958_844_520, behind=True),
-                                     Entrant("Claude", 2_072_857_153, behind=False))
+    assert rounds[2].matchups[1] == (
+        Entrant("Cai", 1_958_844_520, behind=True),
+        Entrant("Claude", 2_072_857_153, behind=False),
+    )
 
 
 def test_running_round_is_read_from_the_page():
     [final, *_] = voting_gauntlet.parse_rounds(ROUND_3_PAGE, utc(10, 6, 1, 44))
 
-    assert final.matchups == [(Entrant("Edelgard", 4_397_904_760, behind=False),
-                               Entrant("Dimitri", 3_872_872_478, behind=True))]
+    assert final.matchups == [
+        (Entrant("Edelgard", 4_397_904_760, behind=False), Entrant("Dimitri", 3_872_872_478, behind=True))
+    ]
 
 
 def test_page_without_rounds_fails():
@@ -71,26 +77,31 @@ def test_round_window_is_given_the_year_closest_to_now():
 
 def test_round_window_reads_afternoon_times():
     assert voting_gauntlet.parse_window("3/1 at 12:00 p.m.~3/3 at 11:59 p.m. UTC", utc(3, 2, 0)) == (
-        utc(3, 1, 12), utc(3, 4, 0))
+        utc(3, 1, 12),
+        utc(3, 4, 0),
+    )
 
 
 def test_matchup_message_keeps_the_site_order():
-    message = voting_gauntlet.format_matchup((Entrant("Cai", 1_958_844_520, behind=True),
-                                              Entrant("Claude", 2_072_857_153, behind=False)), [])
+    message = voting_gauntlet.format_matchup(
+        (Entrant("Cai", 1_958_844_520, behind=True), Entrant("Claude", 2_072_857_153, behind=False)), []
+    )
 
     assert message == "Cai (Weaker)\n1,958,844,520\nClaude (Stronger)\n2,072,857,153"
 
 
 def test_matchup_without_a_side_behind_is_same():
-    message = voting_gauntlet.format_matchup((Entrant("Cai", 2_072_857_153, behind=False),
-                                              Entrant("Claude", 2_072_857_150, behind=False)), [])
+    message = voting_gauntlet.format_matchup(
+        (Entrant("Cai", 2_072_857_153, behind=False), Entrant("Claude", 2_072_857_150, behind=False)), []
+    )
 
     assert message == "Cai (Same)\n2,072,857,153\nClaude (Same)\n2,072,857,150"
 
 
 def test_matchup_message_mentions_the_trackers():
-    message = voting_gauntlet.format_matchup((Entrant("Cai", 1, behind=True), Entrant("Claude", 2, behind=False)),
-                                             ["11", "22"])
+    message = voting_gauntlet.format_matchup(
+        (Entrant("Cai", 1, behind=True), Entrant("Claude", 2, behind=False)), ["11", "22"]
+    )
 
     assert message.endswith("Claude (Stronger)\n2\n<@11> <@22>")
 
@@ -152,8 +163,9 @@ def test_nobody_is_pinged_when_neither_side_is_behind(monkeypatch):
     run_task(monkeypatch, utc(10, 6, 1, 5), page=ROUND_3_PAGE)
     track("Dimitri", "Edelgard", 11)
 
-    [message] = run_task(monkeypatch, utc(10, 6, 2, 5),
-                         page=ROUND_3_PAGE.replace("art-112-8-behind", "art-112-8-normal")).sent
+    [message] = run_task(
+        monkeypatch, utc(10, 6, 2, 5), page=ROUND_3_PAGE.replace("art-112-8-behind", "art-112-8-normal")
+    ).sent
 
     assert "<@" not in message
 

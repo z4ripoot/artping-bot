@@ -3,8 +3,7 @@ import logging
 import discord
 
 from fjormcord.bot.artping import config
-# Imported as a module, since character_vote_service imports this one too
-from fjormcord.bot.artping.service import character_vote_service
+from fjormcord.bot.artping.service import character_vote_service  # A module: it imports this one too
 
 VOTE_BUTTON_ID = "character_vote"
 

@@ -19,19 +19,21 @@ def build_art_ping_command(max_characters: int) -> app_commands.Command:
         values = [value for value in characters.values() if value is not None]
         await run(interaction, lambda: art_ping_service.do_art_ping([to_name(value) for value in values]))
 
-    parameters = [inspect.Parameter("interaction", inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                                    annotation=discord.Interaction)]
-    parameters += [inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, annotation=str)
-                   if name == "character" else
-                   inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, default=None, annotation=str | None)
-                   for name in names]
+    parameters = [
+        inspect.Parameter("interaction", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=discord.Interaction)
+    ]
+    parameters += [
+        inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, annotation=str)
+        if name == "character"
+        else inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, default=None, annotation=str | None)
+        for name in names
+    ]
     art_ping.__signature__ = inspect.Signature(parameters)
     art_ping.__annotations__ = {parameter.name: parameter.annotation for parameter in parameters}
 
     art_ping = app_commands.describe(**{name: CHARACTER_DESCRIPTION for name in names})(art_ping)
     art_ping = app_commands.autocomplete(**{name: character_choices for name in names})(art_ping)
-    return app_commands.Command(name="artping", description="Ping users for art of these characters",
-                                callback=art_ping)
+    return app_commands.Command(name="artping", description="Ping users for art of these characters", callback=art_ping)
 
 
 class ArtPingCog(commands.Cog):

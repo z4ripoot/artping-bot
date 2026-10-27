@@ -11,7 +11,9 @@ from fjormcord.bot.artping.util.message_util import log_info
 # Plain ASCII, so names are easy to type and can't hold mention syntax
 _RESOURCE_NAME = re.compile(r"[A-Za-z0-9_-]+")
 # https://discord.com/channels/<server>/<channel>/<message>, also from the test clients and the old domain
-_DISCORD_MESSAGE_LINK = re.compile(r"https://(?:(?:ptb|canary)\.)?discord(?:app)?\.com/channels/(?:\d+|@me)/(\d+)/(\d+)")
+_DISCORD_MESSAGE_LINK = re.compile(
+    r"https://(?:(?:ptb|canary)\.)?discord(?:app)?\.com/channels/(?:\d+|@me)/(\d+)/(\d+)"
+)
 _WEBSITE_LINK = re.compile(r"https?://\S+")
 
 

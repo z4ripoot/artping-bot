@@ -30,18 +30,24 @@ def test_example_is_a_complete_config():
     assert settings.art_ping_slash_max_characters == 10
     assert settings.character_votes_needed == 5
     assert settings.character_vote_emoji == "⭐"
-    assert settings.emoji['lorenz_smile'].startswith("<:LorenzSmile:")
+    assert settings.emoji["lorenz_smile"].startswith("<:LorenzSmile:")
 
 
 def test_settings_are_read_from_the_file(tmp_path):
-    path = write_config(tmp_path, {("discord", "token"): "secret", ("discord", "guild_id"): "456",
-                                   ("commands", "cooldown_seconds"): "2.5",
-                                   ("commands", "autocomplete_max_choices"): "7",
-                                   ("art_ping", "slash_max_characters"): "3",
-                                   ("tasks", "coliseum_notification_channel_id"): "123",
-                                   ("tasks", "voting_gauntlet_channel_id"): "789",
-                                   ("character_vote", "votes_needed"): "3",
-                                   ("character_vote", "emoji"): "<:Vote:123>"})
+    path = write_config(
+        tmp_path,
+        {
+            ("discord", "token"): "secret",
+            ("discord", "guild_id"): "456",
+            ("commands", "cooldown_seconds"): "2.5",
+            ("commands", "autocomplete_max_choices"): "7",
+            ("art_ping", "slash_max_characters"): "3",
+            ("tasks", "coliseum_notification_channel_id"): "123",
+            ("tasks", "voting_gauntlet_channel_id"): "789",
+            ("character_vote", "votes_needed"): "3",
+            ("character_vote", "emoji"): "<:Vote:123>",
+        },
+    )
 
     settings = load_settings(path)
 

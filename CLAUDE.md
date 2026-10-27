@@ -13,11 +13,12 @@ Discord bot for the Fjormcord community, built on discord.py (2.x) with a SQLite
 .venv/Scripts/python -m fjormcord.bot.artping        # run the bot (exits unless config.ini sets discord.token); also: artping-bot
 .venv/Scripts/python -m pytest                       # run all tests
 .venv/Scripts/python -m pytest tests/fjormcord/bot/artping/service/test_art_ping_service.py::test_add_and_remove_ping   # single test
+.venv/Scripts/python -m ruff check --fix src tests && .venv/Scripts/python -m ruff format src tests   # sort imports, then format
 ```
 
 To reset a local database, delete the file; it is recreated on the next start.
 
-Without the editable install, run with `PYTHONPATH=src`. Use `-e` rather than a plain `pip install .`: `config.py` locates the config files relative to its own file in `src/`, which breaks once the code is copied into `site-packages`. There is no linter configured.
+Without the editable install, run with `PYTHONPATH=src`. Use `-e` rather than a plain `pip install .`: `config.py` locates the config files relative to its own file in `src/`, which breaks once the code is copied into `site-packages`. Code is formatted with ruff (`pyproject.toml`: line length 120, imports sorted, double quotes); run it before committing. The formatter wraps code but not comments or strings, so keep those within 120 characters by hand.
 
 ## Layout
 
