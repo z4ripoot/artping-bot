@@ -12,6 +12,7 @@ from fjormcord.bot.artping import config
 from fjormcord.bot.artping.model.voting_gauntlet import Entrant, Round
 from fjormcord.bot.artping.service import voting_gauntlet_service
 from fjormcord.bot.artping.util.message_util import split_message
+from fjormcord.bot.artping.util.task_util import get_task_channel, start_channel_task
 from fjormcord.bot.artping.voting_gauntlet_view import TrackView
 
 # Redirects to the page of the latest gauntlet, e.g. /voting_gauntlet/tournaments/112. There is no API, so the page's
@@ -37,13 +38,7 @@ NOTIFICATION_CHANNEL_ID = config.read_settings().voting_gauntlet_channel_id
 
 
 def start_voting_gauntlet_notification(client: discord.Client):
-    if not NOTIFICATION_CHANNEL_ID:
-        logging.warning("No channel ID is configured for Voting Gauntlet scores. Voting Gauntlet task will not be "
-                        "initiated")
-    elif not task_voting_gauntlet_scores.is_running():
-        # on_ready fires again after reconnects; starting a running loop raises
-        logging.info("Initiating Voting Gauntlet task")
-        task_voting_gauntlet_scores.start(client)
+    start_channel_task(task_voting_gauntlet_scores, client, NOTIFICATION_CHANNEL_ID, "Voting Gauntlet scores")
 
 
 @tasks.loop(time=POSTING_TIMES)
@@ -66,9 +61,8 @@ async def task_voting_gauntlet_scores(client: discord.Client):
         return
 
     voting_gauntlet_service.start_gauntlet(tournament_id)
-    channel = client.get_channel(NOTIFICATION_CHANNEL_ID)
+    channel = get_task_channel(client, NOTIFICATION_CHANNEL_ID)
     if channel is None:
-        logging.error("Channel %s not found. Task will be skipped", NOTIFICATION_CHANNEL_ID)
         return
     for matchup in running.matchups:
         trackers = [user_id for entrant in matchup if entrant.behind

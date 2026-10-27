@@ -238,5 +238,5 @@ def test_not_started_without_channel_id(monkeypatch, caplog):
 
     voting_gauntlet.start_voting_gauntlet_notification(SimpleNamespace())
 
-    assert "No channel ID is configured for Voting Gauntlet" in caplog.text
+    assert "No channel ID is configured for the Voting Gauntlet scores task" in caplog.text
     assert not voting_gauntlet.task_voting_gauntlet_scores.is_running()
