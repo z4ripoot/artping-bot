@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from types import SimpleNamespace
 
 import discord
 
@@ -10,7 +11,10 @@ from tests.fakes import FakeInteraction
 
 
 def run_command(interaction, call, command_name="checkping", **options):
-    asyncio.run(run(interaction, command_name, call, **options))
+    # run takes the name from the app command being run; a stand-in, unless the test set a command
+    if interaction.command is None:
+        interaction.command = SimpleNamespace(name=command_name)
+    asyncio.run(run(interaction, call, **options))
 
 
 def replies(interaction):

@@ -13,8 +13,8 @@ class EasterEggCog(commands.Cog):
 
     @app_commands.command(name="lorenz")
     async def lorenz(self, interaction: discord.Interaction):
-        await run(interaction, "lorenz", lambda: easter_eggs.LORENZ_SMILE)
+        await run(interaction, lambda: easter_eggs.LORENZ_SMILE)
 
     @app_commands.command(name="chromk", description="Chromk")
     async def chromk(self, interaction: discord.Interaction):
-        await run(interaction, "chromk", lambda: easter_eggs.CHROMK)
+        await run(interaction, lambda: easter_eggs.CHROMK)

@@ -19,7 +19,7 @@ def build_art_ping_command(max_characters: int) -> app_commands.Command:
 
     async def art_ping(interaction: discord.Interaction, **characters: str | None):
         values = [value for value in characters.values() if value is not None]
-        await run(interaction, "artping", lambda: art_ping_service.do_art_ping([to_name(value) for value in values]))
+        await run(interaction, lambda: art_ping_service.do_art_ping([to_name(value) for value in values]))
 
     parameters = [inspect.Parameter("interaction", inspect.Parameter.POSITIONAL_OR_KEYWORD,
                                     annotation=discord.Interaction)]
@@ -53,16 +53,14 @@ class ArtPingCog(commands.Cog):
     @app_commands.describe(character=CHARACTER_DESCRIPTION)
     @app_commands.autocomplete(character=character_choices)
     async def add_ping(self, interaction: discord.Interaction, character: str):
-        await run(interaction, "addping",
-                  lambda: art_ping_service.add_ping(str(interaction.user.id), to_name(character)))
+        await run(interaction, lambda: art_ping_service.add_ping(str(interaction.user.id), to_name(character)))
 
     @app_commands.command(name="removeping", description="Remove yourself from the ping list of this character")
     @app_commands.describe(character=CHARACTER_DESCRIPTION)
     @app_commands.autocomplete(character=character_choices)
     async def remove_ping(self, interaction: discord.Interaction, character: str):
-        await run(interaction, "removeping",
-                  lambda: art_ping_service.remove_ping(str(interaction.user.id), to_name(character)))
+        await run(interaction, lambda: art_ping_service.remove_ping(str(interaction.user.id), to_name(character)))
 
     @app_commands.command(name="checkping", description="See which characters you are being pinged for")
     async def check_ping(self, interaction: discord.Interaction):
-        await run(interaction, "checkping", lambda: art_ping_service.check_ping(str(interaction.user.id)))
+        await run(interaction, lambda: art_ping_service.check_ping(str(interaction.user.id)))

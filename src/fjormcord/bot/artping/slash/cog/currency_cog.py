@@ -19,19 +19,18 @@ class CurrencyCog(commands.Cog):
     @app_commands.autocomplete(currency=currency_choices)
     async def set_currency(self, interaction: discord.Interaction, currency: str,
                            amount: app_commands.Range[int, 0, None]):
-        await run(interaction, "setcurrency",
+        await run(interaction,
                   lambda: currency_service.set_currency(str(interaction.user.id), to_name(currency), amount))
 
     @app_commands.command(name="clearcurrency", description="Clear the number you have saved for this currency")
     @app_commands.describe(currency=CURRENCY_DESCRIPTION)
     @app_commands.autocomplete(currency=currency_choices)
     async def clear_currency(self, interaction: discord.Interaction, currency: str):
-        await run(interaction, "clearcurrency",
-                  lambda: currency_service.clear_currency(str(interaction.user.id), to_name(currency)))
+        await run(interaction, lambda: currency_service.clear_currency(str(interaction.user.id), to_name(currency)))
 
     @app_commands.command(name="checkwallet", description="Shows a list of all currencies you have and their count")
     async def check_wallet(self, interaction: discord.Interaction):
-        await run(interaction, "checkwallet",
+        await run(interaction,
                   lambda: currency_service.check_wallet(str(interaction.user.id), interaction.user.display_name,
                                                         slash=True))
 
@@ -40,17 +39,17 @@ class CurrencyCog(commands.Cog):
     @app_commands.autocomplete(currency=currency_choices)
     async def scoreboard(self, interaction: discord.Interaction, currency: str,
                          page: app_commands.Range[int, 1, None] = 1):
-        await run(interaction, "scoreboard",
+        await run(interaction,
                   lambda: currency_service.get_scoreboard(interaction.client, to_name(currency), page, slash=True),
                   defer=True)
 
     @admin_command(name="addcurrency", description="Add a currency that users can track")
     @app_commands.describe(currency="The new currency's name; spaces are fine")
     async def add_currency(self, interaction: discord.Interaction, currency: str):
-        await run(interaction, "addcurrency", lambda: currency_service.add_currency(to_name(currency)))
+        await run(interaction, lambda: currency_service.add_currency(to_name(currency)))
 
     @admin_command(name="removecurrency", description="Remove a currency and clear it from all wallets")
     @app_commands.describe(currency=CURRENCY_DESCRIPTION)
     @app_commands.autocomplete(currency=currency_choices)
     async def remove_currency(self, interaction: discord.Interaction, currency: str):
-        await run(interaction, "removecurrency", lambda: currency_service.remove_currency(to_name(currency)))
+        await run(interaction, lambda: currency_service.remove_currency(to_name(currency)))

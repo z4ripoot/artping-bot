@@ -23,8 +23,8 @@ def _is_admin_command(interaction: discord.Interaction) -> bool:
     return permissions is not None and permissions.administrator
 
 
-async def run(interaction: discord.Interaction, command_name: str, call: Callable[[], str | Awaitable[str]], *,
-              defer: bool = False, allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS) -> None:
+async def run(interaction: discord.Interaction, call: Callable[[], str | Awaitable[str]], *, defer: bool = False,
+              allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS) -> None:
     # Runs a slash command the way legacy.dispatch runs a ~ command: checks, the call, and the reply. call does the
     # command's work and returns the reply, directly or as a coroutine; it raises CommandError to turn the user down.
     try:
@@ -40,6 +40,7 @@ async def run(interaction: discord.Interaction, command_name: str, call: Callabl
         await _send(interaction, str(e), ephemeral=True)
         return
     except Exception:
+        command_name = interaction.command.name
         logging.exception("Command /%s failed", command_name)
         await _send(interaction, f"Something went wrong while running /{command_name}", ephemeral=True)
         return
