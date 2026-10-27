@@ -10,19 +10,26 @@ from discord.ext import tasks
 
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.model.voting_gauntlet import Entrant, Round
+from fjormcord.bot.artping.service import voting_gauntlet_service
+from fjormcord.bot.artping.util.message_util import split_message
+from fjormcord.bot.artping.voting_gauntlet_view import TrackView
 
 # Redirects to the page of the latest gauntlet, e.g. /voting_gauntlet/tournaments/112. There is no API, so the page's
 # HTML is read; the redirect drops a query, so the language and timezone are added to the page it redirects to
 CURRENT_URL = "https://support.fire-emblem-heroes.com/voting_gauntlet/current"
 PAGE_QUERY = {"locale": "en-US", "timezone": "Etc/UTC"}
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=30)
+TOURNAMENT_PATTERN = re.compile(r'/tournaments/(\d+)$')
 
 # The site counts the votes at the top of every hour; a few minutes later the new scores are on the page
 POSTING_TIMES = [time(hour=hour, minute=5, tzinfo=timezone.utc) for hour in range(24)]
 
 ROUND_PATTERN = re.compile(r'<article class="body-section-tournament">(.*?)</article>', re.DOTALL)
 WINDOW_PATTERN = re.compile(r'<div class="tournaments-date">([^<]*)</div>')
-ENTRANT_PATTERN = re.compile(r'<p class="name">([^<]*)</p><p>([\d,]+)</p>')
+# A character's picture, then its name and score. The picture's class ends in its status: normal or behind
+ENTRANT_PATTERN = re.compile(r'<div class="tournaments-art-(?:left|right) art-\d+-\d+-(\w+)">'
+                             r'.*?<p class="name">([^<]*)</p><p>([\d,]+)</p>', re.DOTALL)
+STATUSES = {"normal": False, "behind": True}
 # One end of a round's window, e.g. "10/5 at 7:00 a.m."
 TIME_PATTERN = re.compile(r'(\d{1,2})/(\d{1,2}) at (\d{1,2}):(\d{2}) ([ap])\.m\.')
 
@@ -43,7 +50,8 @@ def start_voting_gauntlet_notification(client: discord.Client):
 async def task_voting_gauntlet_scores(client: discord.Client):
     try:
         current_time = now()
-        rounds = parse_rounds(await fetch_page(), current_time)
+        tournament_id, page = await fetch_page()
+        rounds = parse_rounds(page, current_time)
     except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
         # An exception would stop the loop; the next hour tries again
         logging.exception("Voting Gauntlet scores could not be read. Task will be skipped")
@@ -51,27 +59,46 @@ async def task_voting_gauntlet_scores(client: discord.Client):
 
     running = next((r for r in rounds if r.start <= current_time < r.end), None)
     if running is None:
+        # Rounds are listed once they start, latest first; the final one has a single matchup
+        latest = rounds[0]
+        if len(latest.matchups) == 1 and current_time >= latest.end:
+            voting_gauntlet_service.end_gauntlet()
         return
+
+    voting_gauntlet_service.start_gauntlet(tournament_id)
     channel = client.get_channel(NOTIFICATION_CHANNEL_ID)
     if channel is None:
         logging.error("Channel %s not found. Task will be skipped", NOTIFICATION_CHANNEL_ID)
         return
     for matchup in running.matchups:
-        await channel.send(format_matchup(matchup))
+        trackers = [user_id for entrant in matchup if entrant.behind
+                    for user_id in voting_gauntlet_service.get_trackers(tournament_id, entrant.name)]
+        try:
+            *parts, last = split_message(format_matchup(matchup, trackers))
+            for part in parts:
+                await channel.send(part)
+            await channel.send(last, view=TrackView(tournament_id, matchup))
+        except discord.DiscordException:
+            # The other matchups are still posted
+            logging.exception("Posting the Voting Gauntlet matchup of %s failed", matchup[0].name)
 
 
 def now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-async def fetch_page() -> str:
+async def fetch_page() -> tuple[int, str]:
+    # The tournament number of the latest gauntlet, and its page
     async with aiohttp.ClientSession(timeout=REQUEST_TIMEOUT) as session:
         async with session.get(CURRENT_URL) as response:
             response.raise_for_status()
             page_url = response.url
+        tournament = TOURNAMENT_PATTERN.search(page_url.path)
+        if tournament is None:
+            raise ValueError(f"Not a tournament page: {page_url}")
         async with session.get(page_url.with_query(PAGE_QUERY)) as response:
             response.raise_for_status()
-            return await response.text()
+            return int(tournament.group(1)), await response.text()
 
 
 def parse_rounds(page: str, current_time: datetime) -> list[Round]:
@@ -82,17 +109,24 @@ def parse_rounds(page: str, current_time: datetime) -> list[Round]:
         if window is None:
             raise ValueError("Round without a date")
         start, end = parse_window(window.group(1), current_time)
-        matchups = []
-        for battle in section.split('<li class="tournaments-battle">')[1:]:
-            entrants = [Entrant(html.unescape(name), int(score.replace(",", "")))
-                        for name, score in ENTRANT_PATTERN.findall(battle)]
-            if len(entrants) != 2:
-                raise ValueError(f"Matchup with {len(entrants)} entrants")
-            matchups.append((entrants[0], entrants[1]))
+        matchups = [_parse_matchup(battle) for battle in section.split('<li class="tournaments-battle">')[1:]]
         rounds.append(Round(start, end, matchups))
     if not rounds:
         raise ValueError("No rounds on the page")
     return rounds
+
+
+def _parse_matchup(battle: str) -> tuple[Entrant, Entrant]:
+    entrants = []
+    for status, name, score in ENTRANT_PATTERN.findall(battle):
+        if status not in STATUSES:
+            raise ValueError(f"Unknown status {status} of {name}")
+        entrants.append(Entrant(html.unescape(name), int(score.replace(",", "")), STATUSES[status]))
+    if len(entrants) != 2:
+        raise ValueError(f"Matchup with {len(entrants)} entrants")
+    if entrants[0].behind and entrants[1].behind:
+        raise ValueError(f"Both {entrants[0].name} and {entrants[1].name} are behind")
+    return entrants[0], entrants[1]
 
 
 def parse_window(window: str, current_time: datetime) -> tuple[datetime, datetime]:
@@ -121,6 +155,17 @@ def _to_datetime(month: str, day: str, hour: str, minute: str, half: str, curren
     return min(candidates, key=lambda candidate: abs(candidate - current_time))
 
 
-def format_matchup(matchup: tuple[Entrant, Entrant]) -> str:
-    stronger, weaker = sorted(matchup, key=lambda entrant: entrant.score, reverse=True)
-    return f"{stronger.name} (Stronger)\n{stronger.score:,}\n{weaker.name} (Weaker)\n{weaker.score:,}"
+def format_matchup(matchup: tuple[Entrant, Entrant], trackers: list[str]) -> str:
+    # In the site's order, labelled as in the game; the trackers of the Weaker character are mentioned below
+    lines = []
+    for entrant, opponent in (matchup, matchup[::-1]):
+        lines += [f"{entrant.name} ({_status(entrant, opponent)})", f"{entrant.score:,}"]
+    if trackers:
+        lines.append(" ".join(f"<@{user_id}>" for user_id in trackers))
+    return "\n".join(lines)
+
+
+def _status(entrant: Entrant, opponent: Entrant) -> str:
+    if entrant.behind:
+        return "Weaker"
+    return "Stronger" if opponent.behind else "Same"

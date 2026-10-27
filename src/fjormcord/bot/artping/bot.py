@@ -16,6 +16,7 @@ from fjormcord.bot.artping.slash.cog.resource_cog import ResourceCog
 from fjormcord.bot.artping.slash.sync import sync_commands
 from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS
 from fjormcord.bot.artping.voting_gauntlet import start_voting_gauntlet_notification
+from fjormcord.bot.artping.voting_gauntlet_view import TrackButton
 
 
 class ArtPingClient(commands.Bot):
@@ -34,6 +35,8 @@ class ArtPingClient(commands.Bot):
         await self.add_cog(CurrencyCog(self))
         await self.add_cog(ResourceCog(self))
         await self.add_cog(EasterEggCog(self))
+        # Clicks on the Track buttons of the Voting Gauntlet messages, also those sent before a restart
+        self.add_dynamic_items(TrackButton)
         await sync_commands(self.tree, config.read_settings().guild_id)
 
     async def on_ready(self):

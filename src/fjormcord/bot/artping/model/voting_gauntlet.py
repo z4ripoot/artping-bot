@@ -7,6 +7,8 @@ class Entrant:
     # A character in a Voting Gauntlet matchup, with the votes counted so far
     name: str
     score: int
+    # Whether the site shows the character as behind (the game's "Weaker"); at most one side of a matchup is
+    behind: bool
 
 
 @dataclass(frozen=True)

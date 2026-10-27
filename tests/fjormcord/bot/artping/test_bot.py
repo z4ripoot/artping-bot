@@ -10,6 +10,7 @@ from fjormcord.bot.artping import config
 from fjormcord.bot.artping.legacy import commands
 from fjormcord.bot.artping.bot import ArtPingClient
 from fjormcord.bot.artping.legacy.commands import Command
+from fjormcord.bot.artping.voting_gauntlet_view import TrackButton
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.easter_eggs import LORENZ_SMILE
 from tests.fakes import FakeClock, make_message
@@ -84,18 +85,22 @@ def test_add_character_by_non_admin_posts_a_vote(bot):
     assert vote.startswith("Vote to add Lucina. Votes needed: ")
 
 
-def test_setup_adds_the_vote_cog_and_its_button(bot, monkeypatch):
+def test_setup_adds_the_vote_cog_and_the_buttons(bot, monkeypatch):
     synced = []
 
     async def sync_commands(tree, guild_id):
         synced.append((tree, guild_id))
 
+    dynamic_items = []
     monkeypatch.setattr("fjormcord.bot.artping.bot.sync_commands", sync_commands)
+    monkeypatch.setattr(bot, "add_dynamic_items", lambda *items: dynamic_items.extend(items))
 
     asyncio.run(bot.setup_hook())
 
     assert bot.get_cog("CharacterVoteCog") is not None
     assert [type(view).__name__ for view in bot.persistent_views] == ["VoteView"]
+    # Routes clicks on the Voting Gauntlet buttons, also those of messages sent before a restart
+    assert dynamic_items == [TrackButton]
     # The sync comes last, so it registers the commands of every cog
     assert synced == [(bot.tree, config.read_settings().guild_id)]
 
