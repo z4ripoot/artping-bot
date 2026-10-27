@@ -41,16 +41,12 @@ async def toggle_vote(client: discord.Client, vote_message: discord.Message, use
         await _edit(vote_message, view=None)
         return "This vote has already been closed"
 
-    name = vote.character_name
-    try:
-        character_service.require_unused_name(name)
-    except CommandError as e:
-        logging.info("Dropping vote %s: %s", message_id, e)
-        character_vote_repository.remove_vote(message_id)
-        await _edit(vote_message, content=str(e), view=None)
-        return str(e)
+    dropped = await _drop_if_name_taken(vote_message, vote)
+    if dropped is not None:
+        return dropped
 
     # Nothing awaits from reading the vote to the commit, so other clicks and events can't interleave
+    name = vote.character_name
     user_id = str(user.id)
     # The click comes from a server member, so the permissions are there without fetching the member
     administrator = is_administrator(user)
@@ -62,11 +58,7 @@ async def toggle_vote(client: discord.Client, vote_message: discord.Message, use
         character_vote_repository.add_voter(message_id, user_id)
         out = f"Your vote for {name} has been added"
 
-    count = character_vote_repository.count_voters(message_id)
-    if administrator or count >= config.read_settings().character_votes_needed:
-        await _pass(client, vote_message, vote)
-    else:
-        await _edit(vote_message, view=vote_view.VoteView(count))
+    await _pass_or_show_count(client, vote_message, vote, administrator)
     return out
 
 
@@ -125,24 +117,39 @@ async def _check_open_vote(client: discord.Client, vote: CharacterVote):
     current = character_vote_repository.get_vote(message_id)
     if current is None:
         return
-    try:
-        character_service.require_unused_name(vote.character_name)
-    except CommandError as e:
-        logging.info("Dropping vote %s: %s", message_id, e)
-        character_vote_repository.remove_vote(message_id)
-        await _edit(vote_message, content=str(e), view=None)
+    if await _drop_if_name_taken(vote_message, vote) is not None:
         return
 
     converting = not current.uses_button
     if converting:
         character_vote_repository.convert_vote(message_id, [str(voter.id) for voter in voters])
 
-    count = character_vote_repository.count_voters(message_id)
-    if (converting and has_administrator) or count >= settings.character_votes_needed:
+    # Re-rendered at every start, so the text and label follow a changed votes_needed, and a conversion whose edit
+    # failed gets its button on the next start
+    await _pass_or_show_count(client, vote_message, vote, converting and has_administrator)
+
+
+async def _drop_if_name_taken(vote_message: discord.Message, vote: CharacterVote) -> str | None:
+    # A name taken another way, e.g. as an alias, leaves the vote nothing to decide: it is dropped and its message
+    # says why. Returns that reason, or None when the vote stays open; then it awaits nothing, so the caller's
+    # vote can't change underneath it
+    try:
+        character_service.require_unused_name(vote.character_name)
+    except CommandError as e:
+        logging.info("Dropping vote %s: %s", vote.message_id, e)
+        character_vote_repository.remove_vote(vote.message_id)
+        await _edit(vote_message, content=str(e), view=None)
+        return str(e)
+    return None
+
+
+async def _pass_or_show_count(client: discord.Client, vote_message: discord.Message, vote: CharacterVote,
+                              by_administrator: bool):
+    # Adds the character when an admin voted or enough users did; otherwise renders the message with the current count
+    count = character_vote_repository.count_voters(vote.message_id)
+    if by_administrator or count >= config.read_settings().character_votes_needed:
         await _pass(client, vote_message, vote)
     else:
-        # Re-rendered at every start, so the text and label follow a changed votes_needed, and a conversion whose
-        # edit failed gets its button on the next start
         await _edit(vote_message, content=_vote_text(vote.character_name), view=vote_view.VoteView(count))
 
 
