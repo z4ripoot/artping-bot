@@ -60,7 +60,7 @@ def test_art_ping_has_a_cooldown():
     invoke(command, first, character="Lucina")
     invoke(command, second, character="Lucina")
 
-    assert second.sent[0][1] is True
+    assert second.sent[0].ephemeral is True
 
 
 def test_add_ping_with_spaces():
@@ -71,7 +71,7 @@ def test_add_ping_with_spaces():
 
     invoke(cog.add_ping, interaction, cog, character="black knight")
 
-    assert interaction.sent[0][0] == "Ping for Black_Knight has been added"
+    assert interaction.sent[0].content == "Ping for Black_Knight has been added"
 
 
 def test_remove_and_check_ping():
@@ -82,8 +82,8 @@ def test_remove_and_check_ping():
     invoke(cog.check_ping, check, cog)
     invoke(cog.remove_ping, remove, cog, character="Lucina")
 
-    assert "Lucina" in check.sent[0][0]
-    assert remove.sent[0][0] == "Ping for Lucina has been removed"
+    assert "Lucina" in check.sent[0].content
+    assert remove.sent[0].content == "Ping for Lucina has been removed"
 
 
 def test_cog_adds_and_removes_the_art_ping_command():

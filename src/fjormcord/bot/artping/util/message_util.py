@@ -1,4 +1,6 @@
+import inspect
 import logging
+from collections.abc import Awaitable, Iterator
 
 import discord
 
@@ -14,18 +16,23 @@ ALLOWED_MENTIONS = discord.AllowedMentions(everyone=False, roles=False, users=Tr
 MAX_MESSAGE_LENGTH = 2000
 
 
-def log_info(reply):
+def log_info(reply: str) -> str:
     # Logs the reply of a command that changed something, and returns it
     logging.info(reply)
     return reply
 
 
-def get_entries(content):
+async def await_reply(reply: str | Awaitable[str]) -> str:
+    # Handlers and services return their reply directly, or as a coroutine when they wait on Discord
+    return await reply if inspect.isawaitable(reply) else reply
+
+
+def get_entries(content: str) -> list[str]:
     # Everything after the command, empty when there is nothing; split() also ignores repeated whitespace
     return content.split()[1:]
 
 
-def get_single_name(content, argument):
+def get_single_name(content: str, argument: str) -> str:
     # For commands that take exactly one name; argument says what it is, e.g. "character name"
     entries = get_entries(content)
     if not entries:
@@ -35,7 +42,7 @@ def get_single_name(content, argument):
     return entries[0]
 
 
-def get_two_entries(content, first, second):
+def get_two_entries(content: str, first: str, second: str) -> tuple[str, str]:
     # For commands that take exactly two arguments; first and second say what they are, e.g. "currency name", "amount"
     entries = get_entries(content)
     if len(entries) > 2:
@@ -45,8 +52,8 @@ def get_two_entries(content, first, second):
     return entries[0], entries[1]
 
 
-# Splits text into chunks within Discord's message length limit; each chunk is sent as a separate message
-def split_message(text, limit=MAX_MESSAGE_LENGTH):
+def split_message(text: str, limit: int = MAX_MESSAGE_LENGTH) -> list[str]:
+    # Splits text into chunks within Discord's message length limit; each chunk is sent as a separate message
     chunks = []
     current = ""
 
@@ -63,7 +70,7 @@ def split_message(text, limit=MAX_MESSAGE_LENGTH):
     return chunks
 
 
-def _pieces(text, limit):
+def _pieces(text: str, limit: int) -> Iterator[tuple[str, str]]:
     # Yields (separator, piece) pairs, each piece at most limit long
     for line_index, line in enumerate(text.split("\n")):
         line_separator = "\n" if line_index else ""
@@ -74,4 +81,4 @@ def _pieces(text, limit):
         for word_index, word in enumerate(line.split(" ")):
             separator = " " if word_index else line_separator
             for start in range(0, len(word), limit):
-                yield separator if start == 0 else "", word[start:start + limit]
+                yield separator if start == 0 else "", word[start : start + limit]

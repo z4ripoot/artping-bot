@@ -11,7 +11,7 @@ from fjormcord.bot.artping.util.user_util import get_username
 SCOREBOARD_PAGE_SIZE = 10
 
 # The largest number SQLite can store in an INTEGER column
-MAX_AMOUNT = 2 ** 63 - 1
+MAX_AMOUNT = 2**63 - 1
 
 
 def require_currency(name: str) -> Currency:
@@ -70,12 +70,9 @@ def check_wallet(user_id: str, display_name: str, slash: bool = False) -> str:
         set_command = "/setcurrency" if slash else "~setcurrency"
         return f"Your wallet is empty. Use {set_command} to add a currency"
 
-    out = f"User {display_name}'s wallet:\n"
-
-    for entry in wallet:
-        out += f"{entry.currency_name}: {entry.amount}\n"
-
-    return out
+    lines = [f"User {display_name}'s wallet:"]
+    lines += [f"{entry.currency_name}: {entry.amount}" for entry in wallet]
+    return "\n".join(lines)
 
 
 async def get_scoreboard(client: discord.Client, name: str, page: int = 1, slash: bool = False) -> str:
@@ -92,19 +89,19 @@ async def get_scoreboard(client: discord.Client, name: str, page: int = 1, slash
         raise CommandError(f"Page {page} doesn't exist. The scoreboard for {currency_name} has {page_count} pages")
 
     if page_count == 1:
-        out = f"Scoreboard for {currency_name}:\n"
+        lines = [f"Scoreboard for {currency_name}:"]
     else:
-        out = f"Scoreboard for {currency_name} (page {page}/{page_count}):\n"
+        lines = [f"Scoreboard for {currency_name} (page {page}/{page_count}):"]
 
     # Only the users on this page are looked up
     start = (page - 1) * SCOREBOARD_PAGE_SIZE
-    for rank, entry in enumerate(scoreboard[start:start + SCOREBOARD_PAGE_SIZE], start=start + 1):
-        out += f"{rank}. {await get_username(client, entry.user_id)} ({entry.amount})\n"
+    for rank, entry in enumerate(scoreboard[start : start + SCOREBOARD_PAGE_SIZE], start=start + 1):
+        lines.append(f"{rank}. {await get_username(client, entry.user_id)} ({entry.amount})")
 
     if page < page_count:
         if slash:
-            out += f"Use /scoreboard currency:{currency_name} page:{page + 1} for the next page"
+            lines.append(f"Use /scoreboard currency:{currency_name} page:{page + 1} for the next page")
         else:
-            out += f"Use ~scoreboard {currency_name} {page + 1} for the next page"
+            lines.append(f"Use ~scoreboard {currency_name} {page + 1} for the next page")
 
-    return out
+    return "\n".join(lines)

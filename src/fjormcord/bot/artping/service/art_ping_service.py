@@ -6,6 +6,7 @@ from fjormcord.bot.artping.repository import art_ping_repository, character_repo
 from fjormcord.bot.artping.service.character_service import require_character
 from fjormcord.bot.artping.util.message_util import log_info
 from fjormcord.bot.artping.util.name_util import normalize_name
+from fjormcord.bot.artping.util.user_util import mentions
 
 
 def _find_characters(names: list[str]) -> tuple[list[Character], list[str]]:
@@ -31,7 +32,7 @@ def _ping(characters: list[Character]) -> str:
     logging.info("Pinged %s users for %s", len(user_ids), character_names)
     if not user_ids:
         return f"Nobody is subscribed to {character_names}"
-    return f"{character_names}: " + " ".join(f"<@{user_id}>" for user_id in user_ids)
+    return f"{character_names}: {mentions(user_ids)}"
 
 
 def do_art_ping(names: list[str]) -> str:

@@ -12,6 +12,8 @@ from fjormcord.bot.artping import config
 from fjormcord.bot.artping.model.voting_gauntlet import Entrant, Round
 from fjormcord.bot.artping.service import voting_gauntlet_service
 from fjormcord.bot.artping.util.message_util import split_message
+from fjormcord.bot.artping.util.task_util import get_task_channel, start_channel_task
+from fjormcord.bot.artping.util.user_util import mentions
 from fjormcord.bot.artping.voting_gauntlet_view import TrackView
 
 # Redirects to the page of the latest gauntlet, e.g. /voting_gauntlet/tournaments/112. There is no API, so the page's
@@ -19,7 +21,7 @@ from fjormcord.bot.artping.voting_gauntlet_view import TrackView
 CURRENT_URL = "https://support.fire-emblem-heroes.com/voting_gauntlet/current"
 PAGE_QUERY = {"locale": "en-US", "timezone": "Etc/UTC"}
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=30)
-TOURNAMENT_PATTERN = re.compile(r'/tournaments/(\d+)$')
+TOURNAMENT_PATTERN = re.compile(r"/tournaments/(\d+)$")
 
 # The site counts the votes at the top of every hour; a few minutes later the new scores are on the page
 POSTING_TIMES = [time(hour=hour, minute=5, tzinfo=timezone.utc) for hour in range(24)]
@@ -27,23 +29,20 @@ POSTING_TIMES = [time(hour=hour, minute=5, tzinfo=timezone.utc) for hour in rang
 ROUND_PATTERN = re.compile(r'<article class="body-section-tournament">(.*?)</article>', re.DOTALL)
 WINDOW_PATTERN = re.compile(r'<div class="tournaments-date">([^<]*)</div>')
 # A character's picture, then its name and score. The picture's class ends in its status: normal or behind
-ENTRANT_PATTERN = re.compile(r'<div class="tournaments-art-(?:left|right) art-\d+-\d+-(\w+)">'
-                             r'.*?<p class="name">([^<]*)</p><p>([\d,]+)</p>', re.DOTALL)
+ENTRANT_PATTERN = re.compile(
+    r'<div class="tournaments-art-(?:left|right) art-\d+-\d+-(\w+)">'
+    r'.*?<p class="name">([^<]*)</p><p>([\d,]+)</p>',
+    re.DOTALL,
+)
 STATUSES = {"normal": False, "behind": True}
 # One end of a round's window, e.g. "10/5 at 7:00 a.m."
-TIME_PATTERN = re.compile(r'(\d{1,2})/(\d{1,2}) at (\d{1,2}):(\d{2}) ([ap])\.m\.')
-
-NOTIFICATION_CHANNEL_ID = config.read_settings().voting_gauntlet_channel_id
+TIME_PATTERN = re.compile(r"(\d{1,2})/(\d{1,2}) at (\d{1,2}):(\d{2}) ([ap])\.m\.")
 
 
 def start_voting_gauntlet_notification(client: discord.Client):
-    if not NOTIFICATION_CHANNEL_ID:
-        logging.warning("No channel ID is configured for Voting Gauntlet scores. Voting Gauntlet task will not be "
-                        "initiated")
-    elif not task_voting_gauntlet_scores.is_running():
-        # on_ready fires again after reconnects; starting a running loop raises
-        logging.info("Initiating Voting Gauntlet task")
-        task_voting_gauntlet_scores.start(client)
+    start_channel_task(
+        task_voting_gauntlet_scores, client, config.read_settings().voting_gauntlet_channel_id, "Voting Gauntlet scores"
+    )
 
 
 @tasks.loop(time=POSTING_TIMES)
@@ -57,7 +56,7 @@ async def task_voting_gauntlet_scores(client: discord.Client):
         logging.exception("Voting Gauntlet scores could not be read. Task will be skipped")
         return
 
-    running = next((r for r in rounds if r.start <= current_time < r.end), None)
+    running = next((round_ for round_ in rounds if round_.start <= current_time < round_.end), None)
     if running is None:
         # Rounds are listed once they start, latest first; the final one has a single matchup
         latest = rounds[0]
@@ -66,13 +65,16 @@ async def task_voting_gauntlet_scores(client: discord.Client):
         return
 
     voting_gauntlet_service.start_gauntlet(tournament_id)
-    channel = client.get_channel(NOTIFICATION_CHANNEL_ID)
+    channel = get_task_channel(client, config.read_settings().voting_gauntlet_channel_id)
     if channel is None:
-        logging.error("Channel %s not found. Task will be skipped", NOTIFICATION_CHANNEL_ID)
         return
     for matchup in running.matchups:
-        trackers = [user_id for entrant in matchup if entrant.behind
-                    for user_id in voting_gauntlet_service.get_trackers(tournament_id, entrant.name)]
+        trackers = [
+            user_id
+            for entrant in matchup
+            if entrant.behind
+            for user_id in voting_gauntlet_service.get_trackers(tournament_id, entrant.name)
+        ]
         try:
             *parts, last = split_message(format_matchup(matchup, trackers))
             for part in parts:
@@ -161,7 +163,7 @@ def format_matchup(matchup: tuple[Entrant, Entrant], trackers: list[str]) -> str
     for entrant, opponent in (matchup, matchup[::-1]):
         lines += [f"{entrant.name} ({_status(entrant, opponent)})", f"{entrant.score:,}"]
     if trackers:
-        lines.append(" ".join(f"<@{user_id}>" for user_id in trackers))
+        lines.append(mentions(trackers))
     return "\n".join(lines)
 
 

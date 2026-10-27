@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from types import SimpleNamespace
 
 import discord
 
@@ -10,7 +11,10 @@ from tests.fakes import FakeInteraction
 
 
 def run_command(interaction, call, command_name="checkping", **options):
-    asyncio.run(run(interaction, command_name, call, **options))
+    # run takes the name from the app command being run; a stand-in, unless the test set a command
+    if interaction.command is None:
+        interaction.command = SimpleNamespace(name=command_name)
+    asyncio.run(run(interaction, call, **options))
 
 
 def replies(interaction):
@@ -108,8 +112,7 @@ def test_success_starts_cooldown_for_every_command():
 
     run_command(interaction, lambda: "subscribed", "checkping")
 
-    assert replies(interaction) == [
-        ("pinged", False), ("You used a command recently. Try again in 1 second", True)]
+    assert replies(interaction) == [("pinged", False), ("You used a command recently. Try again in 1 second", True)]
 
 
 def test_failure_does_not_start_cooldown():

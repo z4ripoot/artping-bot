@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 from fjormcord.bot.artping import coliseum
-from tests.fakes import FakeChannel
+from tests.fakes import FakeChannel, use_settings
 
 
 def fake_datetime(utc_now, host_offset):
@@ -24,7 +24,7 @@ CHANNEL_ID = 123
 def run_coliseum_task(monkeypatch, utc_now, host_offset=timedelta(hours=2), channel_id=CHANNEL_ID):
     channel = FakeChannel()
     client = SimpleNamespace(get_channel=lambda channel_id: channel if channel_id == CHANNEL_ID else None)
-    monkeypatch.setattr(coliseum, "NOTIFICATION_CHANNEL_ID", channel_id)
+    use_settings(monkeypatch, coliseum_channel_id=channel_id)
     monkeypatch.setattr(coliseum, "datetime", fake_datetime(utc_now, host_offset))
 
     asyncio.run(coliseum.task_coliseum_before_closing_notification.coro(client))
@@ -52,7 +52,7 @@ def test_coliseum_notification_skipped_for_unknown_channel(monkeypatch, caplog):
 
 
 def test_coliseum_notification_not_started_without_channel_id(monkeypatch, caplog):
-    monkeypatch.setattr(coliseum, "NOTIFICATION_CHANNEL_ID", None)
+    use_settings(monkeypatch, coliseum_channel_id=None)
 
     coliseum.start_coliseum_notification(SimpleNamespace())
 

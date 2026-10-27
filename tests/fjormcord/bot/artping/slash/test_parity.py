@@ -10,7 +10,7 @@ SLASH_ONLY = {"resource", "lorenz", "chromk"}
 
 
 def test_every_legacy_command_has_a_slash_command():
-    cogs = [ArtPingCog(None), CharacterCog(None), CurrencyCog(None), ResourceCog(None), EasterEggCog(None)]
+    cogs = [ArtPingCog(None), CharacterCog(), CurrencyCog(), ResourceCog(), EasterEggCog()]
     slash_names = {command.name for cog in cogs for command in cog.get_app_commands()}
     slash_names.add(build_art_ping_command(1).name)
 

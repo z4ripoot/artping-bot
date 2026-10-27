@@ -1,4 +1,4 @@
-from fjormcord.bot.artping.database import execute, get_database_connection
+from fjormcord.bot.artping.database import execute, fetch_names, fetch_one
 from fjormcord.bot.artping.model.resource import Resource
 
 
@@ -9,22 +9,11 @@ def get_resource(name: str) -> Resource | None:
         WHERE R.NAME = ?
         """
 
-    row = get_database_connection().execute(sql, (name,)).fetchone()
-    return Resource(**row) if row else None
+    return fetch_one(Resource, sql, (name,))
 
 
 def get_resource_names(prefix: str = "", limit: int = -1) -> list[str]:
-    # The names starting with prefix, ignoring case; a limit of -1 means no limit
-    sql = """
-        SELECT R.NAME
-        FROM RESOURCE R
-        WHERE SUBSTR(R.NAME, 1, LENGTH(?)) = ? COLLATE NOCASE
-        ORDER BY R.NAME
-        LIMIT ?
-        """
-
-    # Each row holds just the one selected column
-    return [name for (name,) in get_database_connection().execute(sql, (prefix, prefix, limit))]
+    return fetch_names("SELECT R.NAME FROM RESOURCE R", prefix, limit)
 
 
 def set_resource(resource: Resource):

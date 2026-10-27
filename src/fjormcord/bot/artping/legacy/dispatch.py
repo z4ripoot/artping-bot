@@ -1,4 +1,3 @@
-import inspect
 import logging
 
 import discord
@@ -8,7 +7,7 @@ from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.exception.missing_argument import MissingArgument
 from fjormcord.bot.artping.legacy.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, Command, format_usage
 from fjormcord.bot.artping.service.resource_service import get_resource_content
-from fjormcord.bot.artping.util.message_util import split_message
+from fjormcord.bot.artping.util.message_util import await_reply, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 
@@ -55,27 +54,20 @@ async def send_resource(client: discord.Client, message: discord.Message, name: 
 
     # Posting a resource is a command too, so it has the cooldown
     try:
-        client.cooldowns.check(message.author.id)
+        with client.cooldowns.command(message.author):
+            logging.info("Posting resource %s for %s", name, message.author.display_name)
+            # The copied text may mention users or roles; posting it again must not ping them
+            for chunk in split_message(content):
+                await message.channel.send(chunk, allowed_mentions=discord.AllowedMentions.none())
     except CommandError as e:
         logging.warning(str(e))
         await message.channel.send(str(e))
-        return
-
-    logging.info("Posting resource %s for %s", name, message.author.display_name)
-    # The copied text may mention users or roles; posting it again must not ping them
-    for chunk in split_message(content):
-        await message.channel.send(chunk, allowed_mentions=discord.AllowedMentions.none())
-    _start_cooldown(client, message.author)
 
 
 async def get_message(client: discord.Client, command: Command, message: discord.Message) -> str:
     try:
-        client.cooldowns.check(message.author.id)
-        out = command.handler(client, message)
-        if inspect.isawaitable(out):
-            out = await out
-        # Only a command that succeeded starts the cooldown, so a mistake can be corrected right away
-        _start_cooldown(client, message.author)
+        with client.cooldowns.command(message.author):
+            out = await await_reply(command.handler(client, message))
     except MissingArgument as e:
         out = f"{e.argument.capitalize()} is missing. Usage: {format_usage(command)}"
         logging.warning(out)
@@ -86,9 +78,3 @@ async def get_message(client: discord.Client, command: Command, message: discord
         logging.exception("Command %s failed", command.name)
         out = f"Something went wrong while running {command.name}"
     return out
-
-
-def _start_cooldown(client: discord.Client, author: discord.abc.User):
-    # Admins never get a cooldown, so checking it doesn't have to exempt them
-    if not is_administrator(author):
-        client.cooldowns.start(author.id)

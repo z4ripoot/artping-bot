@@ -22,19 +22,19 @@ from fjormcord.bot.artping.voting_gauntlet_view import TrackButton
 class ArtPingClient(commands.Bot):
     def __init__(self, **options):
         # The ~ commands are handled by legacy.dispatch, so the prefix is never used
-        options.setdefault('command_prefix', commands.when_mentioned)
-        options.setdefault('help_command', None)
-        options.setdefault('allowed_mentions', ALLOWED_MENTIONS)
+        options.setdefault("command_prefix", commands.when_mentioned)
+        options.setdefault("help_command", None)
+        options.setdefault("allowed_mentions", ALLOWED_MENTIONS)
         super().__init__(**options)
         self.cooldowns = Cooldowns(config.read_settings().cooldown_seconds)
 
     async def setup_hook(self):
         await self.add_cog(CharacterVoteCog(self))
         await self.add_cog(ArtPingCog(self))
-        await self.add_cog(CharacterCog(self))
-        await self.add_cog(CurrencyCog(self))
-        await self.add_cog(ResourceCog(self))
-        await self.add_cog(EasterEggCog(self))
+        await self.add_cog(CharacterCog())
+        await self.add_cog(CurrencyCog())
+        await self.add_cog(ResourceCog())
+        await self.add_cog(EasterEggCog())
         # Clicks on the Track buttons of the Voting Gauntlet messages, also those sent before a restart
         self.add_dynamic_items(TrackButton)
         await sync_commands(self.tree, config.read_settings().guild_id)

@@ -1,14 +1,16 @@
 import asyncio
 import inspect
 import itertools
+from dataclasses import replace
 from types import SimpleNamespace
+from typing import NamedTuple
 
 import discord
 
+from fjormcord.bot.artping import config
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.service import character_vote_service
-
 
 # The bot's own user, e.g. on the reaction it added to vote messages before they had a button
 BOT_USER = SimpleNamespace(id=999, bot=True)
@@ -19,14 +21,23 @@ _message_ids = itertools.count(1000)
 _UNCHANGED = object()
 
 
+def use_settings(monkeypatch, **changes):
+    # Runs the test with these settings changed from the example's
+    monkeypatch.setattr(config, "_settings", replace(config.read_settings(), **changes))
+
+
 def make_user(user_id, bot=False):
     # A user as reactions list them when the member isn't cached: without guild permissions
     return SimpleNamespace(id=user_id, bot=bot)
 
 
 def make_member(user_id, administrator=False):
-    return SimpleNamespace(id=user_id, bot=False, display_name=f"user{user_id}",
-                           guild_permissions=SimpleNamespace(administrator=administrator))
+    return SimpleNamespace(
+        id=user_id,
+        bot=False,
+        display_name=f"user{user_id}",
+        guild_permissions=SimpleNamespace(administrator=administrator),
+    )
 
 
 def http_error(error, status):
@@ -166,15 +177,27 @@ class FakeClient:
 
 
 def make_message(content, user_id=1, administrator=False, channel=None, bot=False):
-    author = SimpleNamespace(id=user_id, display_name=f"user{user_id}", bot=bot,
-                             guild_permissions=SimpleNamespace(administrator=administrator))
-    return SimpleNamespace(content=content, author=author, channel=channel or FakeChannel(),
-                           guild=SimpleNamespace(id=1))
+    author = SimpleNamespace(
+        id=user_id,
+        display_name=f"user{user_id}",
+        bot=bot,
+        guild_permissions=SimpleNamespace(administrator=administrator),
+    )
+    return SimpleNamespace(
+        content=content, author=author, channel=channel or FakeChannel(), guild=SimpleNamespace(id=1)
+    )
 
 
 def click(client, message, user_id, administrator=False):
     # A click on a vote message's button by a server member; returns the ephemeral reply
     return asyncio.run(character_vote_service.toggle_vote(client, message, make_member(user_id, administrator)))
+
+
+class Sent(NamedTuple):
+    # A message sent in answer to an interaction; allowed_mentions is None for the client's default
+    content: str
+    ephemeral: bool
+    allowed_mentions: discord.AllowedMentions | None
 
 
 class FakeInteractionResponse:
@@ -226,11 +249,11 @@ class FakeInteraction:
         self.followup = FakeFollowup(self)
         # The app command being run, set by invoke; None for a component click
         self.command = None
-        # (content, ephemeral, allowed_mentions) of everything sent, as response or follow-up
-        self.sent = []
+        # Everything sent, as response or follow-up
+        self.sent: list[Sent] = []
 
     def record(self, content, ephemeral, allowed_mentions, view):
-        self.sent.append((content, ephemeral, allowed_mentions))
+        self.sent.append(Sent(content, ephemeral, allowed_mentions))
         return self.channel.post(content, view)
 
 

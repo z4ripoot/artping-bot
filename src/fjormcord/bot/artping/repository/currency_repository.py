@@ -1,6 +1,6 @@
 import logging
 
-from fjormcord.bot.artping.database import execute, exists, get_database_connection
+from fjormcord.bot.artping.database import execute, exists, fetch_all, fetch_names, fetch_one
 from fjormcord.bot.artping.model.currency import Currency, ScoreboardEntry, WalletEntry
 
 
@@ -11,8 +11,7 @@ def get_currency(currency_name: str) -> Currency | None:
         WHERE C.NAME = ?
         """
 
-    row = get_database_connection().execute(sql, (currency_name,)).fetchone()
-    return Currency(**row) if row else None
+    return fetch_one(Currency, sql, (currency_name,))
 
 
 def add_currency(currency_name: str):
@@ -73,7 +72,7 @@ def get_wallet(user_id: str) -> list[WalletEntry]:
         ORDER BY C.NAME
         """
 
-    return [WalletEntry(**row) for row in get_database_connection().execute(sql, (user_id,))]
+    return fetch_all(WalletEntry, sql, (user_id,))
 
 
 def get_scoreboard(currency_id: int) -> list[ScoreboardEntry]:
@@ -84,18 +83,8 @@ def get_scoreboard(currency_id: int) -> list[ScoreboardEntry]:
         ORDER BY W.AMOUNT DESC
         """
 
-    return [ScoreboardEntry(**row) for row in get_database_connection().execute(sql, (currency_id,))]
+    return fetch_all(ScoreboardEntry, sql, (currency_id,))
 
 
 def get_currency_names(prefix: str = "", limit: int = -1) -> list[str]:
-    # The names starting with prefix, ignoring case; a limit of -1 means no limit
-    sql = """
-        SELECT C.NAME
-        FROM GACHA_CURRENCY C
-        WHERE SUBSTR(C.NAME, 1, LENGTH(?)) = ? COLLATE NOCASE
-        ORDER BY C.NAME
-        LIMIT ?
-        """
-
-    # Each row holds just the one selected column
-    return [name for (name,) in get_database_connection().execute(sql, (prefix, prefix, limit))]
+    return fetch_names("SELECT C.NAME FROM GACHA_CURRENCY C", prefix, limit)

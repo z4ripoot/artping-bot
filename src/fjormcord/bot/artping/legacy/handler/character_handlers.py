@@ -7,8 +7,11 @@ from fjormcord.bot.artping.util.message_util import get_single_name
 
 async def add_character(client: discord.Client, message: discord.Message) -> str:
     name = get_single_name(message.content, "character name")
-    vote_channel = VoteChannel(str(message.channel.id), message.guild is not None,
-                               lambda content, view: message.channel.send(content, view=view))
+    vote_channel = VoteChannel(
+        str(message.channel.id),
+        message.guild is not None,
+        lambda content, view: message.channel.send(content, view=view),
+    )
     return await character_service.add_character(client, message.author, name, vote_channel)
 
 

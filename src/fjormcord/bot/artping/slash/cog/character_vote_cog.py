@@ -24,9 +24,9 @@ class CharacterVoteCog(commands.Cog):
         except Exception:
             logging.exception("Checking the open votes failed")
 
-    # The raw event also fires for messages sent before the bot started, such as older vote messages
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+        # The raw event also fires for messages sent before the bot started, such as older vote messages
         try:
             drop_deleted_vote(str(payload.message_id))
         except Exception:

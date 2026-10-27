@@ -1,11 +1,15 @@
 import logging
 
-from fjormcord.bot.artping.database import execute, exists, get_database_connection
+from fjormcord.bot.artping.database import execute, exists, fetch_column, fetch_value, get_database_connection
+
+_REMOVE_TRACKER = """
+    DELETE FROM VOTING_GAUNTLET_TRACKER
+    WHERE TOURNAMENT_ID = ? AND USER = ? AND CHARACTER_NAME = ?
+    """
 
 
 def get_running_tournament() -> int | None:
-    row = get_database_connection().execute("SELECT TOURNAMENT_ID FROM VOTING_GAUNTLET").fetchone()
-    return row[0] if row else None
+    return fetch_value("SELECT TOURNAMENT_ID FROM VOTING_GAUNTLET")
 
 
 def set_running_tournament(tournament_id: int):
@@ -33,23 +37,18 @@ def has_tracker(tournament_id: int, user_id: str, character_name: str) -> bool:
 def add_tracker(tournament_id: int, user_id: str, character_name: str, opponent_name: str):
     # A user tracks one side of a matchup, so tracking a character stops tracking its opponent
     with get_database_connection() as conn:
-        conn.execute("""
-            DELETE FROM VOTING_GAUNTLET_TRACKER
-            WHERE TOURNAMENT_ID = ? AND USER = ? AND CHARACTER_NAME = ?
-            """, (tournament_id, user_id, opponent_name))
-        conn.execute("""
+        conn.execute(_REMOVE_TRACKER, (tournament_id, user_id, opponent_name))
+        conn.execute(
+            """
             INSERT OR IGNORE INTO VOTING_GAUNTLET_TRACKER (TOURNAMENT_ID, USER, CHARACTER_NAME)
             VALUES (?, ?, ?)
-            """, (tournament_id, user_id, character_name))
+            """,
+            (tournament_id, user_id, character_name),
+        )
 
 
 def remove_tracker(tournament_id: int, user_id: str, character_name: str):
-    sql = """
-        DELETE FROM VOTING_GAUNTLET_TRACKER
-        WHERE TOURNAMENT_ID = ? AND USER = ? AND CHARACTER_NAME = ?
-        """
-
-    execute(sql, (tournament_id, user_id, character_name))
+    execute(_REMOVE_TRACKER, (tournament_id, user_id, character_name))
 
 
 def get_trackers(tournament_id: int, character_name: str) -> list[str]:
@@ -60,5 +59,4 @@ def get_trackers(tournament_id: int, character_name: str) -> list[str]:
         ORDER BY USER
         """
 
-    rows = get_database_connection().execute(sql, (tournament_id, character_name))
-    return [user_id for (user_id,) in rows]
+    return fetch_column(sql, (tournament_id, character_name))

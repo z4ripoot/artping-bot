@@ -55,8 +55,12 @@ def test_failed_click_is_answered_privately(monkeypatch, caplog):
 
     monkeypatch.setattr(character_vote_service, "toggle_vote", failing_toggle_vote)
     channel = FakeChannel()
-    interaction = FakeInteraction(1, channel=channel, client=FakeClient(channels=[channel]),
-                                  message=channel.post("Vote to add Lucina. Votes needed: 2"))
+    interaction = FakeInteraction(
+        1,
+        channel=channel,
+        client=FakeClient(channels=[channel]),
+        message=channel.post("Vote to add Lucina. Votes needed: 2"),
+    )
 
     asyncio.run(VoteView().vote.callback(interaction))
 

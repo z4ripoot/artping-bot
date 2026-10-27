@@ -1,7 +1,12 @@
 import pytest
 
-from fjormcord.bot.artping.service.voting_gauntlet_service import (MESSAGE_ENDED, end_gauntlet, get_trackers,
-                                                                   start_gauntlet, toggle_tracking)
+from fjormcord.bot.artping.service.voting_gauntlet_service import (
+    MESSAGE_ENDED,
+    end_gauntlet,
+    get_trackers,
+    start_gauntlet,
+    toggle_tracking,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -10,8 +15,10 @@ def running():
 
 
 def test_track_a_character():
-    assert toggle_tracking(112, "1", "Dimitri", "Edelgard") == \
-        "You now track Dimitri. You'll be pinged every hour Dimitri is Weaker"
+    assert (
+        toggle_tracking(112, "1", "Dimitri", "Edelgard")
+        == "You now track Dimitri. You'll be pinged every hour Dimitri is Weaker"
+    )
     assert get_trackers(112, "Dimitri") == ["1"]
 
 
@@ -25,8 +32,10 @@ def test_click_again_stops_tracking():
 def test_tracking_the_opponent_switches_sides():
     toggle_tracking(112, "1", "Dimitri", "Edelgard")
 
-    assert toggle_tracking(112, "1", "Edelgard", "Dimitri") == \
-        "You now track Edelgard instead of Dimitri. You'll be pinged every hour Edelgard is Weaker"
+    assert (
+        toggle_tracking(112, "1", "Edelgard", "Dimitri")
+        == "You now track Edelgard instead of Dimitri. You'll be pinged every hour Edelgard is Weaker"
+    )
     assert get_trackers(112, "Dimitri") == []
     assert get_trackers(112, "Edelgard") == ["1"]
 

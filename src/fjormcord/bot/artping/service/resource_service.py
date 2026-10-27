@@ -11,8 +11,17 @@ from fjormcord.bot.artping.util.message_util import log_info
 # Plain ASCII, so names are easy to type and can't hold mention syntax
 _RESOURCE_NAME = re.compile(r"[A-Za-z0-9_-]+")
 # https://discord.com/channels/<server>/<channel>/<message>, also from the test clients and the old domain
-_DISCORD_MESSAGE_LINK = re.compile(r"https://(?:(?:ptb|canary)\.)?discord(?:app)?\.com/channels/(?:\d+|@me)/(\d+)/(\d+)")
+_DISCORD_MESSAGE_LINK = re.compile(
+    r"https://(?:(?:ptb|canary)\.)?discord(?:app)?\.com/channels/(?:\d+|@me)/(\d+)/(\d+)"
+)
 _WEBSITE_LINK = re.compile(r"https?://\S+")
+
+
+def require_resource(name: str) -> Resource:
+    resource = resource_repository.get_resource(name)
+    if resource is None:
+        raise CommandError(f"Resource {name} doesn't exist")
+    return resource
 
 
 def _parse_name(entry: str) -> str:
@@ -65,11 +74,7 @@ async def set_resource(client: discord.Client, name: str, link: str) -> str:
 
 
 def remove_resource(name: str) -> str:
-    name = _parse_name(name)
-
-    resource = resource_repository.get_resource(name)
-    if resource is None:
-        raise CommandError(f"Resource {name} doesn't exist")
+    resource = require_resource(_parse_name(name))
 
     resource_repository.remove_resource(resource.name)
 
@@ -88,10 +93,7 @@ def list_resources(slash: bool = False) -> str:
 
 
 def post_resource(name: str) -> str:
-    content = get_resource_content(name)
-    if content is None:
-        raise CommandError(f"Resource {name} doesn't exist")
-    return content
+    return require_resource(name).content
 
 
 def get_resource_content(name: str) -> str | None:

@@ -123,14 +123,18 @@ def test_missing_link_and_extra_words_are_refused(client):
 def test_remove_resource(client):
     set_from(client, "hof", WEBSITE)
 
-    assert reply(remove_resource, client, make_message("~removeresource HOF", administrator=True)) == \
-        "Resource hof has been removed"
+    assert (
+        reply(remove_resource, client, make_message("~removeresource HOF", administrator=True))
+        == "Resource hof has been removed"
+    )
     assert get_resource_names() == []
 
 
 def test_remove_unknown_resource(client):
-    assert reply(remove_resource, client, make_message("~removeresource hof", administrator=True)) == \
-        "Resource hof doesn't exist"
+    assert (
+        reply(remove_resource, client, make_message("~removeresource hof", administrator=True))
+        == "Resource hof doesn't exist"
+    )
 
 
 def test_list_resources_alphabetically(client):

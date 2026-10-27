@@ -12,7 +12,7 @@ def main():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(filename)s %(funcName)s %(message)s",
-        handlers=[logging.StreamHandler()]
+        handlers=[logging.StreamHandler()],
     )
 
     # A missing config.ini or setting stops the bot with what is wrong, see config.example.ini

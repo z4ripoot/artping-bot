@@ -1,8 +1,12 @@
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
-from fjormcord.bot.artping import __main__ as main_module, config, database
+from fjormcord.bot.artping import __main__ as main_module
+from fjormcord.bot.artping import config, database
 from fjormcord.bot.artping.config import Settings
 
 
@@ -22,10 +26,19 @@ def reset_recording_client(monkeypatch):
 
 
 def use_token(monkeypatch, token):
-    settings = Settings(discord_token=token, database_path=Path("test.db"), cooldown_seconds=1,
-                        autocomplete_max_choices=20, coliseum_channel_id=None, voting_gauntlet_channel_id=None,
-                        guild_id=None, art_ping_slash_max_characters=10, character_votes_needed=5,
-                        character_vote_emoji="⭐", emoji={})
+    settings = Settings(
+        discord_token=token,
+        database_path=Path("test.db"),
+        cooldown_seconds=1,
+        autocomplete_max_choices=20,
+        coliseum_channel_id=None,
+        voting_gauntlet_channel_id=None,
+        guild_id=None,
+        art_ping_slash_max_characters=10,
+        character_votes_needed=5,
+        character_vote_emoji="⭐",
+        emoji={},
+    )
     monkeypatch.setattr(config, "read_settings", lambda: settings)
 
 
@@ -47,6 +60,23 @@ def test_missing_config_exits_with_setup_hint(monkeypatch, tmp_path):
         main_module.main()
 
     assert RecordingClient.started_with is None
+
+
+def test_missing_config_is_reported_before_any_module_reads_it(tmp_path):
+    # In a fresh process, as a module that read the settings when imported would fail before main can report it
+    script = (
+        "from pathlib import Path\n"
+        "from fjormcord.bot.artping import config\n"
+        f"config.CONFIG_FILE = Path({str(tmp_path / 'config.ini')!r})\n"
+        "from fjormcord.bot.artping.__main__ import main\n"
+        "main()\n"
+    )
+    environment = {**os.environ, "PYTHONPATH": str(config.PROJECT_ROOT / "src")}
+
+    result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, env=environment)
+
+    assert result.returncode == 1
+    assert result.stderr.startswith("Invalid configuration: ")
 
 
 def test_database_is_opened_before_connecting_to_discord(monkeypatch):

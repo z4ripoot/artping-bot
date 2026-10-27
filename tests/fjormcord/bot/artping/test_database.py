@@ -14,7 +14,7 @@ def user_version(connection):
 
 
 def latest_version():
-    return max(int(path.name.split('_')[0]) for path in MIGRATIONS_PATH.glob('*.sql'))
+    return max(int(path.name.split("_")[0]) for path in MIGRATIONS_PATH.glob("*.sql"))
 
 
 def unversioned_database(path):
@@ -27,8 +27,14 @@ def unversioned_database(path):
 def test_new_database_gets_schema(tmp_path):
     connection = connect(tmp_path / "new.db")
 
-    assert {"CHARACTERS", "PINGS", "GACHA_CURRENCY", "GACHA_CURRENCY_WALLET", "CHARACTER_VOTE", "RESOURCE"} <= \
-        table_names(connection)
+    assert {
+        "CHARACTERS",
+        "PINGS",
+        "GACHA_CURRENCY",
+        "GACHA_CURRENCY_WALLET",
+        "CHARACTER_VOTE",
+        "RESOURCE",
+    } <= table_names(connection)
     assert user_version(connection) == latest_version()
     connection.close()
 
@@ -86,8 +92,9 @@ def test_unversioned_database_is_migrated_without_losing_data(tmp_path):
     assert connection.execute("SELECT CHARACTER_ID, NAME FROM CHARACTERS").fetchall() == [(7, "Lucina")]
     assert connection.execute("SELECT CHARACTER_ID, USER FROM PINGS").fetchall() == [(7, "1")]
     assert connection.execute("SELECT CHARACTER_ID, ALIAS FROM ALIAS").fetchall() == [(7, "Lucy")]
-    assert connection.execute("SELECT GACHA_CURRENCY_ID, USER, AMOUNT FROM GACHA_CURRENCY_WALLET").fetchall() == \
-        [(3, "1", 50)]
+    assert connection.execute("SELECT GACHA_CURRENCY_ID, USER, AMOUNT FROM GACHA_CURRENCY_WALLET").fetchall() == [
+        (3, "1", 50)
+    ]
     with pytest.raises(sqlite3.IntegrityError):
         connection.execute("INSERT INTO CHARACTERS (NAME) VALUES ('LUCINA')")
     connection.close()
@@ -123,8 +130,10 @@ def test_failed_migration_leaves_database_unchanged(tmp_path):
     connection = sqlite3.connect(path)
     assert user_version(connection) == 1
     assert "NEW_CHARACTERS" not in table_names(connection)
-    assert connection.execute("SELECT NAME FROM CHARACTERS ORDER BY CHARACTER_ID").fetchall() == \
-        [("Lucina",), ("lucina",)]
+    assert connection.execute("SELECT NAME FROM CHARACTERS ORDER BY CHARACTER_ID").fetchall() == [
+        ("Lucina",),
+        ("lucina",),
+    ]
     connection.close()
 
 
