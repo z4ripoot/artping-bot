@@ -1,6 +1,6 @@
 import logging
 
-from fjormcord.bot.artping.database import get_database_connection
+from fjormcord.bot.artping.database import execute, get_database_connection
 from fjormcord.bot.artping.model.character import Character
 
 
@@ -37,8 +37,7 @@ def add_character(character_name: str):
         """
 
     logging.info("Adding character %s", character_name)
-    with get_database_connection() as conn:
-        conn.execute(sql, (character_name,))
+    execute(sql, (character_name,))
 
 
 def remove_character(character_id: int):
@@ -48,5 +47,4 @@ def remove_character(character_id: int):
         """
 
     logging.info("Removing character %s", character_id)
-    with get_database_connection() as conn:
-        conn.execute(sql, (character_id,))
+    execute(sql, (character_id,))

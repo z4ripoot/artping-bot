@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Iterable
 
-from fjormcord.bot.artping.database import get_database_connection
+from fjormcord.bot.artping.database import execute, exists, get_database_connection
 from fjormcord.bot.artping.model.character_vote import CharacterVote
 
 _SELECT_VOTE = """
@@ -18,9 +18,7 @@ def add_vote(vote: CharacterVote):
         """
 
     logging.info("Adding vote %s for character %s", vote.message_id, vote.character_name)
-    with get_database_connection() as conn:
-        conn.execute(sql, (vote.message_id, vote.channel_id, vote.character_name, vote.proposer,
-                                 vote.uses_button))
+    execute(sql, (vote.message_id, vote.channel_id, vote.character_name, vote.proposer, vote.uses_button))
 
 
 def get_vote(message_id: str) -> CharacterVote | None:
@@ -44,8 +42,7 @@ def remove_vote(message_id: str):
         """
 
     logging.info("Removing vote %s", message_id)
-    with get_database_connection() as conn:
-        conn.execute(sql, (message_id,))
+    execute(sql, (message_id,))
 
 
 def remove_votes_for(character_name: str):
@@ -55,8 +52,7 @@ def remove_votes_for(character_name: str):
         """
 
     logging.info("Removing votes for character %s", character_name)
-    with get_database_connection() as conn:
-        conn.execute(sql, (character_name,))
+    execute(sql, (character_name,))
 
 
 def add_voter(message_id: str, user_id: str):
@@ -65,8 +61,7 @@ def add_voter(message_id: str, user_id: str):
         VALUES (?, ?)
         """
 
-    with get_database_connection() as conn:
-        conn.execute(sql, (message_id, user_id))
+    execute(sql, (message_id, user_id))
 
 
 def remove_voter(message_id: str, user_id: str):
@@ -75,8 +70,7 @@ def remove_voter(message_id: str, user_id: str):
         WHERE MESSAGE_ID = ? AND USER = ?
         """
 
-    with get_database_connection() as conn:
-        conn.execute(sql, (message_id, user_id))
+    execute(sql, (message_id, user_id))
 
 
 def has_voter(message_id: str, user_id: str) -> bool:
@@ -86,7 +80,7 @@ def has_voter(message_id: str, user_id: str) -> bool:
         WHERE MESSAGE_ID = ? AND USER = ?
         """
 
-    return get_database_connection().execute(sql, (message_id, user_id)).fetchone() is not None
+    return exists(sql, (message_id, user_id))
 
 
 def count_voters(message_id: str) -> int:

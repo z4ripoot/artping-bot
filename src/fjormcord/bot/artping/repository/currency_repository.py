@@ -1,6 +1,6 @@
 import logging
 
-from fjormcord.bot.artping.database import get_database_connection
+from fjormcord.bot.artping.database import execute, exists, get_database_connection
 from fjormcord.bot.artping.model.currency import Currency, ScoreboardEntry, WalletEntry
 
 
@@ -22,8 +22,7 @@ def add_currency(currency_name: str):
         """
 
     logging.info("Adding currency %s", currency_name)
-    with get_database_connection() as conn:
-        conn.execute(sql, (currency_name,))
+    execute(sql, (currency_name,))
 
 
 def remove_currency(currency_id: int):
@@ -33,8 +32,7 @@ def remove_currency(currency_id: int):
         """
 
     logging.info("Removing currency %s", currency_id)
-    with get_database_connection() as conn:
-        conn.execute(sql, (currency_id,))
+    execute(sql, (currency_id,))
 
 
 def set_currency(user_id: str, currency_id: int, amount: int):
@@ -45,8 +43,7 @@ def set_currency(user_id: str, currency_id: int, amount: int):
         """
 
     logging.info("Setting user %s's currency %s to %s", user_id, currency_id, amount)
-    with get_database_connection() as conn:
-        conn.execute(sql, (currency_id, user_id, amount))
+    execute(sql, (currency_id, user_id, amount))
 
 
 def clear_currency(user_id: str, currency_id: int):
@@ -56,8 +53,7 @@ def clear_currency(user_id: str, currency_id: int):
         """
 
     logging.info("Clearing user %s's currency %s", user_id, currency_id)
-    with get_database_connection() as conn:
-        conn.execute(sql, (currency_id, user_id))
+    execute(sql, (currency_id, user_id))
 
 
 def has_wallet_entry(user_id: str, currency_id: int) -> bool:
@@ -67,7 +63,7 @@ def has_wallet_entry(user_id: str, currency_id: int) -> bool:
         WHERE W.GACHA_CURRENCY_ID = ? AND W.USER = ?
         """
 
-    return get_database_connection().execute(sql, (currency_id, user_id)).fetchone() is not None
+    return exists(sql, (currency_id, user_id))
 
 
 def get_wallet(user_id: str) -> list[WalletEntry]:

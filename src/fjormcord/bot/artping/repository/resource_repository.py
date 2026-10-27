@@ -1,6 +1,6 @@
 import logging
 
-from fjormcord.bot.artping.database import get_database_connection
+from fjormcord.bot.artping.database import execute, get_database_connection
 from fjormcord.bot.artping.model.resource import Resource
 
 
@@ -35,8 +35,7 @@ def set_resource(resource: Resource):
         """
 
     logging.info("Setting resource %s from %s", resource.name, resource.source)
-    with get_database_connection() as conn:
-        conn.execute(sql, (resource.name, resource.content, resource.source))
+    execute(sql, (resource.name, resource.content, resource.source))
 
 
 def remove_resource(name: str):
@@ -46,5 +45,4 @@ def remove_resource(name: str):
         """
 
     logging.info("Removing resource %s", name)
-    with get_database_connection() as conn:
-        conn.execute(sql, (name,))
+    execute(sql, (name,))

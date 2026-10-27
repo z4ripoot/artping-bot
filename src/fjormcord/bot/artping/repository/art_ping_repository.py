@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 
-from fjormcord.bot.artping.database import get_database_connection
+from fjormcord.bot.artping.database import execute, exists, get_database_connection
 from fjormcord.bot.artping.model.character import Character
 
 
@@ -13,7 +13,7 @@ def has_ping(character_id: int, user_id: str) -> bool:
             AND P.USER = ? \
           """
 
-    return get_database_connection().execute(sql, (character_id, user_id)).fetchone() is not None
+    return exists(sql, (character_id, user_id))
 
 
 def get_art_ping_users(character_ids: Sequence[int]) -> list[str]:
@@ -34,8 +34,7 @@ def add_ping(character_id: int, user_id: str):
           """
 
     logging.info("Adding ping for character %s and user %s", character_id, user_id)
-    with get_database_connection() as conn:
-        conn.execute(sql, (character_id, user_id))
+    execute(sql, (character_id, user_id))
 
 
 def remove_ping(character_id: int, user_id: str):
@@ -47,8 +46,7 @@ def remove_ping(character_id: int, user_id: str):
           """
 
     logging.info("Removing ping for character %s and user %s", character_id, user_id)
-    with get_database_connection() as conn:
-        conn.execute(sql, (character_id, user_id))
+    execute(sql, (character_id, user_id))
 
 
 def get_pings_from_user(user_id: str) -> list[Character]:

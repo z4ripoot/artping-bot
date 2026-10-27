@@ -16,6 +16,17 @@ def get_database_connection():
     return _connection
 
 
+def execute(sql, parameters=()):
+    # A single write, committed on its own
+    with get_database_connection() as conn:
+        conn.execute(sql, parameters)
+
+
+def exists(sql, parameters=()) -> bool:
+    # Whether the query finds a row
+    return get_database_connection().execute(sql, parameters).fetchone() is not None
+
+
 def connect(path):
     connection = sqlite3.connect(path)
     # Lets migrations normalize names the same way the commands do
