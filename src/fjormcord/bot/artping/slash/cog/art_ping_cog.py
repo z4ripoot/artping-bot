@@ -19,14 +19,12 @@ def build_art_ping_command(max_characters: int) -> app_commands.Command:
         values = [value for value in characters.values() if value is not None]
         await run(interaction, lambda: art_ping_service.do_art_ping([to_name(value) for value in values]))
 
+    keyword_only = inspect.Parameter.KEYWORD_ONLY
     parameters = [
-        inspect.Parameter("interaction", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=discord.Interaction)
-    ]
-    parameters += [
-        inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, annotation=str)
-        if name == "character"
-        else inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, default=None, annotation=str | None)
-        for name in names
+        inspect.Parameter("interaction", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=discord.Interaction),
+        # The first character is required, the others are optional
+        inspect.Parameter(names[0], keyword_only, annotation=str),
+        *(inspect.Parameter(name, keyword_only, default=None, annotation=str | None) for name in names[1:]),
     ]
     art_ping.__signature__ = inspect.Signature(parameters)
     art_ping.__annotations__ = {parameter.name: parameter.annotation for parameter in parameters}
