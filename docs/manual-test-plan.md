@@ -266,7 +266,7 @@ database. Run each command as the account named in the section it comes from.
 | 11.4 | U1 | `/addping character:black knight` (with a space) | The name is `Black_Knight`: `Character Black_Knight doesn't exist` (or, if it exists, the ping is added) |
 | 11.5 | U1 | `/addping character:marth` | Ephemeral `Character Marth doesn't exist` |
 | 11.6 | U1 | `/addping character:Lucina` again | Ephemeral `Ping for Lucina already exists` |
-| 11.7 | U1 | `/removeping character:Lucina`, then again | `Ping for Lucina has been removed`, then ephemeral `Ping for Lucina doesn't exist` |
+| 11.7 | U1 | `/removeping character:Lucina`, then again | `Ping for Lucina has been removed`, then ephemeral `Ping for Lucina doesn't exist`. Autocomplete only suggests the characters U1 is subscribed to (no aliases); typing another name still gives that error |
 | 11.8 | U1 | `/checkping` | `Lucina` / `You are not subscribed to any characters` |
 | 11.9 | U1 | `/artping character:Lucina` | `Lucina: <@U1> <@U2>`, the subscribers are pinged |
 | 11.10 | U1 | `/artping character:Lucina character2:Chrom character3:Luci` | One line per character, sorted, Lucina once; U1 mentioned once |

@@ -6,11 +6,19 @@ from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.resource import Resource
 from fjormcord.bot.artping.repository import (
     alias_repository,
+    art_ping_repository,
     character_repository,
     currency_repository,
     resource_repository,
 )
-from fjormcord.bot.artping.slash.options import character_choices, currency_choices, resource_choices, to_name
+from fjormcord.bot.artping.slash.options import (
+    character_choices,
+    currency_choices,
+    resource_choices,
+    subscribed_character_choices,
+    to_name,
+)
+from tests.fakes import FakeInteraction
 
 
 def names(choices):
@@ -36,6 +44,23 @@ def test_character_choices_match_prefix_and_aliases():
     assert names(asyncio.run(character_choices(None, "mask"))) == []
     assert names(asyncio.run(character_choices(None, "marth m"))) == ["Marth_Mask"]
     assert names(asyncio.run(character_choices(None, ""))) == ["Lucina", "Marth", "Marth_Mask"]
+
+
+def test_subscribed_character_choices_are_the_users_subscriptions():
+    for name in ["Marth", "Lucina", "Chrom"]:
+        character_repository.add_character(name)
+    marth = character_repository.get_character("Marth")
+    lucina = character_repository.get_character("Lucina")
+    chrom = character_repository.get_character("Chrom")
+    alias_repository.add_alias(marth.id, "Marth_Mask")
+    art_ping_repository.add_ping(marth.id, "1")
+    art_ping_repository.add_ping(lucina.id, "1")
+    art_ping_repository.add_ping(chrom.id, "2")
+    interaction = FakeInteraction(user_id=1)
+
+    assert names(asyncio.run(subscribed_character_choices(interaction, ""))) == ["Lucina", "Marth"]
+    assert names(asyncio.run(subscribed_character_choices(interaction, "MA"))) == ["Marth"]
+    assert names(asyncio.run(subscribed_character_choices(FakeInteraction(user_id=3), ""))) == []
 
 
 def test_currency_choices_match_prefix():

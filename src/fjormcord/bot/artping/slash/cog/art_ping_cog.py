@@ -6,7 +6,12 @@ from discord.ext import commands
 
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.service import art_ping_service
-from fjormcord.bot.artping.slash.options import CHARACTER_DESCRIPTION, character_choices, to_name
+from fjormcord.bot.artping.slash.options import (
+    CHARACTER_DESCRIPTION,
+    character_choices,
+    subscribed_character_choices,
+    to_name,
+)
 from fjormcord.bot.artping.slash.runner import run
 
 
@@ -55,7 +60,7 @@ class ArtPingCog(commands.Cog):
 
     @app_commands.command(name="removeping", description="Remove yourself from the ping list of this character")
     @app_commands.describe(character=CHARACTER_DESCRIPTION)
-    @app_commands.autocomplete(character=character_choices)
+    @app_commands.autocomplete(character=subscribed_character_choices)
     async def remove_ping(self, interaction: discord.Interaction, character: str):
         await run(interaction, lambda: art_ping_service.remove_ping(str(interaction.user.id), to_name(character)))
 

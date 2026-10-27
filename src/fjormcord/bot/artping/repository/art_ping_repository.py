@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 
-from fjormcord.bot.artping.database import execute, exists, fetch_all, fetch_column
+from fjormcord.bot.artping.database import execute, exists, fetch_all, fetch_column, fetch_names
 from fjormcord.bot.artping.model.character import Character
 
 
@@ -57,3 +57,15 @@ def get_pings_from_user(user_id: str) -> list[Character]:
         """
 
     return fetch_all(Character, sql, (user_id,))
+
+
+def get_subscribed_names(user_id: str, prefix: str = "", limit: int = -1) -> list[str]:
+    # The names of the characters the user is subscribed to, for autocompletion
+    sql = """
+        SELECT C.NAME
+        FROM PINGS P
+        JOIN CHARACTERS C ON P.CHARACTER_ID = C.CHARACTER_ID
+        WHERE P.USER = ?
+        """
+
+    return fetch_names(sql, prefix, limit, (user_id,))

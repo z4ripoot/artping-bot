@@ -54,9 +54,9 @@ def fetch_value(sql: str, parameters: Sequence = ()) -> Any:
     return row[0] if row else None
 
 
-def fetch_names(names_sql: str, prefix: str = "", limit: int = -1) -> list[str]:
-    # The names selected by names_sql, a query of one column, that start with prefix, ignoring case, in alphabetical
-    # order; a limit of -1 means no limit
+def fetch_names(names_sql: str, prefix: str = "", limit: int = -1, parameters: Sequence = ()) -> list[str]:
+    # The names selected by names_sql, a query of one column with parameters, that start with prefix, ignoring case,
+    # in alphabetical order; a limit of -1 means no limit
     sql = f"""
         SELECT N.NAME
         FROM ({names_sql}) N
@@ -65,7 +65,7 @@ def fetch_names(names_sql: str, prefix: str = "", limit: int = -1) -> list[str]:
         LIMIT ?
         """
 
-    return fetch_column(sql, (prefix, prefix, limit))
+    return fetch_column(sql, (*parameters, prefix, prefix, limit))
 
 
 def connect(path: str | Path) -> sqlite3.Connection:

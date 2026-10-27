@@ -5,7 +5,12 @@ from discord import app_commands
 
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.exception.command_error import CommandError
-from fjormcord.bot.artping.repository import character_repository, currency_repository, resource_repository
+from fjormcord.bot.artping.repository import (
+    art_ping_repository,
+    character_repository,
+    currency_repository,
+    resource_repository,
+)
 
 # The description of an option that takes a character
 CHARACTER_DESCRIPTION = "The character's name or an alias; spaces are fine"
@@ -31,6 +36,14 @@ def _choices(get_names: Callable[[str, int], list[str]], current: str) -> list[a
 
 async def character_choices(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
     return _choices(character_repository.get_all_names, current)
+
+
+async def subscribed_character_choices(
+    interaction: discord.Interaction, current: str
+) -> list[app_commands.Choice[str]]:
+    # Only the characters the user is subscribed to, the ones they can remove a ping for
+    user_id = str(interaction.user.id)
+    return _choices(lambda prefix, limit: art_ping_repository.get_subscribed_names(user_id, prefix, limit), current)
 
 
 async def currency_choices(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
