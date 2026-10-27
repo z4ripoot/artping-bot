@@ -1,4 +1,4 @@
-from fjormcord.bot.artping.database import execute, fetch_column, fetch_one
+from fjormcord.bot.artping.database import execute, fetch_names, fetch_one
 from fjormcord.bot.artping.model.character import Character
 
 
@@ -15,17 +15,8 @@ def get_character(name: str) -> Character | None:
 
 
 def get_all_names(prefix: str = "", limit: int = -1) -> list[str]:
-    # The names of all characters and all aliases starting with prefix, ignoring case, for autocompletion; a limit
-    # of -1 means no limit
-    sql = """
-        SELECT N.NAME
-        FROM (SELECT C.NAME FROM CHARACTERS C UNION SELECT A.ALIAS FROM ALIAS A) N
-        WHERE SUBSTR(N.NAME, 1, LENGTH(?)) = ? COLLATE NOCASE
-        ORDER BY N.NAME COLLATE NOCASE
-        LIMIT ?
-        """
-
-    return fetch_column(sql, (prefix, prefix, limit))
+    # The names of all characters and all aliases, for autocompletion
+    return fetch_names("SELECT C.NAME FROM CHARACTERS C UNION SELECT A.ALIAS FROM ALIAS A", prefix, limit)
 
 
 def add_character(character_name: str):

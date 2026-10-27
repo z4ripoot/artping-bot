@@ -1,6 +1,6 @@
 import logging
 
-from fjormcord.bot.artping.database import execute, exists, fetch_all, fetch_column, fetch_one
+from fjormcord.bot.artping.database import execute, exists, fetch_all, fetch_names, fetch_one
 from fjormcord.bot.artping.model.currency import Currency, ScoreboardEntry, WalletEntry
 
 
@@ -87,13 +87,4 @@ def get_scoreboard(currency_id: int) -> list[ScoreboardEntry]:
 
 
 def get_currency_names(prefix: str = "", limit: int = -1) -> list[str]:
-    # The names starting with prefix, ignoring case; a limit of -1 means no limit
-    sql = """
-        SELECT C.NAME
-        FROM GACHA_CURRENCY C
-        WHERE SUBSTR(C.NAME, 1, LENGTH(?)) = ? COLLATE NOCASE
-        ORDER BY C.NAME
-        LIMIT ?
-        """
-
-    return fetch_column(sql, (prefix, prefix, limit))
+    return fetch_names("SELECT C.NAME FROM GACHA_CURRENCY C", prefix, limit)

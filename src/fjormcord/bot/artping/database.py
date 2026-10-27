@@ -53,6 +53,20 @@ def fetch_value(sql, parameters=()):
     return row[0] if row else None
 
 
+def fetch_names(names_sql: str, prefix: str = "", limit: int = -1) -> list[str]:
+    # The names selected by names_sql, a query of one column, that start with prefix, ignoring case, in alphabetical
+    # order; a limit of -1 means no limit
+    sql = f"""
+        SELECT N.NAME
+        FROM ({names_sql}) N
+        WHERE SUBSTR(N.NAME, 1, LENGTH(?)) = ? COLLATE NOCASE
+        ORDER BY N.NAME COLLATE NOCASE
+        LIMIT ?
+        """
+
+    return fetch_column(sql, (prefix, prefix, limit))
+
+
 def connect(path):
     connection = sqlite3.connect(path)
     # Lets migrations normalize names the same way the commands do

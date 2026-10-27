@@ -1,4 +1,4 @@
-from fjormcord.bot.artping.database import execute, fetch_column, fetch_one
+from fjormcord.bot.artping.database import execute, fetch_names, fetch_one
 from fjormcord.bot.artping.model.resource import Resource
 
 
@@ -13,16 +13,7 @@ def get_resource(name: str) -> Resource | None:
 
 
 def get_resource_names(prefix: str = "", limit: int = -1) -> list[str]:
-    # The names starting with prefix, ignoring case; a limit of -1 means no limit
-    sql = """
-        SELECT R.NAME
-        FROM RESOURCE R
-        WHERE SUBSTR(R.NAME, 1, LENGTH(?)) = ? COLLATE NOCASE
-        ORDER BY R.NAME
-        LIMIT ?
-        """
-
-    return fetch_column(sql, (prefix, prefix, limit))
+    return fetch_names("SELECT R.NAME FROM RESOURCE R", prefix, limit)
 
 
 def set_resource(resource: Resource):
