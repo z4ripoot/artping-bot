@@ -1,3 +1,5 @@
+import pytest
+
 from fjormcord.bot.artping.repository import alias_repository, character_repository, character_vote_repository
 from fjormcord.bot.artping.slash.cog.character_cog import CharacterCog
 from fjormcord.bot.artping.vote_view import VoteView
@@ -6,8 +8,12 @@ from tests.fakes import FakeInteraction, click, invoke
 ADMIN_ONLY_COMMANDS = ["remove_character", "add_alias", "remove_alias", "set_primary_name"]
 
 
-def test_admin_add_character():
-    cog = CharacterCog()
+@pytest.fixture
+def cog():
+    return CharacterCog()
+
+
+def test_admin_add_character(cog):
     interaction = FakeInteraction(administrator=True)
 
     invoke(cog.add_character, interaction, cog, character="black knight")
@@ -17,8 +23,7 @@ def test_admin_add_character():
     assert character_repository.get_character("Black_Knight") is not None
 
 
-def test_non_admin_add_character_starts_a_button_vote():
-    cog = CharacterCog()
+def test_non_admin_add_character_starts_a_button_vote(cog):
     interaction = FakeInteraction(user_id=7)
 
     invoke(cog.add_character, interaction, cog, character="Lucina")
@@ -32,8 +37,7 @@ def test_non_admin_add_character_starts_a_button_vote():
     assert character_vote_repository.count_voters(str(vote_message.id)) == 1
 
 
-def test_add_character_vote_refused_in_dms():
-    cog = CharacterCog()
+def test_add_character_vote_refused_in_dms(cog):
     interaction = FakeInteraction(in_guild=False)
 
     invoke(cog.add_character, interaction, cog, character="Lucina")
@@ -44,8 +48,7 @@ def test_add_character_vote_refused_in_dms():
     assert character_repository.get_character("Lucina") is None
 
 
-def test_admin_commands_hidden_and_checked():
-    cog = CharacterCog()
+def test_admin_commands_hidden_and_checked(cog):
     for name in ADMIN_ONLY_COMMANDS:
         command = getattr(cog, name)
         assert command.default_permissions.administrator, name
@@ -60,9 +63,8 @@ def test_admin_commands_hidden_and_checked():
     assert character_repository.get_character("Lucina") is not None
 
 
-def test_add_alias_with_spaces():
+def test_add_alias_with_spaces(cog):
     character_repository.add_character("Black_Knight")
-    cog = CharacterCog()
     interaction = FakeInteraction(administrator=True)
 
     invoke(cog.add_alias, interaction, cog, character="black knight", alias="zelgius the knight")
@@ -72,9 +74,8 @@ def test_add_alias_with_spaces():
     assert "Zelgius_The_Knight" in interaction.sent[0].content
 
 
-def test_check_remove_alias_and_primary_name():
+def test_check_remove_alias_and_primary_name(cog):
     character_repository.add_character("Lucina")
-    cog = CharacterCog()
     admin = FakeInteraction(administrator=True)
     invoke(cog.add_alias, admin, cog, character="Lucina", alias="Marth_Mask")
 

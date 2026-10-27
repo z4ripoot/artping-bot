@@ -1,12 +1,18 @@
+import pytest
+
 from fjormcord.bot.artping.model.resource import Resource
 from fjormcord.bot.artping.repository import resource_repository
 from fjormcord.bot.artping.slash.cog.resource_cog import ResourceCog
 from tests.fakes import FakeInteraction, invoke
 
 
-def test_resource_is_posted_without_mentions():
+@pytest.fixture
+def cog():
+    return ResourceCog()
+
+
+def test_resource_is_posted_without_mentions(cog):
     resource_repository.set_resource(Resource("hof", "Hello <@5>", "https://example.com"))
-    cog = ResourceCog()
     interaction = FakeInteraction()
 
     invoke(cog.resource, interaction, cog, name="hof")
@@ -18,8 +24,7 @@ def test_resource_is_posted_without_mentions():
     )
 
 
-def test_unknown_resource_is_refused():
-    cog = ResourceCog()
+def test_unknown_resource_is_refused(cog):
     interaction = FakeInteraction()
 
     invoke(cog.resource, interaction, cog, name="hof")
@@ -28,9 +33,8 @@ def test_unknown_resource_is_refused():
     assert interaction.sent[0].ephemeral is True
 
 
-def test_long_resource_is_split():
+def test_long_resource_is_split(cog):
     resource_repository.set_resource(Resource("hof", "word " * 1000, "https://example.com"))
-    cog = ResourceCog()
     interaction = FakeInteraction()
 
     invoke(cog.resource, interaction, cog, name="hof")
@@ -39,8 +43,7 @@ def test_long_resource_is_split():
     assert all(len(content) <= 2000 for content, _, _ in interaction.sent)
 
 
-def test_resource_name_with_space_is_refused():
-    cog = ResourceCog()
+def test_resource_name_with_space_is_refused(cog):
     interaction = FakeInteraction(administrator=True)
 
     invoke(cog.set_resource, interaction, cog, name="hall of fame", link="https://example.com")
@@ -49,8 +52,7 @@ def test_resource_name_with_space_is_refused():
     assert interaction.sent[0].ephemeral is True
 
 
-def test_set_list_and_remove_resource():
-    cog = ResourceCog()
+def test_set_list_and_remove_resource(cog):
     refused, added, listed, removed = (
         FakeInteraction(administrator=False),
         FakeInteraction(administrator=True),

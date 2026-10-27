@@ -1,4 +1,5 @@
 from fjormcord.bot.artping.legacy.handler.alias_handlers import add_alias, remove_alias, set_primary_name
+from fjormcord.bot.artping.repository import alias_repository
 from fjormcord.bot.artping.repository.character_repository import add_character, get_character
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
 from tests.fakes import make_message, reply
@@ -32,7 +33,7 @@ def test_add_alias_for_unknown_character(client):
 def test_add_alias_rejects_an_existing_alias_of_any_character(client):
     add_character("Furina")
     add_character("Neuvillette")
-    add_alias(client, make_message("~addalias Furina Focalors"))
+    alias_repository.add_alias(get_character("Furina").id, "Focalors")
 
     assert (
         reply(add_alias, client, make_message("~addalias Neuvillette FOCALORS"))
@@ -62,7 +63,7 @@ def test_add_alias_checks_its_arguments(client):
 
 def test_remove_alias(client):
     add_character("Furina")
-    add_alias(client, make_message("~addalias Furina Focalors"))
+    alias_repository.add_alias(get_character("Furina").id, "Focalors")
 
     assert (
         reply(remove_alias, client, make_message("~removealias furina focalors"))
@@ -74,7 +75,7 @@ def test_remove_alias(client):
 def test_remove_alias_of_another_character(client):
     add_character("Furina")
     add_character("Neuvillette")
-    add_alias(client, make_message("~addalias Furina Focalors"))
+    alias_repository.add_alias(get_character("Furina").id, "Focalors")
 
     assert (
         reply(remove_alias, client, make_message("~removealias Neuvillette Focalors"))
@@ -93,7 +94,7 @@ def test_remove_alias_rejects_the_character_name(client):
 def test_set_primary_name_swaps_the_alias_and_the_name(client):
     add_character("Furina")
     character_id = get_character("Furina").id
-    add_alias(client, make_message("~addalias Furina Focalors"))
+    alias_repository.add_alias(get_character("Furina").id, "Focalors")
 
     assert (
         reply(set_primary_name, client, make_message("~setprimaryname focalors"))
