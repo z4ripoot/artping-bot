@@ -71,8 +71,8 @@ async def toggle_vote(client: discord.Client, vote_message: discord.Message, use
 
 
 async def check_open_votes(client: discord.Client):
-    # Run at startup: votes_needed or the names may have changed while the bot was offline, and votes still counted
-    # by their reactions get the button
+    # Run at startup: votes_needed or the names may have changed while the bot was offline, votes still counted by
+    # their reactions get the button, and the messages of the votes that stay open are re-rendered
     for vote in character_vote_repository.get_votes():
         try:
             await _check_open_vote(client, vote)
@@ -99,7 +99,7 @@ def _vote_text(name: str) -> str:
 
 async def _check_open_vote(client: discord.Client, vote: CharacterVote):
     # Adds the character once enough users voted, or an admin reacted before the conversion; drops the vote when its
-    # message is gone or its name got taken
+    # message is gone or its name got taken; otherwise re-renders its message with the current text and count
     message_id = vote.message_id
     try:
         vote_message = await _fetch_vote_message(client, vote)
@@ -140,7 +140,9 @@ async def _check_open_vote(client: discord.Client, vote: CharacterVote):
     count = character_vote_repository.count_voters(message_id)
     if (converting and has_administrator) or count >= settings.character_votes_needed:
         await _pass(client, vote_message, vote)
-    elif converting:
+    else:
+        # Re-rendered at every start, so the text and label follow a changed votes_needed, and a conversion whose
+        # edit failed gets its button on the next start
         await _edit(vote_message, content=_vote_text(vote.character_name), view=vote_view.VoteView(count))
 
 

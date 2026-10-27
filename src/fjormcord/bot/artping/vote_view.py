@@ -1,3 +1,5 @@
+import logging
+
 import discord
 
 from fjormcord.bot.artping import config
@@ -21,5 +23,10 @@ class VoteView(discord.ui.View):
         # Deferred first: passing a vote edits every vote message for the name, which may take longer than the
         # 3 seconds Discord waits for an answer
         await interaction.response.defer(ephemeral=True, thinking=True)
-        reply = await character_vote_service.toggle_vote(interaction.client, interaction.message, interaction.user)
+        try:
+            reply = await character_vote_service.toggle_vote(interaction.client, interaction.message, interaction.user)
+        except Exception:
+            # Answered here, since after the defer View.on_error would only log and leave the clicker waiting
+            logging.exception("Vote click on message %s failed", interaction.message.id)
+            reply = "Something went wrong while voting"
         await interaction.followup.send(reply, ephemeral=True)

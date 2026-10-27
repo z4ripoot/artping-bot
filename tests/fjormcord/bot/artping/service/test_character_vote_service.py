@@ -264,6 +264,17 @@ def test_open_votes_are_checked_at_startup(client, channel, monkeypatch):
     assert [open_vote.character_name for open_vote in get_votes()] == ["Marth"]
 
 
+def test_open_votes_follow_a_changed_votes_needed_at_startup(client, channel, monkeypatch):
+    vote_message = start_vote(client, channel, "Lucina")
+    vote(client, vote_message, 1)
+    set_votes_needed(monkeypatch, 3)
+
+    check_votes(client)
+
+    assert vote_message.content == "Vote to add Lucina. Votes needed: 3"
+    assert label(vote_message) == "Vote (1/3)"
+
+
 def test_vote_whose_message_is_gone_is_dropped_at_startup(client, channel):
     vote_message = start_vote(client, channel, "Lucina")
     del channel.messages[vote_message.id]
@@ -306,6 +317,19 @@ def test_reaction_vote_is_converted_at_startup(client, channel):
     assert label(vote_message) == "Vote (1/2)"
     assert get_votes()[0].uses_button
     assert get_character("Black_Knight") is None
+
+
+def test_failed_conversion_edit_is_repaired_at_the_next_startup(client, channel):
+    vote_message = reaction_vote(channel, "Black_Knight", make_user(1))
+    vote_message.failing_edits = 1
+    check_votes(client)
+    assert vote_message.view is None
+
+    check_votes(client)
+
+    assert vote_message.content == "Vote to add Black_Knight. Votes needed: 2"
+    assert label(vote_message) == "Vote (1/2)"
+    assert count_voters(str(vote_message.id)) == 1
 
 
 def test_reaction_vote_passes_during_conversion(client, channel):

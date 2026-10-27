@@ -63,6 +63,8 @@ class FakeSentMessage:
         self.guild = guild
         self.view = view
         self.reactions = []
+        # The number of next edits that fail, as when Discord has an outage
+        self.failing_edits = 0
 
     def react(self, emoji, user):
         reaction = next((reaction for reaction in self.reactions if reaction.emoji == emoji), None)
@@ -75,6 +77,9 @@ class FakeSentMessage:
         self.react(emoji, BOT_USER)
 
     async def edit(self, content=_UNCHANGED, view=_UNCHANGED):
+        if self.failing_edits > 0:
+            self.failing_edits -= 1
+            raise http_error(discord.HTTPException, 500)
         if content is not _UNCHANGED:
             self.content = content
         if view is not _UNCHANGED:

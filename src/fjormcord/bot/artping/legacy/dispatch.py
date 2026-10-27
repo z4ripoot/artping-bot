@@ -5,7 +5,8 @@ import math
 import discord
 
 from fjormcord.bot.artping.easter_eggs import get_easter_egg_reply
-from fjormcord.bot.artping.legacy.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, Command, cooldown_key,     format_usage
+from fjormcord.bot.artping.legacy.commands import (COMMAND_PREFIX, COMMANDS_BY_NAME, Command, cooldown_key,
+                                                   format_usage)
 from fjormcord.bot.artping.service.resource_service import get_resource_content
 from fjormcord.bot.artping.util.message_util import CommandError, MissingArgument, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator

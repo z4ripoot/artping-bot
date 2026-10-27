@@ -4,6 +4,7 @@ from dataclasses import replace
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.model.character_vote import CharacterVote
 from fjormcord.bot.artping.repository import character_vote_repository
+from fjormcord.bot.artping.service import character_vote_service
 from fjormcord.bot.artping.slash.character_vote_cog import CharacterVoteCog
 from fjormcord.bot.artping.vote_view import VOTE_BUTTON_ID, VoteView
 from tests.fakes import FakeChannel, FakeClient, FakeInteraction
@@ -46,3 +47,18 @@ def test_click_is_deferred_and_answered_privately(monkeypatch):
     assert interaction.response.deferred == [{"ephemeral": True, "thinking": True}]
     assert interaction.sent == [("Your vote for Lucina has been added", True, None)]
     assert character_vote_repository.count_voters(str(vote_message.id)) == 1
+
+
+def test_failed_click_is_answered_privately(monkeypatch, caplog):
+    async def failing_toggle_vote(client, vote_message, user):
+        raise RuntimeError("database is locked")
+
+    monkeypatch.setattr(character_vote_service, "toggle_vote", failing_toggle_vote)
+    channel = FakeChannel()
+    interaction = FakeInteraction(1, channel=channel, client=FakeClient(channels=[channel]),
+                                  message=channel.post("Vote to add Lucina. Votes needed: 2"))
+
+    asyncio.run(VoteView().vote.callback(interaction))
+
+    assert interaction.sent == [("Something went wrong while voting", True, None)]
+    assert "database is locked" in caplog.text
