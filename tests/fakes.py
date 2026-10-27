@@ -1,10 +1,12 @@
 import asyncio
 import inspect
 import itertools
+from dataclasses import replace
 from types import SimpleNamespace
 
 import discord
 
+from fjormcord.bot.artping import config
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.service import character_vote_service
@@ -16,6 +18,11 @@ _message_ids = itertools.count(1000)
 
 # Stands for an argument left out of an edit, as discord.py's MISSING does
 _UNCHANGED = object()
+
+
+def use_settings(monkeypatch, **changes):
+    # Runs the test with these settings changed from the example's
+    monkeypatch.setattr(config, "_settings", replace(config.read_settings(), **changes))
 
 
 def make_user(user_id, bot=False):

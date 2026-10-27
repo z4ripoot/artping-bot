@@ -9,7 +9,7 @@ from discord.ext import commands as discord_commands
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.bot import ArtPingClient
 from fjormcord.bot.artping.cooldowns import Cooldowns
-from fjormcord.bot.artping.easter_eggs import LORENZ_SMILE
+from fjormcord.bot.artping.easter_eggs import lorenz_smile
 from fjormcord.bot.artping.legacy import commands
 from fjormcord.bot.artping.legacy.commands import Command
 from fjormcord.bot.artping.voting_gauntlet_view import TrackButton
@@ -171,7 +171,7 @@ def test_long_reply_is_split_into_messages_within_discord_limit(bot):
 
 
 def test_easter_egg_is_answered(bot):
-    assert dispatch(bot, make_message("Thanks Lorenz")) == [LORENZ_SMILE]
+    assert dispatch(bot, make_message("Thanks Lorenz")) == [lorenz_smile()]
 
 
 @pytest.fixture

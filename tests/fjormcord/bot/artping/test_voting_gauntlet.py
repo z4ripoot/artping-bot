@@ -10,7 +10,7 @@ from fjormcord.bot.artping import voting_gauntlet
 from fjormcord.bot.artping.model.voting_gauntlet import Entrant
 from fjormcord.bot.artping.service import voting_gauntlet_service
 from fjormcord.bot.artping.voting_gauntlet_view import TrackButton
-from tests.fakes import FakeChannel
+from tests.fakes import FakeChannel, use_settings
 
 # English, UTC pages of tournament 112 (scripts removed): as the site served it after the gauntlet ended, and an
 # archived copy taken during round 3, whose Pacific times were rewritten to the UTC the bot requests
@@ -115,7 +115,7 @@ def run_task(monkeypatch, now, page=ENDED_PAGE, tournament_id=TOURNAMENT_ID, cha
             raise page
         return tournament_id, page
 
-    monkeypatch.setattr(voting_gauntlet, "NOTIFICATION_CHANNEL_ID", channel_id)
+    use_settings(monkeypatch, voting_gauntlet_channel_id=channel_id)
     monkeypatch.setattr(voting_gauntlet, "fetch_page", fetch_page)
     monkeypatch.setattr(voting_gauntlet, "now", lambda: now)
 
@@ -246,7 +246,7 @@ def test_unknown_channel_is_logged(monkeypatch, caplog):
 
 
 def test_not_started_without_channel_id(monkeypatch, caplog):
-    monkeypatch.setattr(voting_gauntlet, "NOTIFICATION_CHANNEL_ID", None)
+    use_settings(monkeypatch, voting_gauntlet_channel_id=None)
 
     voting_gauntlet.start_voting_gauntlet_notification(SimpleNamespace())
 

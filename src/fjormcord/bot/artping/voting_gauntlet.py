@@ -38,11 +38,11 @@ STATUSES = {"normal": False, "behind": True}
 # One end of a round's window, e.g. "10/5 at 7:00 a.m."
 TIME_PATTERN = re.compile(r"(\d{1,2})/(\d{1,2}) at (\d{1,2}):(\d{2}) ([ap])\.m\.")
 
-NOTIFICATION_CHANNEL_ID = config.read_settings().voting_gauntlet_channel_id
-
 
 def start_voting_gauntlet_notification(client: discord.Client):
-    start_channel_task(task_voting_gauntlet_scores, client, NOTIFICATION_CHANNEL_ID, "Voting Gauntlet scores")
+    start_channel_task(
+        task_voting_gauntlet_scores, client, config.read_settings().voting_gauntlet_channel_id, "Voting Gauntlet scores"
+    )
 
 
 @tasks.loop(time=POSTING_TIMES)
@@ -65,7 +65,7 @@ async def task_voting_gauntlet_scores(client: discord.Client):
         return
 
     voting_gauntlet_service.start_gauntlet(tournament_id)
-    channel = get_task_channel(client, NOTIFICATION_CHANNEL_ID)
+    channel = get_task_channel(client, config.read_settings().voting_gauntlet_channel_id)
     if channel is None:
         return
     for matchup in running.matchups:
