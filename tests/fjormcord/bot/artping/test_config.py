@@ -25,6 +25,7 @@ def test_example_is_a_complete_config():
     assert settings.cooldown_seconds == 1
     assert settings.autocomplete_max_choices == 20
     assert settings.coliseum_channel_id is None
+    assert settings.voting_gauntlet_channel_id is None
     assert settings.guild_id is None
     assert settings.art_ping_slash_max_characters == 10
     assert settings.character_votes_needed == 5
@@ -38,6 +39,7 @@ def test_settings_are_read_from_the_file(tmp_path):
                                    ("commands", "autocomplete_max_choices"): "7",
                                    ("art_ping", "slash_max_characters"): "3",
                                    ("tasks", "coliseum_notification_channel_id"): "123",
+                                   ("tasks", "voting_gauntlet_channel_id"): "789",
                                    ("character_vote", "votes_needed"): "3",
                                    ("character_vote", "emoji"): "<:Vote:123>"})
 
@@ -47,6 +49,7 @@ def test_settings_are_read_from_the_file(tmp_path):
     assert settings.cooldown_seconds == 2.5
     assert settings.autocomplete_max_choices == 7
     assert settings.coliseum_channel_id == 123
+    assert settings.voting_gauntlet_channel_id == 789
     assert settings.guild_id == 456
     assert settings.art_ping_slash_max_characters == 3
     assert settings.character_votes_needed == 3

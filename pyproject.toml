@@ -9,6 +9,8 @@ description = "Discord community bot tailored to the Fjormcord community"
 requires-python = ">=3.10"
 dependencies = [
     "discord.py==2.7.1",
+    # Comes with discord.py; used directly to read the Voting Gauntlet page
+    "aiohttp>=3.7.4,<4",
 ]
 
 [project.optional-dependencies]
