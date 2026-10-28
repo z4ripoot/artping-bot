@@ -15,7 +15,6 @@ class CharacterCog(commands.Cog):
         name="addcharacter", description="Add a character to ping for; non-admins start a vote, voters get subscribed"
     )
     @app_commands.describe(character="The new character's name; spaces are fine")
-    @app_commands.autocomplete(character=character_choices)
     async def add_character(self, interaction: discord.Interaction, character: str):
         # A vote message is a follow-up to the deferred interaction; wait=True returns it, as its ID identifies the vote
         vote_channel = VoteChannel(
