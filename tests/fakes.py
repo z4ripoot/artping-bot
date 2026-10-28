@@ -214,6 +214,7 @@ class FakeInteractionResponse:
     async def defer(self, **options):
         self._done = True
         self.deferred.append(options)
+        self._interaction.placeholder = options
 
     def is_done(self):
         return self._done
@@ -231,7 +232,10 @@ class FakeFollowup:
         # As in Discord, a follow-up needs the interaction to be answered or deferred first
         if not self._interaction.response.is_done():
             raise RuntimeError("Follow-up sent before the interaction was responded to or deferred")
-        # After a defer Discord fixes the first follow-up's visibility; ephemeral is recorded as given
+        # As in Discord, the first follow-up after a defer replaces its placeholder and keeps the defer's visibility
+        if self._interaction.placeholder is not None:
+            ephemeral = self._interaction.placeholder.get("ephemeral", False)
+            self._interaction.placeholder = None
         message = self._interaction.record(content, ephemeral, allowed_mentions, view)
         return message if wait else None
 
@@ -251,6 +255,16 @@ class FakeInteraction:
         self.command = None
         # Everything sent, as response or follow-up
         self.sent: list[Sent] = []
+        # The defer's options while its "is thinking" placeholder is the original response, else None
+        self.placeholder = None
+        self.original_deleted = False
+
+    async def original_response(self):
+        return SimpleNamespace(flags=discord.MessageFlags(loading=self.placeholder is not None))
+
+    async def delete_original_response(self):
+        self.placeholder = None
+        self.original_deleted = True
 
     def record(self, content, ephemeral, allowed_mentions, view):
         self.sent.append(Sent(content, ephemeral, allowed_mentions))

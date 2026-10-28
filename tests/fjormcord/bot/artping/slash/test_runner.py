@@ -162,3 +162,41 @@ def test_deferred_reply_goes_to_followup():
 
     assert interaction.response.deferred == [{}]
     assert interaction.sent == [("hi", False, ALLOWED_MENTIONS)]
+
+
+def test_deferred_command_error_is_ephemeral():
+    interaction = FakeInteraction()
+
+    def call():
+        raise CommandError("Nope")
+
+    run_command(interaction, call, defer=True)
+
+    assert interaction.original_deleted
+    assert replies(interaction) == [("Nope", True)]
+
+
+def test_deferred_unexpected_error_is_ephemeral():
+    interaction = FakeInteraction()
+
+    def call():
+        raise ValueError("boom")
+
+    run_command(interaction, call, defer=True)
+
+    assert interaction.original_deleted
+    assert replies(interaction) == [("Something went wrong while running /checkping", True)]
+
+
+def test_deferred_error_keeps_a_follow_up_already_sent():
+    interaction = FakeInteraction()
+
+    async def call():
+        # As a vote message is sent before the command fails
+        await interaction.followup.send("Vote for Lucina")
+        raise ValueError("boom")
+
+    run_command(interaction, call, defer=True)
+
+    assert not interaction.original_deleted
+    assert replies(interaction) == [("Vote for Lucina", False), ("Something went wrong while running /checkping", True)]

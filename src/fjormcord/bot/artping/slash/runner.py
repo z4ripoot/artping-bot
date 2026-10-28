@@ -43,17 +43,29 @@ async def run(
             out = await await_reply(call())
     except CommandError as e:
         logging.warning(str(e))
-        await _send(interaction, str(e), ephemeral=True)
+        await _send_error(interaction, str(e))
         return
     except Exception:
         command_name = interaction.command.name
         logging.exception("Command /%s failed", command_name)
-        await _send(interaction, f"Something went wrong while running /{command_name}", ephemeral=True)
+        await _send_error(interaction, f"Something went wrong while running /{command_name}")
         return
 
     # Replies longer than Discord allows are sent as several messages; an empty reply sends nothing
     for chunk in split_message(out):
         await _send(interaction, chunk, allowed_mentions=allowed_mentions)
+
+
+async def _send_error(interaction: discord.Interaction, text: str):
+    # The first follow-up after a public defer replaces its "is thinking" placeholder and would show the error to
+    # everyone, so the placeholder is deleted first. A follow-up that already replaced it (a vote message) stays.
+    if interaction.response.is_done():
+        try:
+            if (await interaction.original_response()).flags.loading:
+                await interaction.delete_original_response()
+        except discord.HTTPException:
+            logging.exception("Could not delete the deferred reply of /%s", interaction.command.name)
+    await _send(interaction, text, ephemeral=True)
 
 
 async def _send(
