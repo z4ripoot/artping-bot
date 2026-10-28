@@ -3,12 +3,14 @@ from collections.abc import Iterable
 
 import discord
 
-from fjormcord.bot.artping import config, vote_view  # vote_view as a module: it imports this one too
+from fjormcord.bot.artping import config
 from fjormcord.bot.artping.exception.command_error import CommandError
+from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.model.character_vote import CharacterVote, VoteChannel
 from fjormcord.bot.artping.repository import character_vote_repository
 from fjormcord.bot.artping.service import character_service  # A module: it imports this one too
 from fjormcord.bot.artping.util.user_util import is_administrator
+from fjormcord.bot.artping.view import subscribe_view, vote_view  # Modules: vote_view imports this one too
 
 
 def is_voting_enabled() -> bool:
@@ -74,11 +76,11 @@ async def check_open_votes(client: discord.Client):
             logging.exception("Checking vote %s failed", vote.message_id)
 
 
-async def close_votes(client: discord.Client, name: str):
+async def close_votes(client: discord.Client, character: Character):
     # The character has been added without them, so the open votes for its name have nothing left to decide
-    votes = character_vote_repository.get_votes_for(name)
-    character_vote_repository.remove_votes_for(name)
-    await _close(client, votes, name)
+    votes = character_vote_repository.get_votes_for(character.name)
+    character_vote_repository.remove_votes_for(character.name)
+    await _close(client, votes, character)
 
 
 def drop_deleted_vote(message_id: str):
@@ -163,9 +165,15 @@ async def _pass(client: discord.Client, vote_message: discord.Message, vote: Cha
         for other in character_vote_repository.get_votes_for(vote.character_name)
         if other.message_id != vote.message_id
     ]
-    character_vote_repository.pass_vote(vote.message_id, vote.character_name)
-    await _edit(vote_message, content=f"Character {vote.character_name} has been added", view=None)
-    await _close(client, other_votes, vote.character_name)
+    character_id = character_vote_repository.pass_vote(vote.message_id, vote.character_name)
+    character = Character(character_id, vote.character_name)
+    # The Vote button makes way for Subscribe, for those who didn't vote
+    await _edit(
+        vote_message,
+        content=f"Character {character.name} has been added",
+        view=subscribe_view.SubscribeView(character),
+    )
+    await _close(client, other_votes, character)
 
 
 async def _fetch_vote_message(client: discord.Client, vote: CharacterVote) -> discord.Message:
@@ -200,15 +208,20 @@ async def _has_administrator(guild: discord.Guild, voters: list[discord.abc.User
     return False
 
 
-async def _close(client: discord.Client, votes: Iterable[CharacterVote], name: str):
-    # The votes are already gone from the database; this only tells their messages, and removes their buttons
+async def _close(client: discord.Client, votes: Iterable[CharacterVote], character: Character):
+    # The votes are already gone from the database; this only tells their messages, and swaps their Vote button for
+    # Subscribe
     for vote in votes:
         try:
             vote_message = await _fetch_vote_message(client, vote)
         except discord.HTTPException as e:
             logging.warning("Failed to fetch the message of closed vote %s. %s", vote.message_id, e)
             continue
-        await _edit(vote_message, content=f"Character {name} has already been added", view=None)
+        await _edit(
+            vote_message,
+            content=f"Character {character.name} has already been added",
+            view=subscribe_view.SubscribeView(character),
+        )
 
 
 async def _edit(vote_message: discord.Message, **changes):

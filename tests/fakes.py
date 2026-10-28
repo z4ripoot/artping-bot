@@ -10,6 +10,7 @@ import discord
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.exception.command_error import CommandError
+from fjormcord.bot.artping.model.reply import Reply
 from fjormcord.bot.artping.service import character_vote_service
 
 # The bot's own user, e.g. on the reaction it added to vote messages before they had a button
@@ -214,7 +215,9 @@ class FakeInteractionResponse:
     async def defer(self, **options):
         self._done = True
         self.deferred.append(options)
-        self._interaction.placeholder = options
+        # As in Discord, a click's defer without thinking shows nothing: the clicked message is edited later
+        if self._interaction.message is None or options.get("thinking"):
+            self._interaction.placeholder = options
 
     def is_done(self):
         return self._done
@@ -262,6 +265,10 @@ class FakeInteraction:
     async def original_response(self):
         return SimpleNamespace(flags=discord.MessageFlags(loading=self.placeholder is not None))
 
+    async def edit_original_response(self, content=_UNCHANGED, view=_UNCHANGED):
+        # After a click's defer, the original response is the clicked message
+        await self.message.edit(content=content, view=view)
+
     async def delete_original_response(self):
         self.placeholder = None
         self.original_deleted = True
@@ -279,9 +286,11 @@ def invoke(command, interaction, cog=None, **options):
 
 
 def reply(handler, client, message):
-    # Runs a handler as the bot does: awaited when it is async, and a CommandError's message is the reply
+    # Runs a handler as the bot does: awaited when it is async, and a CommandError's message is the reply. Returns
+    # the reply's text; tests of its buttons call the handler themselves
     try:
         out = handler(client, message)
-        return asyncio.run(out) if inspect.isawaitable(out) else out
+        out = asyncio.run(out) if inspect.isawaitable(out) else out
     except CommandError as e:
         return str(e)
+    return out.content if isinstance(out, Reply) else out

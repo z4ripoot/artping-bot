@@ -14,6 +14,16 @@ def get_currency(currency_name: str) -> Currency | None:
     return fetch_one(Currency, sql, (currency_name,))
 
 
+def get_currency_by_id(currency_id: int) -> Currency | None:
+    sql = """
+        SELECT C.GACHA_CURRENCY_ID AS id, C.NAME AS name
+        FROM GACHA_CURRENCY C
+        WHERE C.GACHA_CURRENCY_ID = ?
+        """
+
+    return fetch_one(Currency, sql, (currency_id,))
+
+
 def add_currency(currency_name: str):
     sql = """
         INSERT INTO GACHA_CURRENCY (NAME)

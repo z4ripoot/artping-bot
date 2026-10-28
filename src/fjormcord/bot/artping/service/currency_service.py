@@ -4,9 +4,11 @@ import discord
 
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.currency import Currency
+from fjormcord.bot.artping.model.reply import Reply
 from fjormcord.bot.artping.repository import currency_repository
 from fjormcord.bot.artping.util.message_util import log_info
 from fjormcord.bot.artping.util.user_util import get_username
+from fjormcord.bot.artping.view import scoreboard_view  # A module: it imports this one too
 
 SCOREBOARD_PAGE_SIZE = 10
 
@@ -75,8 +77,20 @@ def check_wallet(user_id: str, display_name: str, slash: bool = False) -> str:
     return "\n".join(lines)
 
 
-async def get_scoreboard(client: discord.Client, name: str, page: int = 1, slash: bool = False) -> str:
-    currency = require_currency(name)
+async def get_scoreboard(client: discord.Client, name: str, page: int = 1) -> str | Reply:
+    return await _render_scoreboard(client, require_currency(name), page)
+
+
+async def get_scoreboard_page(client: discord.Client, currency_id: int, page: int) -> str | Reply:
+    # A click on Previous or Next; the currency may have been removed since the scoreboard was posted
+    currency = currency_repository.get_currency_by_id(currency_id)
+    if currency is None:
+        raise CommandError("This currency doesn't exist anymore")
+    return await _render_scoreboard(client, currency, page)
+
+
+async def _render_scoreboard(client: discord.Client, currency: Currency, page: int) -> str | Reply:
+    # A scoreboard of several pages gets the buttons to turn them
     currency_name = currency.name
     scoreboard = currency_repository.get_scoreboard(currency.id)
 
@@ -98,10 +112,6 @@ async def get_scoreboard(client: discord.Client, name: str, page: int = 1, slash
     for rank, entry in enumerate(scoreboard[start : start + SCOREBOARD_PAGE_SIZE], start=start + 1):
         lines.append(f"{rank}. {await get_username(client, entry.user_id)} ({entry.amount})")
 
-    if page < page_count:
-        if slash:
-            lines.append(f"Use /scoreboard currency:{currency_name} page:{page + 1} for the next page")
-        else:
-            lines.append(f"Use ~scoreboard {currency_name} {page + 1} for the next page")
-
-    return "\n".join(lines)
+    if page_count == 1:
+        return "\n".join(lines)
+    return Reply("\n".join(lines), scoreboard_view.ScoreboardView(currency.id, page, page_count))

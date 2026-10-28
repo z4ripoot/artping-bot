@@ -1,4 +1,4 @@
-from fjormcord.bot.artping.database import execute, fetch_names, fetch_one
+from fjormcord.bot.artping.database import execute, fetch_names, fetch_one, get_database_connection
 from fjormcord.bot.artping.model.character import Character
 
 
@@ -14,18 +14,30 @@ def get_character(name: str) -> Character | None:
     return fetch_one(Character, sql, (name, name))
 
 
+def get_character_by_id(character_id: int) -> Character | None:
+    sql = """
+        SELECT C.CHARACTER_ID AS id, C.NAME AS name
+        FROM CHARACTERS C
+        WHERE C.CHARACTER_ID = ?
+        """
+
+    return fetch_one(Character, sql, (character_id,))
+
+
 def get_all_names(prefix: str = "", limit: int = -1) -> list[str]:
     # The names of all characters and all aliases, for autocompletion
     return fetch_names("SELECT C.NAME FROM CHARACTERS C UNION SELECT A.ALIAS FROM ALIAS A", prefix, limit)
 
 
-def add_character(character_name: str):
+def add_character(character_name: str) -> int:
+    # Returns the new character's ID
     sql = """
         INSERT INTO CHARACTERS (NAME)
         VALUES (?)
         """
 
-    execute(sql, (character_name,))
+    with get_database_connection() as conn:
+        return conn.execute(sql, (character_name,)).lastrowid
 
 
 def remove_character(character_id: int):

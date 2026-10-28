@@ -106,8 +106,9 @@ def convert_vote(message_id: str, user_ids: Iterable[str]):
         conn.execute(mark_vote, (message_id,))
 
 
-def pass_vote(message_id: str, character_name: str):
-    # Adds the character, subscribes the voters and closes every vote for the name, all or nothing
+def pass_vote(message_id: str, character_name: str) -> int:
+    # Adds the character, subscribes the voters and closes every vote for the name, all or nothing; returns the new
+    # character's ID
     add_character = """
         INSERT INTO CHARACTERS (NAME)
         VALUES (?)
@@ -124,3 +125,4 @@ def pass_vote(message_id: str, character_name: str):
         character_id = conn.execute(add_character, (character_name,)).lastrowid
         conn.execute(add_pings, (character_id, message_id))
         conn.execute(_REMOVE_VOTES_FOR, (character_name,))
+    return character_id

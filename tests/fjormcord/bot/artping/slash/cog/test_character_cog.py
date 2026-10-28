@@ -2,7 +2,7 @@ import pytest
 
 from fjormcord.bot.artping.repository import alias_repository, character_repository, character_vote_repository
 from fjormcord.bot.artping.slash.cog.character_cog import CharacterCog
-from fjormcord.bot.artping.vote_view import VoteView
+from fjormcord.bot.artping.view.vote_view import VoteView
 from tests.fakes import FakeInteraction, click, invoke
 
 ADMIN_ONLY_COMMANDS = ["remove_character", "add_alias", "remove_alias", "set_primary_name"]
@@ -21,6 +21,8 @@ def test_admin_add_character(cog):
     assert interaction.response.deferred == [{}]
     assert interaction.sent[0].content == "Character Black_Knight has been added"
     assert character_repository.get_character("Black_Knight") is not None
+    [button] = interaction.channel.last_message().view.children
+    assert button.item.label == "Subscribe to Black_Knight"
 
 
 def test_non_admin_add_character_starts_a_button_vote(cog):

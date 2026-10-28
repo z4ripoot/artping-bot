@@ -3,11 +3,13 @@ import discord
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.model.character_vote import VoteChannel
+from fjormcord.bot.artping.model.reply import Reply
 from fjormcord.bot.artping.repository import alias_repository, art_ping_repository, character_repository
 from fjormcord.bot.artping.service import character_vote_service  # A module: it imports this one too
 from fjormcord.bot.artping.util.message_util import log_info
 from fjormcord.bot.artping.util.name_util import normalize_name
 from fjormcord.bot.artping.util.user_util import get_username, is_administrator
+from fjormcord.bot.artping.view import subscribe_view  # A module: it imports this one too, via art_ping_service
 
 
 def require_character(name: str) -> Character:
@@ -27,7 +29,9 @@ def require_unused_name(name: str):
     raise CommandError(f"Character {existing.name} already exists")
 
 
-async def add_character(client: discord.Client, user: discord.abc.User, name: str, vote_channel: VoteChannel) -> str:
+async def add_character(
+    client: discord.Client, user: discord.abc.User, name: str, vote_channel: VoteChannel
+) -> str | Reply:
     entry = normalize_name(name)
 
     require_unused_name(entry)
@@ -36,10 +40,10 @@ async def add_character(client: discord.Client, user: discord.abc.User, name: st
     if not is_administrator(user) and character_vote_service.is_voting_enabled():
         return await character_vote_service.start_vote(vote_channel, str(user.id), entry)
 
-    character_repository.add_character(entry)
-    await character_vote_service.close_votes(client, entry)
+    character = Character(character_repository.add_character(entry), entry)
+    await character_vote_service.close_votes(client, character)
 
-    return log_info(f"Character {entry} has been added")
+    return Reply(log_info(f"Character {entry} has been added"), subscribe_view.SubscribeView(character))
 
 
 def remove_character(name: str) -> str:

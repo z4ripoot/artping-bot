@@ -84,9 +84,7 @@ def test_scoreboard_shows_first_page_of_ten(orbs):
     out = reply(get_scoreboard, client, make_message("~scoreboard orbs"))
 
     assert out == "\n".join(
-        ["Scoreboard for Orbs (page 1/3):"]
-        + [f"{rank}. User{26 - rank} ({(26 - rank) * 10})" for rank in range(1, 11)]
-        + ["Use ~scoreboard Orbs 2 for the next page"]
+        ["Scoreboard for Orbs (page 1/3):"] + [f"{rank}. User{26 - rank} ({(26 - rank) * 10})" for rank in range(1, 11)]
     )
     assert len(client.fetched) == 10
 

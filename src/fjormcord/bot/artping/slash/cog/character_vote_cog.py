@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from fjormcord.bot.artping.service.character_vote_service import check_open_votes, drop_deleted_vote
-from fjormcord.bot.artping.vote_view import VoteView
+from fjormcord.bot.artping.view.vote_view import VoteView
 
 
 class CharacterVoteCog(commands.Cog):

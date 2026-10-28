@@ -112,7 +112,9 @@ Preparation: A creates `Lucina` and `Chrom`, and adds the alias `Luci` to Lucina
 |---|---|---|---|
 | 5.1 | A | `~addcharacter` | `Character name is missing. Usage: ~addcharacter (character name)` |
 | 5.2 | A | `~addcharacter Black Knight` | Only-one-name error |
-| 5.3 | A | `~addcharacter black_KNIGHT` | `Character Black_Knight has been added` |
+| 5.3 | A | `~addcharacter black_KNIGHT` | `Character Black_Knight has been added`, with a button `Subscribe to Black_Knight` |
+| 5.3a | U1 | Click `Subscribe to Black_Knight`, then again | Ephemeral `Ping for Black_Knight has been added`, then `Ping for Black_Knight already exists` (the button never unsubscribes). Clicking right after another command works: the button has no cooldown |
+| 5.3b | U2 | Restart the bot, then click `Subscribe to Black_Knight` | Ephemeral `Ping for Black_Knight has been added` (the button survives restarts) |
 | 5.4 | A | `~addcharacter m!robin`, `~addcharacter l'arachel`, `~addcharacter Lucina` | `M!Robin`, `L'Arachel`, `Lucina` added |
 | 5.5 | A | `~addcharacter LUCINA` | `Character Lucina already exists` |
 | 5.6 | A | `~addcharacter luci` (alias) | `Luci is already an alias of Lucina` |
@@ -154,10 +156,12 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 | 7.4 | U1 reacts with ⭐ or 👍 on the vote message | Nothing happens (reactions don't count) |
 | 7.5 | U1 clicks the button | Ephemeral `Your vote for Marth has been taken back`; the label becomes `Vote (0/2)` |
 | 7.6 | U1 clicks again | Ephemeral `Your vote for Marth has been added`; the label is `Vote (1/2)` again |
-| 7.7 | U2 clicks | The message is edited to `Character Marth has been added` and loses its button. U1 and U2 both have Marth in `~checkping`. U2's click got `Your vote for Marth has been added` |
-| 7.8 | U1: `~addcharacter ike` **twice** → two vote messages. U2 clicks the 1st | The 1st becomes `…has been added`, the 2nd `Character Ike has already been added`, and neither has a button |
+| 7.7 | U2 clicks | The message is edited to `Character Marth has been added` and its Vote button makes way for `Subscribe to Marth`. U1 and U2 both have Marth in `~checkping`. U2's click got `Your vote for Marth has been added` |
+| 7.7a | A clicks `Subscribe to Marth`; then U1 clicks it | A: ephemeral `Ping for Marth has been added`. U1 (a voter): `Ping for Marth already exists` |
+| 7.7b | A: `~removecharacter marth`, then U2 clicks `Subscribe to Marth` | Ephemeral `This character doesn't exist anymore` |
+| 7.8 | U1: `~addcharacter ike` **twice** → two vote messages. U2 clicks the 1st | The 1st becomes `…has been added` with `Subscribe to Ike`, the 2nd `Character Ike has already been added`; both now have `Subscribe to Ike` |
 | 7.9 | U1: `~addcharacter roy`. **A** clicks | Passes at once (an admin's vote). A and U1 (the proposer's vote) are subscribed to Roy |
-| 7.10 | U1: `~addcharacter eliwood` (2 votes). A runs `~addcharacter eliwood` | A gets `Character Eliwood has been added`, and both vote messages are edited to `…has already been added` without a button |
+| 7.10 | U1: `~addcharacter eliwood` (2 votes). A runs `~addcharacter eliwood` | A gets `Character Eliwood has been added`, and both vote messages are edited to `…has already been added` with `Subscribe to Eliwood` |
 | 7.11 | U1: `~addcharacter hector`. A: `~addalias Lucina hector`. U2 clicks the vote | U2 gets an ephemeral `Hector is already an alias of Lucina`, and the vote message is edited to that text without a button. The vote is dropped |
 | 7.12 | U1: `~addcharacter lyn`, then **delete** the vote message. A: `~addcharacter lyn` | Added, with no errors in the log about fetching the deleted vote (it was dropped on delete) |
 | 7.13 | U1: `~addcharacter ephraim`. Stop the bot, U2 tries to click (`This interaction failed`), start the bot, U2 clicks | The vote and U1's vote survived the restart; U2's click now passes it (button votes survive restarts) |
@@ -196,12 +200,16 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 | 8.21 | U1 | `~scoreboard orbs 1 2` / `~scoreboard orbs abc` | Only-one-name error (both) |
 | 8.22 | U1 | `~scoreboard gems` | `Currency gems doesn't exist` |
 | 8.23 | U1 | `~scoreboard feathers` (A adds `~addcurrency feathers`, nobody has set it) | `Nobody has set their feathers yet` |
-| 8.24 | U1 | `~scoreboard orbs` (U1 and U2 have set it) | `Scoreboard for orbs:` / `1. … (amount)` in descending order, no page info, no "next page" line |
+| 8.24 | U1 | `~scoreboard orbs` (U1 and U2 have set it) | `Scoreboard for orbs:` / `1. … (amount)` in descending order, no page info, no buttons |
 | 8.25 | U1 | `~scoreboard orbs 0` / `orbs 2` | `Page 0 doesn't exist. The scoreboard for orbs has 1 pages` |
-| 8.26 | — | Seed fake users (below), then `~scoreboard orbs` | `(page 1/2)` header, ranks 1–10, `Use ~scoreboard orbs 2 for the next page`. Fake IDs show as `Unknown user (<id>)` |
-| 8.27 | U1 | `~scoreboard orbs 2` | `(page 2/2)`, ranks starting at 11, no next-page line |
+| 8.26 | — | Seed fake users (below), then `~scoreboard orbs` | `(page 1/2)` header, ranks 1–10, buttons `◀ Previous` (disabled) and `Next ▶`. Fake IDs show as `Unknown user (<id>)` |
+| 8.27 | U1 | `~scoreboard orbs 2` | `(page 2/2)`, ranks starting at 11, `◀ Previous` enabled and `Next ▶` disabled |
+| 8.27a | U2 | Click `Next ▶` on the message of 8.26 | The same message is edited to page 2 (nothing new is posted); anyone may click |
+| 8.27b | U2 | Click `◀ Previous` within the cooldown | Ephemeral cooldown error; the page stays. After the cooldown it turns back to page 1. A has no cooldown |
+| 8.27c | U1 | Restart the bot, click a page button | Still works |
+| 8.27d | U1 | Delete the seeded rows, then click `Next ▶` on a page 1 message | Ephemeral `Page 2 doesn't exist. The scoreboard for orbs has 1 pages`; `◀ Previous` on a page 2 message turns it into the one-page scoreboard without buttons |
 | 8.28 | A | `~removecurrency` / `a b` / `gems` | Missing-argument / one-name / doesn't-exist errors |
-| 8.29 | A | `~removecurrency ORBS` | `Currency orbs has been removed`. U1's `~checkwallet` no longer shows orbs |
+| 8.29 | A | `~removecurrency ORBS` | `Currency orbs has been removed`. U1's `~checkwallet` no longer shows orbs, and a page button on an orbs scoreboard answers ephemerally `This currency doesn't exist anymore` |
 
 Seed for 8.26 (run while the bot is stopped, or between commands):
 
@@ -293,7 +301,7 @@ database. Run each command as the account named in the section it comes from.
 | 11.31 | U1 | `/scoreboard currency:orbs` | Scoreboard for orbs, with the usernames resolved |
 | 11.32 | U1 | `/scoreboard currency:orbs page:0` | Discord refuses the option (minimum 1) |
 | 11.33 | U1 | `/scoreboard currency:orbs page:5` | Ephemeral `Page 5 doesn't exist. The scoreboard for orbs has N pages` |
-| 11.34 | U1 | `/scoreboard currency:orbs` with the 11 seeded users (8.26) | `(page 1/2)` and `Use /scoreboard currency:orbs page:2 for the next page`; `page:2` shows page 2 |
+| 11.34 | U1 | `/scoreboard currency:orbs` with the 11 seeded users (8.26) | `(page 1/2)` with the page buttons, which turn the page as in 8.27a; `page:2` shows page 2 |
 | 11.35 | A | `/removecurrency currency:orbs` | `Currency orbs has been removed` |
 | 11.36 | A | `/setresource name:guide link:https://example.com/guide` | `Resource guide has been set` (deferred) |
 | 11.37 | A | `/setresource name:help link:https://x.com`, `name:h@f …`, `name:my guide …` (space), `link:www.example.com` | The errors of 9.4 to 9.6 (`~help is a command, so it can't be a resource`, the letters-digits rule for the `@` and the space, and the link error). The command defers, so they follow the defer's visibility (public) |
@@ -317,7 +325,7 @@ vote row has `USES_BUTTON = 0` (`sqlite3 test.db "select message_id, uses_button
 |---|---|---|
 | 12.1 | One ⭐ vote with U1's reaction, `votes_needed=2` | At startup the message is edited to `Vote to add Conv1. Votes needed: 2` with a `Vote (1/2)` button. `uses_button` is 1, and U1 is a stored voter: U1 clicking now takes the vote back (`… has been taken back`) |
 | 12.2 | Restart the bot | Nothing changes and no voter is lost (a converted vote isn't converted twice) |
-| 12.3 | A ⭐ vote with ⭐ from U1 and U2, `votes_needed=2` | Passes during the conversion: `Character … has been added`, U1 and U2 subscribed, no button |
+| 12.3 | A ⭐ vote with ⭐ from U1 and U2, `votes_needed=2` | Passes during the conversion: `Character … has been added`, U1 and U2 subscribed, a `Subscribe to …` button |
 | 12.4 | A ⭐ vote with an admin's ⭐ only | Passes during the conversion, and the admin is subscribed |
 | 12.5 | A ⭐ vote with a 👍 only, and with the bot's own ⭐ only | Converted with `Vote (0/2)`: other emoji and the bot's reaction don't count |
 | 12.6 | A ⭐ vote whose message was deleted while the bot was offline | Dropped with the log line of 7.14 |

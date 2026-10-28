@@ -69,7 +69,8 @@ def check_votes(client):
 
 def label(vote_message):
     [button] = vote_message.view.children
-    return button.label
+    # The Subscribe button of a passed vote is a DynamicItem around the button
+    return getattr(button, "item", button).label
 
 
 def subscribers(name):
@@ -152,7 +153,7 @@ def test_vote_passes_and_subscribes_the_voters(client, channel):
 
     assert subscribers("Black_Knight") == {"1", "2"}
     assert vote_message.content == "Character Black_Knight has been added"
-    assert vote_message.view is None
+    assert label(vote_message) == "Subscribe to Black_Knight"
     assert get_votes() == []
 
 
@@ -172,7 +173,7 @@ def test_admin_click_passes_the_vote(client, channel):
 
     assert subscribers("Lucina") == {"1", str(ADMIN_ID)}
     assert vote_message.content == "Character Lucina has been added"
-    assert vote_message.view is None
+    assert label(vote_message) == "Subscribe to Lucina"
 
 
 def test_admin_click_subscribes_the_other_voters_too(client, channel, monkeypatch):
@@ -193,7 +194,7 @@ def test_only_the_voters_of_the_passing_vote_are_subscribed(client, channel):
 
     assert subscribers("Lucina") == {"1", "2"}
     assert first.content == "Character Lucina has already been added"
-    assert first.view is None
+    assert label(first) == "Subscribe to Lucina"
     assert get_votes() == []
 
 
@@ -205,7 +206,7 @@ def test_admin_add_closes_open_votes(client, channel):
         == "Character Lucina has been added"
     )
     assert vote_message.content == "Character Lucina has already been added"
-    assert vote_message.view is None
+    assert label(vote_message) == "Subscribe to Lucina"
     assert get_votes() == []
 
 
@@ -280,7 +281,7 @@ def test_open_votes_are_checked_at_startup(client, channel, monkeypatch):
 
     assert subscribers("Lucina") == {"1", "2"}
     assert passing.content == "Character Lucina has been added"
-    assert passing.view is None
+    assert label(passing) == "Subscribe to Lucina"
     assert get_character("Marth") is None
     assert [open_vote.character_name for open_vote in get_votes()] == ["Marth"]
 
@@ -359,7 +360,7 @@ def test_reaction_vote_passes_during_conversion(client, channel):
 
     assert subscribers("Lucina") == {"1", "2"}
     assert vote_message.content == "Character Lucina has been added"
-    assert vote_message.view is None
+    assert label(vote_message) == "Subscribe to Lucina"
     assert get_votes() == []
 
 

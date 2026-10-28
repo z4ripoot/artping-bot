@@ -48,14 +48,25 @@ def test_check_wallet_names_the_slash_command():
     assert check_wallet("5", "user5", slash=True) == "Your wallet is empty. Use /setcurrency to add a currency"
 
 
-def test_scoreboard_hint_uses_slash_syntax():
+def test_scoreboard_of_several_pages_has_buttons_to_turn_them():
     add_currency("Orbs")
     for user_id in range(1, 12):
         set_currency(str(user_id), "Orbs", user_id)
 
-    out = asyncio.run(get_scoreboard(FakeClient(), "Orbs", slash=True))
+    out = asyncio.run(get_scoreboard(FakeClient(), "Orbs"))
 
-    assert out.endswith("Use /scoreboard currency:Orbs page:2 for the next page")
+    assert out.content.splitlines()[0] == "Scoreboard for Orbs (page 1/2):"
+    assert [(button.item.label, button.item.disabled, button.page) for button in out.view.children] == [
+        ("◀ Previous", True, 0),
+        ("Next ▶", False, 2),
+    ]
+
+
+def test_scoreboard_of_one_page_has_no_buttons():
+    add_currency("Orbs")
+    set_currency("1", "Orbs", 5)
+
+    assert asyncio.run(get_scoreboard(FakeClient({1: "Alice"}), "Orbs")) == "Scoreboard for Orbs:\n1. Alice (5)"
 
 
 def test_set_currency_takes_an_int():

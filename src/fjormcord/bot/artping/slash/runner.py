@@ -5,7 +5,8 @@ import discord
 from discord import app_commands
 
 from fjormcord.bot.artping.exception.command_error import CommandError
-from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS, await_reply, split_message
+from fjormcord.bot.artping.model.reply import Reply
+from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS, await_reply, split_reply, view_option
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 
@@ -26,7 +27,7 @@ def _is_admin_command(interaction: discord.Interaction) -> bool:
 
 async def run(
     interaction: discord.Interaction,
-    call: Callable[[], str | Awaitable[str]],
+    call: Callable[[], str | Reply | Awaitable[str | Reply]],
     *,
     defer: bool = False,
     allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS,
@@ -52,8 +53,8 @@ async def run(
         return
 
     # Replies longer than Discord allows are sent as several messages; an empty reply sends nothing
-    for chunk in split_message(out):
-        await _send(interaction, chunk, allowed_mentions=allowed_mentions)
+    for chunk, view in split_reply(out):
+        await _send(interaction, chunk, allowed_mentions=allowed_mentions, view=view)
 
 
 async def _send_error(interaction: discord.Interaction, text: str):
@@ -73,9 +74,11 @@ async def _send(
     text: str,
     ephemeral: bool = False,
     allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS,
+    view: discord.ui.View | None = None,
 ):
     # The first message answers the interaction, or follows up on the defer; the rest are follow-ups
+    options = {"ephemeral": ephemeral, "allowed_mentions": allowed_mentions, **view_option(view)}
     if interaction.response.is_done():
-        await interaction.followup.send(text, ephemeral=ephemeral, allowed_mentions=allowed_mentions)
+        await interaction.followup.send(text, **options)
     else:
-        await interaction.response.send_message(text, ephemeral=ephemeral, allowed_mentions=allowed_mentions)
+        await interaction.response.send_message(text, **options)

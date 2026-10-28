@@ -1,11 +1,12 @@
 import discord
 
 from fjormcord.bot.artping.model.character_vote import VoteChannel
+from fjormcord.bot.artping.model.reply import Reply
 from fjormcord.bot.artping.service import character_service
 from fjormcord.bot.artping.util.message_util import get_single_name
 
 
-async def add_character(client: discord.Client, message: discord.Message) -> str:
+async def add_character(client: discord.Client, message: discord.Message) -> str | Reply:
     name = get_single_name(message.content, "character name")
     vote_channel = VoteChannel(
         str(message.channel.id),

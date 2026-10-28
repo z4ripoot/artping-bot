@@ -2,7 +2,7 @@ import asyncio
 
 from fjormcord.bot.artping.model.voting_gauntlet import Entrant
 from fjormcord.bot.artping.service import voting_gauntlet_service
-from fjormcord.bot.artping.voting_gauntlet_view import TrackButton, TrackView
+from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton, TrackView
 from tests.fakes import FakeInteraction
 
 MATCHUP = (Entrant("Edelgard", 2, behind=False), Entrant("Dimitri", 1, behind=True))

@@ -3,7 +3,7 @@ import logging
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.repository import art_ping_repository, character_repository
-from fjormcord.bot.artping.service.character_service import require_character
+from fjormcord.bot.artping.service import character_service  # A module: it imports this one too, via subscribe_view
 from fjormcord.bot.artping.util.message_util import log_info
 from fjormcord.bot.artping.util.name_util import normalize_name
 from fjormcord.bot.artping.util.user_util import mentions
@@ -51,8 +51,18 @@ def do_art_ping(names: list[str]) -> str:
 
 
 def add_ping(user_id: str, name: str) -> str:
-    character = require_character(name)
+    return _add_ping(user_id, character_service.require_character(name))
 
+
+def subscribe(user_id: str, character_id: int) -> str:
+    # A click on the Subscribe button of a new character, which may have been removed since
+    character = character_repository.get_character_by_id(character_id)
+    if character is None:
+        raise CommandError("This character doesn't exist anymore")
+    return _add_ping(user_id, character)
+
+
+def _add_ping(user_id: str, character: Character) -> str:
     if art_ping_repository.has_ping(character.id, user_id):
         raise CommandError(f"Ping for {character.name} already exists")
 
@@ -62,7 +72,7 @@ def add_ping(user_id: str, name: str) -> str:
 
 
 def remove_ping(user_id: str, name: str) -> str:
-    character = require_character(name)
+    character = character_service.require_character(name)
 
     if not art_ping_repository.has_ping(character.id, user_id):
         raise CommandError(f"Ping for {character.name} doesn't exist")

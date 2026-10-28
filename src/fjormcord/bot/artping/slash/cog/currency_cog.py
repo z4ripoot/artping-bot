@@ -43,7 +43,7 @@ class CurrencyCog(commands.Cog):
     ):
         await run(
             interaction,
-            lambda: currency_service.get_scoreboard(interaction.client, to_name(currency), page, slash=True),
+            lambda: currency_service.get_scoreboard(interaction.client, to_name(currency), page),
             defer=True,
         )
 

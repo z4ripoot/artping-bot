@@ -2,6 +2,7 @@ import pytest
 
 from fjormcord.bot.artping.repository import currency_repository
 from fjormcord.bot.artping.slash.cog.currency_cog import CurrencyCog
+from fjormcord.bot.artping.view.scoreboard_view import ScoreboardView
 from tests.fakes import FakeClient, FakeInteraction, invoke
 
 
@@ -59,7 +60,7 @@ def test_wallet_names_the_member(cog):
     assert interaction.sent[0].content.startswith("User Lissa's wallet:")
 
 
-def test_scoreboard_next_page_hint(cog):
+def test_scoreboard_is_sent_with_its_buttons(cog):
     currency_repository.add_currency("Orbs")
     client = FakeClient(users={user_id: f"user{user_id}" for user_id in range(1, 13)})
     for user_id in range(1, 13):
@@ -69,7 +70,8 @@ def test_scoreboard_next_page_hint(cog):
     invoke(cog.scoreboard, interaction, cog, currency="Orbs", page=1)
 
     assert interaction.response.deferred == [{}]
-    assert interaction.sent[0].content.endswith("Use /scoreboard currency:Orbs page:2 for the next page")
+    assert interaction.sent[0].content.splitlines()[-1] == "10. user3 (3)"
+    assert isinstance(interaction.channel.last_message().view, ScoreboardView)
 
 
 def test_admin_currency_commands_are_admin_only(cog):

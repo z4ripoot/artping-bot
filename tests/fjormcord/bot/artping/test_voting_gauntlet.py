@@ -9,7 +9,7 @@ import pytest
 from fjormcord.bot.artping import voting_gauntlet
 from fjormcord.bot.artping.model.voting_gauntlet import Entrant
 from fjormcord.bot.artping.service import voting_gauntlet_service
-from fjormcord.bot.artping.voting_gauntlet_view import TrackButton
+from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
 from tests.fakes import FakeChannel, use_settings
 
 # English, UTC pages of tournament 112 (scripts removed): as the site served it after the gauntlet ended, and an

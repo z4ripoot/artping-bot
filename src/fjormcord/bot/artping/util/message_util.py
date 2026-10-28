@@ -6,6 +6,7 @@ import discord
 
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.exception.missing_argument import MissingArgument
+from fjormcord.bot.artping.model.reply import Reply
 
 # Arguments are split on whitespace, so names of several words are written with underscores
 MULTI_WORD_HINT = "Use underscores for multi-word names, e.g. Black_Knight"
@@ -22,9 +23,22 @@ def log_info(reply: str) -> str:
     return reply
 
 
-async def await_reply(reply: str | Awaitable[str]) -> str:
+async def await_reply(reply: str | Reply | Awaitable[str | Reply]) -> str | Reply:
     # Handlers and services return their reply directly, or as a coroutine when they wait on Discord
     return await reply if inspect.isawaitable(reply) else reply
+
+
+def split_reply(reply: str | Reply) -> list[tuple[str, discord.ui.View | None]]:
+    # The messages of a reply as split_message splits it, each with its buttons: only the last one has them
+    if isinstance(reply, str):
+        return [(chunk, None) for chunk in split_message(reply)]
+    *chunks, last = split_message(reply.content)
+    return [(chunk, None) for chunk in chunks] + [(last, reply.view)]
+
+
+def view_option(view: discord.ui.View | None) -> dict:
+    # The view keyword for send, left out when there are no buttons: discord.py's interaction replies fail on None
+    return {} if view is None else {"view": view}
 
 
 def get_entries(content: str) -> list[str]:
