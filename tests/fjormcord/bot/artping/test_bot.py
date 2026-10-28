@@ -10,8 +10,11 @@ from fjormcord.bot.artping import config
 from fjormcord.bot.artping.bot import ArtPingClient
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.easter_eggs import lorenz_smile
+from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.legacy import commands
 from fjormcord.bot.artping.legacy.commands import Command
+from fjormcord.bot.artping.model.layout import Layout
+from fjormcord.bot.artping.view.layout import layout_text
 from fjormcord.bot.artping.view.scoreboard_view import PageButton
 from fjormcord.bot.artping.view.subscribe_view import SubscribeButton
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
@@ -136,6 +139,30 @@ def test_failing_command_still_replies(bot, monkeypatch):
     monkeypatch.setitem(commands.COMMANDS_BY_NAME, "~checkping", Command(command.name, broken, command.description))
 
     assert dispatch(bot, make_message("~checkping")) == ["Something went wrong while running ~checkping"]
+
+
+def replace_checkping(monkeypatch, handler):
+    command = commands.COMMANDS_BY_NAME["~checkping"]
+    monkeypatch.setitem(commands.COMMANDS_BY_NAME, "~checkping", Command(command.name, handler, command.description))
+
+
+def test_layout_reply_is_sent_as_a_view(bot, monkeypatch):
+    replace_checkping(monkeypatch, lambda client, message: Layout(("Lucina", "Chrom")))
+    message = make_message("~checkping")
+
+    assert dispatch(bot, message) == ["Lucina\nChrom"]
+    assert layout_text(message.channel.last_message().view) == "Lucina\nChrom"
+
+
+def test_command_error_with_a_layout_is_sent_as_the_layout(bot, monkeypatch):
+    def refused(client, message):
+        raise CommandError("No", layout=Layout(("No", "Hint")))
+
+    replace_checkping(monkeypatch, refused)
+    message = make_message("~checkping")
+
+    assert dispatch(bot, message) == ["No\nHint"]
+    assert layout_text(message.channel.last_message().view) == "No\nHint"
 
 
 # The alias commands only reply that aliases aren't supported yet

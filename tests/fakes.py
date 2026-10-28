@@ -12,6 +12,7 @@ from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.reply import Reply
 from fjormcord.bot.artping.service import character_vote_service
+from fjormcord.bot.artping.view.layout import layout_text
 
 # The bot's own user, e.g. on the reaction it added to vote messages before they had a button
 BOT_USER = SimpleNamespace(id=999, bot=True)
@@ -20,6 +21,31 @@ _message_ids = itertools.count(1000)
 
 # Stands for an argument left out of an edit, as discord.py's MISSING does
 _UNCHANGED = object()
+
+
+def sent_content(content, view):
+    # What a sent message shows: a layout's text, which it must carry without content, as in Discord
+    if isinstance(view, discord.ui.LayoutView):
+        if content is not None:
+            raise AssertionError("A layout message can't have content")
+        return layout_text(view)
+    return content
+
+
+def button_labels(view):
+    # The labels of a message's buttons, in order, also of those wrapped in a DynamicItem; [] without a view
+    if view is None:
+        return []
+    items = view.walk_children() if isinstance(view, discord.ui.LayoutView) else view.children
+    items = [getattr(item, "item", item) for item in items]
+    return [item.label for item in items if isinstance(item, discord.ui.Button)]
+
+
+def select_options(view):
+    # The labels of the options of a message's dropdown
+    selects = [getattr(item, "item", item) for item in view.walk_children()]
+    [select] = [item for item in selects if isinstance(item, discord.ui.Select)]
+    return [option.label for option in select.options]
 
 
 def use_settings(monkeypatch, **changes):
@@ -92,6 +118,11 @@ class FakeSentMessage:
         if self.failing_edits > 0:
             self.failing_edits -= 1
             raise http_error(discord.HTTPException, 500)
+        if isinstance(view, discord.ui.LayoutView):
+            # As in Discord, a message that becomes a layout must lose its content, explicitly
+            if content is not None:
+                raise AssertionError("A layout message can't have content")
+            content = layout_text(view)
         if content is not _UNCHANGED:
             self.content = content
         if view is not _UNCHANGED:
@@ -109,7 +140,9 @@ class FakeChannel:
         self.sent_allowed_mentions = []
         self.messages = {}
 
-    async def send(self, content, allowed_mentions=None, view=None):
+    async def send(self, content=None, allowed_mentions=None, view=None):
+        # A layout's text is recorded as its content, so tests compare both kinds of message the same way
+        content = sent_content(content, view)
         self.sent.append(content)
         self.sent_allowed_mentions.append(allowed_mentions)
         return self.post(content, view)
@@ -208,7 +241,7 @@ class FakeInteractionResponse:
         self.deferred = []
         self._done = False
 
-    async def send_message(self, content, ephemeral=False, allowed_mentions=None, view=None):
+    async def send_message(self, content=None, ephemeral=False, allowed_mentions=None, view=None):
         self._done = True
         self._interaction.record(content, ephemeral, allowed_mentions, view)
 
@@ -231,7 +264,7 @@ class FakeFollowup:
     def __init__(self, interaction):
         self._interaction = interaction
 
-    async def send(self, content, ephemeral=False, allowed_mentions=None, view=None, wait=False):
+    async def send(self, content=None, ephemeral=False, allowed_mentions=None, view=None, wait=False):
         # As in Discord, a follow-up needs the interaction to be answered or deferred first
         if not self._interaction.response.is_done():
             raise RuntimeError("Follow-up sent before the interaction was responded to or deferred")
@@ -274,6 +307,7 @@ class FakeInteraction:
         self.original_deleted = True
 
     def record(self, content, ephemeral, allowed_mentions, view):
+        content = sent_content(content, view)
         self.sent.append(Sent(content, ephemeral, allowed_mentions))
         return self.channel.post(content, view)
 
@@ -286,11 +320,11 @@ def invoke(command, interaction, cog=None, **options):
 
 
 def reply(handler, client, message):
-    # Runs a handler as the bot does: awaited when it is async, and a CommandError's message is the reply. Returns
-    # the reply's text; tests of its buttons call the handler themselves
+    # Runs a handler as the bot does: awaited when it is async, and a CommandError's message, or layout, is the reply.
+    # Returns a Reply's text and a Layout as it is, so tests compare its texts
     try:
         out = handler(client, message)
         out = asyncio.run(out) if inspect.isawaitable(out) else out
     except CommandError as e:
-        return str(e)
+        return e.layout or str(e)
     return out.content if isinstance(out, Reply) else out

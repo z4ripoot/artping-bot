@@ -5,8 +5,10 @@ from types import SimpleNamespace
 import discord
 
 from fjormcord.bot.artping.exception.command_error import CommandError
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.slash.runner import admin_command, run
 from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS
+from fjormcord.bot.artping.view.layout import layout_text
 from tests.fakes import FakeInteraction
 
 
@@ -200,3 +202,33 @@ def test_deferred_error_keeps_a_follow_up_already_sent():
 
     assert not interaction.original_deleted
     assert replies(interaction) == [("Vote for Lucina", False), ("Something went wrong while running /checkping", True)]
+
+
+def test_layout_is_sent_as_a_view_with_the_allowed_mentions():
+    interaction = FakeInteraction()
+
+    run_command(interaction, lambda: Layout(("Lucina", "<@1>")))
+
+    assert interaction.sent == [("Lucina\n<@1>", False, ALLOWED_MENTIONS)]
+    assert layout_text(interaction.channel.last_message().view) == "Lucina\n<@1>"
+
+
+def test_ephemeral_command_replies_and_defers_privately():
+    interaction = FakeInteraction()
+
+    run_command(interaction, lambda: Layout(("Mine",)), defer=True, ephemeral=True)
+
+    assert interaction.response.deferred == [{"ephemeral": True}]
+    assert replies(interaction) == [("Mine", True)]
+
+
+def test_command_error_with_a_layout_is_sent_as_the_layout():
+    interaction = FakeInteraction()
+
+    def call():
+        raise CommandError("No", layout=Layout(("No", "Hint")))
+
+    run_command(interaction, call)
+
+    assert replies(interaction) == [("No\nHint", True)]
+    assert layout_text(interaction.channel.last_message().view) == "No\nHint"

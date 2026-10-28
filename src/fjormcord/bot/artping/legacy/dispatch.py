@@ -6,10 +6,12 @@ from fjormcord.bot.artping.easter_eggs import get_easter_egg_reply
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.exception.missing_argument import MissingArgument
 from fjormcord.bot.artping.legacy.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, Command, format_usage
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.model.reply import Reply
 from fjormcord.bot.artping.service.resource_service import get_resource_content
-from fjormcord.bot.artping.util.message_util import await_reply, split_message, split_reply, view_option
+from fjormcord.bot.artping.util.message_util import await_reply, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
+from fjormcord.bot.artping.view.layout import message_options
 
 
 async def handle_message(client: discord.Client, message: discord.Message):
@@ -44,8 +46,8 @@ async def handle_message(client: discord.Client, message: discord.Message):
     out = await get_message(client, command, message)
 
     # Replies longer than Discord allows are sent as several messages; an empty reply sends nothing
-    for chunk, view in split_reply(out):
-        await message.channel.send(chunk, **view_option(view))
+    for options in message_options(out):
+        await message.channel.send(**options)
 
 
 async def send_resource(client: discord.Client, message: discord.Message, name: str):
@@ -65,7 +67,7 @@ async def send_resource(client: discord.Client, message: discord.Message, name: 
         await message.channel.send(str(e))
 
 
-async def get_message(client: discord.Client, command: Command, message: discord.Message) -> str | Reply:
+async def get_message(client: discord.Client, command: Command, message: discord.Message) -> str | Reply | Layout:
     try:
         with client.cooldowns.command(message.author):
             out = await await_reply(command.handler(client, message))
@@ -73,8 +75,8 @@ async def get_message(client: discord.Client, command: Command, message: discord
         out = f"{e.argument.capitalize()} is missing. Usage: {format_usage(command)}"
         logging.warning(out)
     except CommandError as e:
-        out = str(e)
-        logging.warning(out)
+        logging.warning(str(e))
+        out = e.layout or str(e)
     except Exception:
         logging.exception("Command %s failed", command.name)
         out = f"Something went wrong while running {command.name}"

@@ -6,6 +6,7 @@ import discord
 
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.exception.missing_argument import MissingArgument
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.model.reply import Reply
 
 # Arguments are split on whitespace, so names of several words are written with underscores
@@ -15,6 +16,8 @@ MESSAGE_ONE_NAME_ONLY = f"Only one name is allowed. {MULTI_WORD_HINT}"
 ALLOWED_MENTIONS = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=True)
 # Discord rejects messages longer than this
 MAX_MESSAGE_LENGTH = 2000
+# The most text Discord allows across the text displays of one layout message
+MAX_LAYOUT_TEXT_LENGTH = 4000
 
 
 def log_info(reply: str) -> str:
@@ -23,22 +26,9 @@ def log_info(reply: str) -> str:
     return reply
 
 
-async def await_reply(reply: str | Reply | Awaitable[str | Reply]) -> str | Reply:
+async def await_reply(reply: str | Reply | Layout | Awaitable[str | Reply | Layout]) -> str | Reply | Layout:
     # Handlers and services return their reply directly, or as a coroutine when they wait on Discord
     return await reply if inspect.isawaitable(reply) else reply
-
-
-def split_reply(reply: str | Reply) -> list[tuple[str, discord.ui.View | None]]:
-    # The messages of a reply as split_message splits it, each with its buttons: only the last one has them
-    if isinstance(reply, str):
-        return [(chunk, None) for chunk in split_message(reply)]
-    *chunks, last = split_message(reply.content)
-    return [(chunk, None) for chunk in chunks] + [(last, reply.view)]
-
-
-def view_option(view: discord.ui.View | None) -> dict:
-    # The view keyword for send, left out when there are no buttons: discord.py's interaction replies fail on None
-    return {} if view is None else {"view": view}
 
 
 def get_entries(content: str) -> list[str]:
@@ -82,6 +72,27 @@ def split_message(text: str, limit: int = MAX_MESSAGE_LENGTH) -> list[str]:
     if current:
         chunks.append(current)
     return chunks
+
+
+def split_layout(layout: Layout, limit: int = MAX_LAYOUT_TEXT_LENGTH) -> list[Layout]:
+    # A layout with more text than one message allows is sent as several, in order: a text that doesn't fit next to
+    # the texts before it starts the next message, and one longer than a whole message is split as split_message
+    # splits a reply. The controls go on the last message
+    if sum(map(len, layout.texts)) <= limit:
+        return [layout]
+
+    parts: list[list[str]] = [[]]
+    for text in layout.texts:
+        if parts[-1] and sum(map(len, parts[-1])) + len(text) > limit:
+            parts.append([])
+        while len(text) > limit:
+            first, *rest = split_message(text, limit)
+            parts[-1].append(first)
+            parts.append([])
+            text = "\n".join(rest)
+        parts[-1].append(text)
+
+    return [Layout(tuple(texts)) for texts in parts[:-1]] + [Layout(tuple(parts[-1]), layout.rows)]
 
 
 def _pieces(text: str, limit: int) -> Iterator[tuple[str, str]]:
