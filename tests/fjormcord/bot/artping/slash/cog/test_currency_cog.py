@@ -56,7 +56,7 @@ def test_wallet_names_the_member(cog):
 
     invoke(cog.check_wallet, interaction, cog)
 
-    assert interaction.sent[0].content.startswith("User Lissa's wallet:")
+    assert interaction.sent[0].content == "### Lissa's wallet\nOrbs: 5"
 
 
 def test_scoreboard_is_sent_with_its_buttons(cog):

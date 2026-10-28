@@ -15,17 +15,18 @@ from fjormcord.bot.artping.legacy.handler.currency_handlers import (
     set_currency,
 )
 from fjormcord.bot.artping.legacy.handler.resource_handlers import list_resources, remove_resource, set_resource
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT
 from fjormcord.bot.artping.util.user_util import is_administrator
 
 COMMAND_PREFIX = "~"
 
-SECTION_ART_PING = ""
-SECTION_CURRENCY = "Gacha Currency Commands:"
-SECTION_ADMIN = "Admin Commands:"
+SECTION_ART_PING = "Art Ping Commands"
+SECTION_CURRENCY = "Gacha Currency Commands"
+SECTION_ADMIN = "Admin Commands"
 
 # Called as handler(client, message); returns the reply, either directly or as a coroutine
-Handler = Callable[[discord.Client, discord.Message], str | Awaitable[str]]
+Handler = Callable[[discord.Client, discord.Message], str | Layout | Awaitable[str | Layout]]
 
 
 @dataclass(frozen=True)
@@ -44,27 +45,26 @@ def format_usage(command: Command) -> str:
     return " ".join([command.name] + [f"({argument})" for argument in command.usage])
 
 
-def show_help(client: discord.Client, message: discord.Message) -> str:
+def show_help(client: discord.Client, message: discord.Message) -> Layout:
+    # The title with the tips, then one part per section, each command's usage in bold over its description. Generated
+    # from COMMANDS, which keeps each section together; the admin section is only shown to admins
     show_admin = is_administrator(message.author)
-    lines = [
-        "Commands (content in brackets is what to add when using command):",
+    title = [
+        "## Commands",
+        "Content in brackets is what to add when using a command",
         MULTI_WORD_HINT,
         "All commands are also available as slash commands, type /",
     ]
 
-    current_section = SECTION_ART_PING
+    sections: dict[str, list[str]] = {}
     for command in COMMANDS:
         if command.admin_only and not show_admin:
             continue
-
         section = SECTION_ADMIN if command.admin_only else command.section
-        if section != current_section:
-            lines += ["", section]
-            current_section = section
+        sections.setdefault(section, []).append(f"**{format_usage(command)}**\n{command.description}")
 
-        lines.append(f"{format_usage(command)}: {command.description}")
-
-    return "\n".join(lines)
+    parts = ["\n".join([f"### {section}", *entries]) for section, entries in sections.items()]
+    return Layout(("\n".join(title), *parts))
 
 
 # The ~ commands; slash commands are in fjormcord.bot.artping.slash

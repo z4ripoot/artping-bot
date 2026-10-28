@@ -1,5 +1,6 @@
 import discord
 
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.service import resource_service
 from fjormcord.bot.artping.util.message_util import get_single_name, get_two_entries
 
@@ -13,5 +14,5 @@ def remove_resource(client: discord.Client, message: discord.Message) -> str:
     return resource_service.remove_resource(get_single_name(message.content, "resource name"))
 
 
-def list_resources(client: discord.Client, message: discord.Message) -> str:
+def list_resources(client: discord.Client, message: discord.Message) -> str | Layout:
     return resource_service.list_resources()

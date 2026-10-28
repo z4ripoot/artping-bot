@@ -4,6 +4,7 @@ import re
 import discord
 
 from fjormcord.bot.artping.exception.command_error import CommandError
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.model.resource import Resource
 from fjormcord.bot.artping.repository import resource_repository
 from fjormcord.bot.artping.util.message_util import log_info
@@ -81,15 +82,16 @@ def remove_resource(name: str) -> str:
     return log_info(f"Resource {resource.name} has been removed")
 
 
-def list_resources(slash: bool = False) -> str:
+def list_resources(slash: bool = False) -> str | Layout:
     names = resource_repository.get_resource_names()
 
     if not names:
         return "No resources have been set yet"
 
+    # A ~ user posts one with ~<name>, a slash user with /resource
     if slash:
-        return "Resources: " + ", ".join(names) + " (post one with /resource)"
-    return "Resources: " + ", ".join(f"~{name}" for name in names)
+        return Layout(("### Resources", "\n".join(names), "Post one with /resource"))
+    return Layout(("### Resources", "\n".join(f"~{name}" for name in names)))
 
 
 def post_resource(name: str) -> str:

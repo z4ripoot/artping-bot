@@ -69,7 +69,7 @@ def test_set_list_and_remove_resource(cog):
     assert refused.sent[0].ephemeral is True
     assert added.response.deferred == [{}]
     assert added.sent[0].content == "Resource hof has been set"
-    assert listed.sent[0].content == "Resources: hof (post one with /resource)"
+    assert listed.sent[0].content == "### Resources\nhof\nPost one with /resource"
     assert removed.sent[0].content == "Resource hof has been removed"
     for command in (cog.set_resource, cog.remove_resource):
         assert command.default_permissions.administrator

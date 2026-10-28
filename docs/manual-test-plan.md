@@ -56,8 +56,8 @@ and 13.12.
 | 2.9 | U1 | `~help extra words` | Help (extra arguments are ignored) |
 | 2.10 | U1 | `~helpme` | Silence (exact match only) |
 | 2.11 | U1 | `~addcurrency Orbs` (admin-only) | Silence |
-| 2.12 | U1 in server | `~help` | No **Admin Commands:** section, but has the "Gacha Currency Commands:" section, the underscore hint and `All commands are also available as slash commands, type /` |
-| 2.13 | A in server | `~help` | Includes **Admin Commands:** |
+| 2.12 | U1 in server | `~help` | A box: the title `Commands` with the brackets explanation, the underscore hint and `All commands are also available as slash commands, type /`; then, after separators, the headings **Art Ping Commands** and **Gacha Currency Commands**, each command's usage in bold with its description on the next line. No **Admin Commands** section |
+| 2.13 | A in server | `~help` | Includes **Admin Commands**, still one message |
 | 2.14 | A in **DM** | `~help`, then `~addcurrency X` | No admin section, and silence on `~addcurrency` (DMs have no permissions) |
 | 2.15 | U1 | `~setcurrency @everyone 5` | Reply echoes `@everyone` but **nobody gets pinged** |
 | 2.16 | A | Lock the DB: `sqlite3 test.db` → `BEGIN EXCLUSIVE;` (keep it open), then `~addcurrency Lock` | After about 5 s: `Something went wrong while running ~addcurrency`, with a traceback in the log. Then run `ROLLBACK;` |
@@ -198,7 +198,7 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 | 8.16 | U2 | `~clearcurrency orbs` (never set) | `You don't have any orbs set` |
 | 8.17 | U1 | `~clearcurrency orbs` | `Your orbs has been cleared` |
 | 8.18 | U2 | `~checkwallet` (empty) | `Your wallet is empty. Use ~setcurrency to add a currency` |
-| 8.19 | U1 | Set `orbs` and `feathers` → `~checkwallet` | `User <display name>'s wallet:` then `feathers: …`, `orbs: …` (sorted) |
+| 8.19 | U1 | Set `orbs` and `feathers` → `~checkwallet` | A box: the heading `<display name>'s wallet`, a separator, `feathers: …`, `orbs: …` (sorted, one per line) |
 | 8.20 | U1 | `~scoreboard` | `Currency name is missing. Usage: ~scoreboard (currency name) (optional page number)` |
 | 8.21 | U1 | `~scoreboard orbs 1 2` / `~scoreboard orbs abc` | Only-one-name error (both) |
 | 8.22 | U1 | `~scoreboard gems` | `Currency gems doesn't exist` |
@@ -246,7 +246,7 @@ FROM generate_series(1, 11);   -- older sqlite3: use 11 separate INSERTs
 | 9.15 | A | Edit the source message, then U1 runs `~hof` | Still the old text (a snapshot). After running `~setresource` again → the new text |
 | 9.16 | A | Source message over 2000 characters (Nitro), set it, then `~hof` | Posted as 2 or more messages |
 | 9.17 | A | `~setresource HOF https://example.com` (existing, different case) | Overwrites it, and `~resources` now lists `~HOF` |
-| 9.18 | U1 | `~resources` with none, then with some | `No resources have been set yet` / `Resources: ~guide, ~HOF` (sorted) |
+| 9.18 | U1 | `~resources` with none, then with some | `No resources have been set yet` / a box: the heading `Resources`, a separator, `~guide` and `~HOF` one per line (sorted) |
 | 9.19 | A | `~removeresource` / `a b` / `h@f` | Missing-argument / one-name / invalid-name errors |
 | 9.20 | A | `~removeresource nope` | `Resource nope doesn't exist` |
 | 9.21 | A | `~removeresource ~hof` | `Resource HOF has been removed`. `~hof` → silence |
@@ -302,7 +302,7 @@ database. Run each command as the account named in the section it comes from.
 | 11.27 | U1 | `/setcurrency currency:gems amount:5` | Ephemeral `Currency gems doesn't exist` |
 | 11.28 | U1 | `/clearcurrency currency:orbs`, then again | `Your orbs has been cleared`, then ephemeral `You don't have any orbs set` |
 | 11.29 | U2 | `/checkwallet` (empty) | `Your wallet is empty. Use /setcurrency to add a currency` (the slash form) |
-| 11.30 | U1 | `/checkwallet` with two currencies set | `User <display name>'s wallet:` and the sorted lines |
+| 11.30 | U1 | `/checkwallet` with two currencies set | The box of 8.19 |
 | 11.31 | U1 | `/scoreboard currency:orbs` | The scoreboard box of 8.24, with the usernames resolved |
 | 11.32 | U1 | `/scoreboard currency:orbs page:0` | Discord refuses the option (minimum 1) |
 | 11.33 | U1 | `/scoreboard currency:orbs page:5` | Ephemeral `Page 5 doesn't exist. The scoreboard for orbs has N pages` |
@@ -314,7 +314,7 @@ database. Run each command as the account named in the section it comes from.
 | 11.39 | U1 | `/resource name:guide` | Posts the stored text; autocomplete suggests `guide` |
 | 11.40 | U1 | `/resource name:nope` | Ephemeral `Resource nope doesn't exist` (where `~nope` is silent) |
 | 11.41 | A | A resource whose source message contains `@everyone` and `<@U2>`; U1 runs `/resource` | The text is shown, **nobody is pinged** |
-| 11.42 | U1 | `/resources`, with none and with some | `No resources have been set yet` / `Resources: guide, HOF (post one with /resource)` |
+| 11.42 | U1 | `/resources`, with none and with some | `No resources have been set yet` / the box of 9.18 with `guide` and `HOF`, then a separator and `Post one with /resource` |
 | 11.43 | A | `/removeresource name:guide`, then again | `Resource guide has been removed`, then ephemeral `Resource guide doesn't exist` |
 | 11.44 | U1 | `/lorenz`, wait out the cooldown, `/chromk` | The LorenzSmile emoji, the 3×4 chromk grid; public. Like every command they start the cooldown |
 | 11.45 | A | Lock the DB as in 2.16, then `/addcurrency currency:Lock` | After about 5 s: ephemeral `Something went wrong while running /addcurrency`, with a traceback in the log. Then `ROLLBACK;` |

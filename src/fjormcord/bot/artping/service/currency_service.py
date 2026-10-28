@@ -65,16 +65,15 @@ def clear_currency(user_id: str, name: str) -> str:
     return log_info(f"Your {currency.name} has been cleared")
 
 
-def check_wallet(user_id: str, display_name: str, slash: bool = False) -> str:
+def check_wallet(user_id: str, display_name: str, slash: bool = False) -> str | Layout:
     wallet = currency_repository.get_wallet(user_id)
 
     if not wallet:
         set_command = "/setcurrency" if slash else "~setcurrency"
         return f"Your wallet is empty. Use {set_command} to add a currency"
 
-    lines = [f"User {display_name}'s wallet:"]
-    lines += [f"{entry.currency_name}: {entry.amount}" for entry in wallet]
-    return "\n".join(lines)
+    lines = [f"{entry.currency_name}: {entry.amount}" for entry in wallet]
+    return Layout((f"### {display_name}'s wallet", "\n".join(lines)))
 
 
 async def get_scoreboard(client: discord.Client, name: str, page: int = 1) -> Layout:

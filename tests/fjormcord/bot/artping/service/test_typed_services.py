@@ -120,7 +120,7 @@ def test_list_resources_in_slash_syntax():
     asyncio.run(set_resource(FakeClient(), "hof", "https://example.com/hof"))
     asyncio.run(set_resource(FakeClient(), "faq", "https://example.com/faq"))
 
-    assert list_resources(slash=True) == "Resources: faq, hof (post one with /resource)"
+    assert list_resources(slash=True).texts == ("### Resources", "faq\nhof", "Post one with /resource")
 
 
 def test_post_resource_refuses_unknown():

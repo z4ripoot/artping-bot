@@ -30,7 +30,7 @@ def clear_currency(client: discord.Client, message: discord.Message) -> str:
     return currency_service.clear_currency(str(message.author.id), get_single_name(message.content, "currency name"))
 
 
-def check_wallet(client: discord.Client, message: discord.Message) -> str:
+def check_wallet(client: discord.Client, message: discord.Message) -> str | Layout:
     return currency_service.check_wallet(str(message.author.id), message.author.display_name)
 
 

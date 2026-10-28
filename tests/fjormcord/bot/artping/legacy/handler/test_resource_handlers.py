@@ -141,7 +141,7 @@ def test_list_resources_alphabetically(client):
     set_from(client, "hof", WEBSITE)
     set_from(client, "FAQ", WEBSITE)
 
-    assert reply(list_resources, client, make_message("~resources")) == "Resources: ~FAQ, ~hof"
+    assert reply(list_resources, client, make_message("~resources")).texts == ("### Resources", "~FAQ\n~hof")
 
 
 def test_list_without_resources(client):

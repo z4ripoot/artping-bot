@@ -26,7 +26,7 @@ def set_amount(currency, amount, user_id=1):
 def test_set_currency_creates_then_updates_wallet(client, orbs):
     assert reply(set_currency, client, make_message("~setcurrency orbs 10")) == "Your Orbs has been set to 10"
     assert reply(set_currency, client, make_message("~setcurrency orbs 25")) == "Your Orbs has been set to 25"
-    assert reply(check_wallet, client, make_message("~checkwallet")) == "User user1's wallet:\nOrbs: 25"
+    assert reply(check_wallet, client, make_message("~checkwallet")).texts == ("### user1's wallet", "Orbs: 25")
 
 
 def test_set_currency_rejects_invalid_amount(client, orbs):
@@ -68,7 +68,7 @@ def test_currency_commands_reject_spaces_in_names(client):
     assert reply(clear_currency, client, make_message("~clearcurrency Fire Orbs")) == MESSAGE_ONE_NAME_ONLY
     assert reply(get_scoreboard, client, make_message("~scoreboard Fire Orbs")) == MESSAGE_ONE_NAME_ONLY
     assert reply(remove_currency, client, make_message("~removecurrency Fire Orbs")) == MESSAGE_ONE_NAME_ONLY
-    assert reply(check_wallet, client, make_message("~checkwallet")) == "User user1's wallet:\nFire: 10"
+    assert reply(check_wallet, client, make_message("~checkwallet")).texts == ("### user1's wallet", "Fire: 10")
 
 
 def scoreboard_of_25_users(orbs):
