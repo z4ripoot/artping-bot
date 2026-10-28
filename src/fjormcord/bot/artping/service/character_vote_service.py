@@ -21,9 +21,12 @@ async def start_vote(vote_channel: VoteChannel, proposer_id: str, name: str) -> 
     if not vote_channel.in_guild:
         raise CommandError("Votes can only be started in a server")
 
-    vote_message = await vote_channel.send(_vote_text(name), vote_view.VoteView(0))
+    # The proposer's vote is counted from the start, which saves them a click. Votes are only started when at least
+    # 2 are needed, so it can't pass the vote on its own
+    vote_message = await vote_channel.send(_vote_text(name), vote_view.VoteView(1))
     character_vote_repository.add_vote(
-        CharacterVote(str(vote_message.id), vote_channel.channel_id, name, proposer_id, uses_button=True)
+        CharacterVote(str(vote_message.id), vote_channel.channel_id, name, proposer_id, uses_button=True),
+        [proposer_id],
     )
 
     # An empty reply sends nothing more

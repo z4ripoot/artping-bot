@@ -150,17 +150,17 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 |---|---|---|
 | 7.1 | U1 in **DM**: `~addcharacter Marth` | `Votes can only be started in a server` |
 | 7.2 | U1: `~addcharacter Lucina` (exists) | `Character Lucina already exists` (no vote) |
-| 7.3 | U1: `~addcharacter marth` | Only the bot's message `Vote to add Marth. Votes needed: 2`, with a button `Vote (0/2)` showing ⭐. The bot adds no reaction and sends no other reply |
+| 7.3 | U1: `~addcharacter marth` | Only the bot's message `Vote to add Marth. Votes needed: 2`, with a button `Vote (1/2)` showing ⭐: U1's own vote is already counted. The bot adds no reaction and sends no other reply |
 | 7.4 | U1 reacts with ⭐ or 👍 on the vote message | Nothing happens (reactions don't count) |
-| 7.5 | U1 clicks the button | Ephemeral `Your vote for Marth has been added`; the label becomes `Vote (1/2)` |
-| 7.6 | U1 clicks again | Ephemeral `Your vote for Marth has been taken back`; the label is `Vote (0/2)` again |
-| 7.7 | U1 and U2 click | The message is edited to `Character Marth has been added` and loses its button. U1 and U2 both have Marth in `~checkping`. U2's click got `Your vote for Marth has been added` |
-| 7.8 | U1: `~addcharacter ike` **twice** → two vote messages. U1 and U2 click the 1st | The 1st becomes `…has been added`, the 2nd `Character Ike has already been added`, and neither has a button |
-| 7.9 | U1: `~addcharacter roy`. **A** clicks | Passes at once (an admin's vote). A is subscribed to Roy (U1 is not, as U1 didn't click) |
+| 7.5 | U1 clicks the button | Ephemeral `Your vote for Marth has been taken back`; the label becomes `Vote (0/2)` |
+| 7.6 | U1 clicks again | Ephemeral `Your vote for Marth has been added`; the label is `Vote (1/2)` again |
+| 7.7 | U2 clicks | The message is edited to `Character Marth has been added` and loses its button. U1 and U2 both have Marth in `~checkping`. U2's click got `Your vote for Marth has been added` |
+| 7.8 | U1: `~addcharacter ike` **twice** → two vote messages. U2 clicks the 1st | The 1st becomes `…has been added`, the 2nd `Character Ike has already been added`, and neither has a button |
+| 7.9 | U1: `~addcharacter roy`. **A** clicks | Passes at once (an admin's vote). A and U1 (the proposer's vote) are subscribed to Roy |
 | 7.10 | U1: `~addcharacter eliwood` (2 votes). A runs `~addcharacter eliwood` | A gets `Character Eliwood has been added`, and both vote messages are edited to `…has already been added` without a button |
 | 7.11 | U1: `~addcharacter hector`. A: `~addalias Lucina hector`. U2 clicks the vote | U2 gets an ephemeral `Hector is already an alias of Lucina`, and the vote message is edited to that text without a button. The vote is dropped |
 | 7.12 | U1: `~addcharacter lyn`, then **delete** the vote message. A: `~addcharacter lyn` | Added, with no errors in the log about fetching the deleted vote (it was dropped on delete) |
-| 7.13 | U1: `~addcharacter ephraim`, U1 clicks. Stop the bot, U2 tries to click (`This interaction failed`), start the bot, U2 clicks | The vote and U1's click survived the restart; U2's click now passes it (button votes survive restarts) |
+| 7.13 | U1: `~addcharacter ephraim`. Stop the bot, U2 tries to click (`This interaction failed`), start the bot, U2 clicks | The vote and U1's vote survived the restart; U2's click now passes it (button votes survive restarts) |
 | 7.14 | U1: `~addcharacter eirika`. Stop the bot, delete the vote message, start | Log: `The message of vote … is gone, dropping the vote` |
 | 7.15 | U1: `~addcharacter seliph`. Remove the bot's **Read Message History** in that channel, restart | Log warning `Can't read the message of vote …`; the vote is kept. Clicks still work. Restore the permission and restart: no warning |
 | 7.16 | U1: `~addcharacter alm`, U1 clicks. Stop the bot, set `votes_needed=1`, start | The vote passes at startup (`Character Alm has been added`) |

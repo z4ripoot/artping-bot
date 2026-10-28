@@ -82,9 +82,12 @@ def test_non_admin_add_character_starts_a_vote(client, channel):
     vote_message = channel.last_message()
     assert out == ""
     assert channel.sent == ["Vote to add Black_Knight. Votes needed: 2"]
-    assert label(vote_message) == "Vote (0/2)"
+    assert label(vote_message) == "Vote (1/2)"
     assert vote_message.reactions == []
     assert get_votes() == [CharacterVote(str(vote_message.id), "10", "Black_Knight", "7")]
+    # The proposer's vote is counted from the start
+    assert character_vote_repository.has_voter(str(vote_message.id), "7")
+    assert count_voters(str(vote_message.id)) == 1
     assert get_character("Black_Knight") is None
 
 
@@ -114,18 +117,28 @@ def test_vote_is_not_started_in_dms(client, channel):
     assert get_votes() == []
 
 
-def test_click_adds_a_vote_and_updates_the_count(client, channel):
+def test_click_adds_a_vote_and_updates_the_count(client, channel, monkeypatch):
+    set_votes_needed(monkeypatch, 3)
     vote_message = start_vote(client, channel, "Black_Knight")
 
-    assert click(client, vote_message, 1) == "Your vote for Black_Knight has been added"
-    assert label(vote_message) == "Vote (1/2)"
+    assert click(client, vote_message, 2) == "Your vote for Black_Knight has been added"
+    assert label(vote_message) == "Vote (2/3)"
     assert get_character("Black_Knight") is None
     assert len(get_votes()) == 1
 
 
-def test_second_click_takes_the_vote_back(client, channel):
+def test_second_click_takes_the_vote_back(client, channel, monkeypatch):
+    set_votes_needed(monkeypatch, 3)
     vote_message = start_vote(client, channel, "Black_Knight")
-    click(client, vote_message, 1)
+    click(client, vote_message, 2)
+
+    assert click(client, vote_message, 2) == "Your vote for Black_Knight has been taken back"
+    assert label(vote_message) == "Vote (1/3)"
+    assert count_voters(str(vote_message.id)) == 1
+
+
+def test_proposer_can_take_their_vote_back(client, channel):
+    vote_message = start_vote(client, channel, "Black_Knight", user_id=1)
 
     assert click(client, vote_message, 1) == "Your vote for Black_Knight has been taken back"
     assert label(vote_message) == "Vote (0/2)"
@@ -133,9 +146,9 @@ def test_second_click_takes_the_vote_back(client, channel):
 
 
 def test_vote_passes_and_subscribes_the_voters(client, channel):
-    vote_message = start_vote(client, channel, "Black_Knight")
+    vote_message = start_vote(client, channel, "Black_Knight", user_id=1)
 
-    vote(client, vote_message, 1, 2)
+    vote(client, vote_message, 2)
 
     assert subscribers("Black_Knight") == {"1", "2"}
     assert vote_message.content == "Character Black_Knight has been added"
@@ -144,39 +157,39 @@ def test_vote_passes_and_subscribes_the_voters(client, channel):
 
 
 def test_taken_back_vote_is_not_subscribed(client, channel):
-    vote_message = start_vote(client, channel, "Lucina")
-    vote(client, vote_message, 3, 3)
+    vote_message = start_vote(client, channel, "Lucina", user_id=1)
+    vote(client, vote_message, 1)
 
-    vote(client, vote_message, 1, 2)
+    vote(client, vote_message, 2, 3)
 
-    assert subscribers("Lucina") == {"1", "2"}
+    assert subscribers("Lucina") == {"2", "3"}
 
 
 def test_admin_click_passes_the_vote(client, channel):
-    vote_message = start_vote(client, channel, "Lucina")
-
-    click(client, vote_message, ADMIN_ID, administrator=True)
-
-    assert subscribers("Lucina") == {str(ADMIN_ID)}
-    assert vote_message.content == "Character Lucina has been added"
-    assert vote_message.view is None
-
-
-def test_admin_click_subscribes_the_other_voters_too(client, channel):
-    vote_message = start_vote(client, channel, "Lucina")
-    click(client, vote_message, 1)
+    vote_message = start_vote(client, channel, "Lucina", user_id=1)
 
     click(client, vote_message, ADMIN_ID, administrator=True)
 
     assert subscribers("Lucina") == {"1", str(ADMIN_ID)}
+    assert vote_message.content == "Character Lucina has been added"
+    assert vote_message.view is None
+
+
+def test_admin_click_subscribes_the_other_voters_too(client, channel, monkeypatch):
+    set_votes_needed(monkeypatch, 3)
+    vote_message = start_vote(client, channel, "Lucina", user_id=1)
+    click(client, vote_message, 2)
+
+    click(client, vote_message, ADMIN_ID, administrator=True)
+
+    assert subscribers("Lucina") == {"1", "2", str(ADMIN_ID)}
 
 
 def test_only_the_voters_of_the_passing_vote_are_subscribed(client, channel):
     first = start_vote(client, channel, "Lucina", user_id=3)
     second = start_vote(client, channel, "lucina", user_id=1)
-    vote(client, first, 3)
 
-    vote(client, second, 1, 2)
+    vote(client, second, 2)
 
     assert subscribers("Lucina") == {"1", "2"}
     assert first.content == "Character Lucina has already been added"
@@ -226,8 +239,8 @@ def test_click_on_a_vote_for_a_name_that_became_an_alias_drops_it(client, channe
 
 
 def test_clicking_a_passed_vote_again_is_harmless(client, channel, database):
-    vote_message = start_vote(client, channel, "Lucina")
-    vote(client, vote_message, 1, 2)
+    vote_message = start_vote(client, channel, "Lucina", user_id=1)
+    vote(client, vote_message, 2)
 
     assert click(client, vote_message, 3) == "This vote has already been closed"
     assert database.execute("SELECT COUNT(*) FROM CHARACTERS").fetchone()[0] == 1
@@ -258,10 +271,9 @@ def test_deleted_vote_message_drops_the_vote(client, channel):
 
 def test_open_votes_are_checked_at_startup(client, channel, monkeypatch):
     set_votes_needed(monkeypatch, 3)
-    passing = start_vote(client, channel, "Lucina")
-    waiting = start_vote(client, channel, "Marth")
-    vote(client, passing, 1, 2)
-    vote(client, waiting, 1)
+    passing = start_vote(client, channel, "Lucina", user_id=1)
+    start_vote(client, channel, "Marth", user_id=1)
+    vote(client, passing, 2)
     set_votes_needed(monkeypatch, 2)
 
     check_votes(client)
@@ -275,7 +287,6 @@ def test_open_votes_are_checked_at_startup(client, channel, monkeypatch):
 
 def test_open_votes_follow_a_changed_votes_needed_at_startup(client, channel, monkeypatch):
     vote_message = start_vote(client, channel, "Lucina")
-    vote(client, vote_message, 1)
     set_votes_needed(monkeypatch, 3)
 
     check_votes(client)

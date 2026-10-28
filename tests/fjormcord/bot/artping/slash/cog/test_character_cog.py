@@ -33,8 +33,9 @@ def test_non_admin_add_character_starts_a_button_vote(cog):
     vote = character_vote_repository.get_vote(str(vote_message.id))
     assert (vote.character_name, vote.proposer) == ("Lucina", "7")
     assert character_repository.get_character("Lucina") is None
+    assert character_vote_repository.has_voter(str(vote_message.id), "7")
     click(interaction.client, vote_message, 2)
-    assert character_vote_repository.count_voters(str(vote_message.id)) == 1
+    assert character_vote_repository.count_voters(str(vote_message.id)) == 2
 
 
 def test_add_character_vote_refused_in_dms(cog):

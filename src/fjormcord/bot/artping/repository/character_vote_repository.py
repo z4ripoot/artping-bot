@@ -19,14 +19,17 @@ _ADD_VOTER = """
     """
 
 
-def add_vote(vote: CharacterVote):
+def add_vote(vote: CharacterVote, voter_ids: Iterable[str] = ()):
+    # Stores the vote with its first voters, all or nothing
     sql = """
         INSERT INTO CHARACTER_VOTE (MESSAGE_ID, CHANNEL_ID, CHARACTER_NAME, PROPOSER, USES_BUTTON)
         VALUES (?, ?, ?, ?, ?)
         """
 
     logging.info("Adding vote %s for character %s", vote.message_id, vote.character_name)
-    execute(sql, (vote.message_id, vote.channel_id, vote.character_name, vote.proposer, vote.uses_button))
+    with get_database_connection() as conn:
+        conn.execute(sql, (vote.message_id, vote.channel_id, vote.character_name, vote.proposer, vote.uses_button))
+        conn.executemany(_ADD_VOTER, [(vote.message_id, voter_id) for voter_id in voter_ids])
 
 
 def get_vote(message_id: str) -> CharacterVote | None:
