@@ -5,7 +5,7 @@ from fjormcord.bot.artping.model.currency import Currency
 from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.repository import currency_repository
 from fjormcord.bot.artping.util.message_util import log_info
-from fjormcord.bot.artping.util.page_util import PAGE_SIZE, get_page
+from fjormcord.bot.artping.util.page_util import PAGE_SIZE, get_page, paged_header
 from fjormcord.bot.artping.util.user_util import get_username
 from fjormcord.bot.artping.view import page_view, scoreboard_view  # Modules: they import this one too
 
@@ -104,8 +104,7 @@ async def _render_scoreboard(client: discord.Client, currency: Currency, page: i
         return Layout((header, f"Nobody has set their {currency.name} yet"), tuple(rows))
 
     entries, page_count = get_page(scoreboard, page, f"The scoreboard for {currency.name}")
-    if page_count > 1:
-        header += f" (page {page}/{page_count})"
+    header = paged_header(header, page, page_count)
 
     # Only the users on this page are looked up
     first_rank = (page - 1) * PAGE_SIZE + 1

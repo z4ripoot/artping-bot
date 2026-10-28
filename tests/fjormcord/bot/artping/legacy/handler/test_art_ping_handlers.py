@@ -48,13 +48,36 @@ def test_add_and_remove_ping(client):
 
     assert reply(add_ping, client, make_message("~addping lucina")) == "Ping for Lucina has been added"
     assert reply(add_ping, client, make_message("~addping lucina")) == "Ping for Lucina already exists"
-    assert reply(check_ping, client, make_message("~checkping")) == "Lucina"
+    assert reply(check_ping, client, make_message("~checkping")).texts == ("### Alice's pings", "Lucina")
     assert reply(remove_ping, client, make_message("~removeping lucina")) == "Ping for Lucina has been removed"
     assert reply(remove_ping, client, make_message("~removeping lucina")) == "Ping for Lucina doesn't exist"
 
 
 def test_add_ping_for_unknown_character(client):
     assert reply(add_ping, client, make_message("~addping Marth")) == "Character Marth doesn't exist"
+
+
+def test_check_ping_lists_the_characters_one_per_line(client):
+    for name in ("Marth", "Chrom", "Lucina"):
+        add_character(name)
+        subscribe(name, 1)
+
+    out = reply(check_ping, client, make_message("~checkping"))
+
+    assert out.texts == ("### Alice's pings", "Chrom\nLucina\nMarth")
+    assert out.rows == ()
+
+
+def test_check_ping_of_many_characters_has_pages(client):
+    for number in range(1, 13):
+        add_character(f"Hero{number:02d}")
+        subscribe(f"Hero{number:02d}", 1)
+
+    out = reply(check_ping, client, make_message("~checkping"))
+
+    assert out.texts == ("### Alice's pings (page 1/2)", "\n".join(f"Hero{number:02d}" for number in range(1, 11)))
+    [buttons] = out.rows
+    assert [button.custom_id for button in buttons] == ["page:pings:1:0", "page:pings:1:2"]
 
 
 def test_check_ping_without_pings_is_not_empty(client):

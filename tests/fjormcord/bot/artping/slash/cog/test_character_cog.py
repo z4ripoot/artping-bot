@@ -87,5 +87,6 @@ def test_check_remove_alias_and_primary_name(cog):
     invoke(cog.remove_alias, remove, cog, character="Marth_Mask", alias="Lucina")
 
     assert "Marth_Mask" in primary.sent[0].content
-    assert check.sent[0].content.startswith("Character entry found for Marth_Mask")
+    assert check.sent[0].content.startswith("### Marth_Mask's pings")
+    assert check.sent[0].ephemeral is False
     assert "has been removed" in remove.sent[0].content

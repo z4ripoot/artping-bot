@@ -1,6 +1,7 @@
 import discord
 
 from fjormcord.bot.artping.exception.missing_argument import MissingArgument
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.service import art_ping_service
 from fjormcord.bot.artping.util.message_util import get_entries, get_single_name
 
@@ -22,5 +23,6 @@ def remove_ping(client: discord.Client, message: discord.Message) -> str:
     return art_ping_service.remove_ping(str(message.author.id), get_single_name(message.content, "character name"))
 
 
-def check_ping(client: discord.Client, message: discord.Message) -> str:
-    return art_ping_service.check_ping(str(message.author.id))
+async def check_ping(client: discord.Client, message: discord.Message) -> str | Layout:
+    # Public, as every ~ reply; /checkping is private
+    return await art_ping_service.check_ping(client, str(message.author.id))

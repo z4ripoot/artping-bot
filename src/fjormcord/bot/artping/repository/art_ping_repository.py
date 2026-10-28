@@ -17,10 +17,13 @@ def has_ping(character_id: int, user_id: str) -> bool:
 
 
 def get_art_ping_users(character_ids: Sequence[int]) -> list[str]:
+    # Each user once, in the order they subscribed, so the pages of a character's subscribers stay put
     sql = """
-        SELECT DISTINCT P.USER
+        SELECT P.USER
         FROM PINGS P
         WHERE P.CHARACTER_ID IN ({})
+        GROUP BY P.USER
+        ORDER BY MIN(P.ROWID)
         """.format(",".join("?" * len(character_ids)))
 
     return fetch_column(sql, list(character_ids))

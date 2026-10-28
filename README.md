@@ -20,10 +20,10 @@ Character names and aliases are stored with every part capitalized, whatever cas
 | ~artping <characters...>          | This will ping all users who are subscribed to the one or more provided characters. Multiple characters have to be separated with spaces                          |
 | ~addping <character>              | This will subscribe the user to the provided character. The user will be pinged when the artping command is performed with the provided character                 |
 | ~removeping <character>           | This will unsubscribe the user from the provided character. The user won't be pinged anymore when the artping command is performed with the provided character    |
-| ~checkping                        | This will display all the characters that the user is subscribed to                                                                                               |
+| ~checkping                        | This will display all the characters that the user is subscribed to, 10 per page. `/checkping` shows them only to the user                                         |
 | ~addcharacter <character>         | This will add the provided character to the pings. For a non-admin it starts a vote instead (see Configuration); once it passes, the voters are subscribed        |
 | ~removecharacter <character>      | This will remove the provided character from the pings. All subscribed users will be unsubscribed from the provided character                                     |
-| ~checkcharacter <character>       | This will display the aliases and all the subscribed users of the provided character                                                                              |
+| ~checkcharacter <character>       | This will display the aliases and all the subscribed users of the provided character, 10 per page                                                                 |
 | ~addalias <character> <alias>     | This will add another name for the provided character. The alias can be used everywhere the character's name can                                                  |
 | ~removealias <character> <alias>  | This will remove the provided alias from the provided character                                                                                                   |
 | ~setprimaryname <alias>           | This will make the provided alias the character's name. The old name becomes an alias, and all subscriptions and other aliases are kept                           |

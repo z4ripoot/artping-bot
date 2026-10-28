@@ -33,7 +33,7 @@ def test_check_character_lists_usernames_and_survives_unknown_users(client):
 
     out = reply(check_character, client, make_message("~checkcharacter lucina"))
 
-    assert out == "Character entry found for Lucina\nUsers: Alice, Unknown user (99)"
+    assert out.texts == ("### Lucina's pings", "Alice\nUnknown user (99)")
 
 
 def test_add_character_rejects_an_alias(client, database):
@@ -80,7 +80,29 @@ def test_check_character_lists_aliases(client, database):
 
     out = reply(check_character, client, make_message("~checkcharacter focalors"))
 
-    assert out == "Character entry found for Furina\nAliases: Archon, Focalors\nUsers: Alice"
+    assert out.texts == ("### Furina's pings\nAliases: Archon, Focalors", "Alice")
+
+
+def test_check_character_without_subscribers_says_so(client):
+    reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
+
+    out = reply(check_character, client, make_message("~checkcharacter lucina"))
+
+    assert out.texts == ("### Lucina's pings", "Nobody is subscribed to Lucina")
+
+
+def test_check_character_of_many_subscribers_has_pages(client):
+    reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
+    character_id = get_character("Lucina").id
+    for user_id in range(1, 13):
+        add_ping(character_id, str(user_id))
+
+    out = reply(check_character, client, make_message("~checkcharacter lucina"))
+
+    assert out.texts[0] == "### Lucina's pings (page 1/2)"
+    assert len(out.texts[1].splitlines()) == 10
+    [buttons] = out.rows
+    assert buttons[1].custom_id == f"page:character:{character_id}:2"
 
 
 def test_add_character_rejects_spaces_with_underscore_hint(client):

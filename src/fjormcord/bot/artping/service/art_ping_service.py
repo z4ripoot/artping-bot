@@ -1,12 +1,19 @@
 import logging
 
+import discord
+
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character import Character
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.repository import art_ping_repository, character_repository
 from fjormcord.bot.artping.service import character_service  # A module: it imports this one too, via subscribe_view
 from fjormcord.bot.artping.util.message_util import log_info
 from fjormcord.bot.artping.util.name_util import normalize_name
-from fjormcord.bot.artping.util.user_util import mentions
+from fjormcord.bot.artping.util.page_util import get_page, paged_header
+from fjormcord.bot.artping.util.user_util import get_username, mentions
+from fjormcord.bot.artping.view import page_view  # A module: it imports this one too
+
+MESSAGE_NO_PINGS = "You are not subscribed to any characters"
 
 
 def _find_characters(names: list[str]) -> tuple[list[Character], list[str]]:
@@ -82,10 +89,24 @@ def remove_ping(user_id: str, name: str) -> str:
     return log_info(f"Ping for {character.name} has been removed")
 
 
-def check_ping(user_id: str) -> str:
+async def check_ping(client: discord.Client, user_id: str, page: int = 1) -> str | Layout:
+    # The user's characters, one per line, 10 per page; the user is named as on the scoreboard, so a page turned after a
+    # restart, which only has the user's ID, shows the same header
     characters = art_ping_repository.get_pings_from_user(user_id)
 
     if not characters:
-        return "You are not subscribed to any characters"
+        return MESSAGE_NO_PINGS
 
-    return ", ".join(character.name for character in characters)
+    name = await get_username(client, user_id)
+    entries, page_count = get_page(characters, page, f"The list of {name}'s pings")
+    header = paged_header(f"### {name}'s pings", page, page_count)
+    buttons = page_view.page_buttons("pings", int(user_id), page, page_count)
+    return Layout((header, "\n".join(character.name for character in entries)), (buttons,) if buttons else ())
+
+
+async def check_ping_page(client: discord.Client, user_id: int, page: int) -> Layout:
+    # A click on Previous or Next; the user may have unsubscribed from everything since
+    out = await check_ping(client, str(user_id), page)
+    if isinstance(out, str):
+        raise CommandError(out)
+    return out

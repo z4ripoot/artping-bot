@@ -66,4 +66,10 @@ class ArtPingCog(commands.Cog):
 
     @app_commands.command(name="checkping", description="See which characters you are being pinged for")
     async def check_ping(self, interaction: discord.Interaction):
-        await run(interaction, lambda: art_ping_service.check_ping(str(interaction.user.id)))
+        # Private, so only the user sees their pings and turns the pages; deferred, as the user's name may be fetched
+        await run(
+            interaction,
+            lambda: art_ping_service.check_ping(interaction.client, str(interaction.user.id)),
+            defer=True,
+            ephemeral=True,
+        )

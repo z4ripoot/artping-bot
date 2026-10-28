@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from fjormcord.bot.artping.repository import currency_repository
-from fjormcord.bot.artping.service import currency_service
+from fjormcord.bot.artping.repository import art_ping_repository, character_repository, currency_repository
+from fjormcord.bot.artping.service import art_ping_service, character_service, currency_service
 from fjormcord.bot.artping.view.layout import to_view
 from fjormcord.bot.artping.view.page_view import PageButton, page_buttons
 from tests.fakes import FakeChannel, FakeClient, FakeInteraction, button_labels
@@ -129,3 +129,42 @@ def test_failed_click_is_answered_privately(client, orbs, monkeypatch, caplog):
 
     assert click(client, message, "Next ▶") == [("Something went wrong while turning the page", True, None)]
     assert "database is locked" in caplog.text
+
+
+def post(layout):
+    return asyncio.run(FakeChannel().send(view=to_view(layout)))
+
+
+def test_next_turns_a_ping_list_to_the_next_page():
+    client = FakeClient({1: "Alice"})
+    for number in range(1, 13):
+        character_id = character_repository.add_character(f"Hero{number:02d}")
+        art_ping_repository.add_ping(character_id, "1")
+    message = post(asyncio.run(art_ping_service.check_ping(client, "1")))
+
+    click(client, message, "Next ▶")
+
+    assert message.content == "### Alice's pings (page 2/2)\nHero11\nHero12"
+
+
+def test_next_turns_a_character_list_to_the_next_page():
+    client = FakeClient({user_id: f"User{user_id}" for user_id in range(1, 13)})
+    character_id = character_repository.add_character("Lucina")
+    for user_id in range(1, 13):
+        art_ping_repository.add_ping(character_id, str(user_id))
+    message = post(asyncio.run(character_service.check_character(client, "Lucina")))
+
+    click(client, message, "Next ▶")
+
+    assert message.content == "### Lucina's pings (page 2/2)\nUser11\nUser12"
+
+
+def test_removed_character_is_answered_privately():
+    client = FakeClient()
+    character_id = character_repository.add_character("Lucina")
+    for user_id in range(1, 13):
+        art_ping_repository.add_ping(character_id, str(user_id))
+    message = post(asyncio.run(character_service.check_character(client, "Lucina")))
+    character_repository.remove_character(character_id)
+
+    assert click(client, message, "Next ▶") == [("This character doesn't exist anymore", True, None)]

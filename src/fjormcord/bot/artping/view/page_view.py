@@ -6,17 +6,18 @@ import discord
 
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.layout import Layout
-from fjormcord.bot.artping.service import currency_service  # A module: it imports this one too
+from fjormcord.bot.artping.service import art_ping_service, character_service, currency_service  # Modules: cycle
 from fjormcord.bot.artping.view.layout import to_view
 
 
 class PageButton(
     discord.ui.DynamicItem[discord.ui.Button],
-    template=r"page:(?P<kind>scoreboard):(?P<subject_id>\d+):(?P<page>\d+)",
+    template=r"page:(?P<kind>scoreboard|pings|character):(?P<subject_id>\d+):(?P<page>\d+)",
 ):
     # Previous or Next under a paged list: turns the clicked message to the page in its custom_id. kind names the list
-    # and subject_id whose it is (the currency of a scoreboard); IDs, not names, keep the custom_id short. Registered
-    # with Client.add_dynamic_items, so a click is handled after a restart too
+    # and subject_id whose it is: the currency of a scoreboard, the user of a ping list, the character of its list of
+    # subscribers. IDs, not names, keep the custom_id short and survive a rename. Registered with
+    # Client.add_dynamic_items, so a click is handled after a restart too
     def __init__(self, kind: str, subject_id: int, page: int, label: str, disabled: bool = False):
         super().__init__(
             discord.ui.Button(
@@ -77,6 +78,10 @@ async def _render(kind: str, client: discord.Client, subject_id: int, page: int)
     match kind:
         case "scoreboard":
             return await currency_service.get_scoreboard_page(client, subject_id, page)
+        case "pings":
+            return await art_ping_service.check_ping_page(client, subject_id, page)
+        case "character":
+            return await character_service.check_character_page(client, subject_id, page)
     raise ValueError(f"Unknown page kind {kind}")
 
 

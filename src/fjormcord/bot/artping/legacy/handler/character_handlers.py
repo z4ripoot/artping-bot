@@ -20,5 +20,5 @@ def remove_character(client: discord.Client, message: discord.Message) -> str:
     return character_service.remove_character(get_single_name(message.content, "character name"))
 
 
-async def check_character(client: discord.Client, message: discord.Message) -> str:
+async def check_character(client: discord.Client, message: discord.Message) -> Layout:
     return await character_service.check_character(client, get_single_name(message.content, "character name"))

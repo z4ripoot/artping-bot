@@ -2,7 +2,8 @@ import asyncio
 
 from fjormcord.bot.artping.repository import alias_repository, art_ping_repository, character_repository
 from fjormcord.bot.artping.slash.cog.art_ping_cog import ArtPingCog, build_art_ping_command
-from tests.fakes import FakeInteraction, invoke
+from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS
+from tests.fakes import FakeClient, FakeInteraction, invoke
 
 
 class FakeBot:
@@ -77,12 +78,14 @@ def test_add_ping_with_spaces():
 def test_remove_and_check_ping():
     add_lucina_pinged_by(1)
     cog = ArtPingCog(FakeBot())
-    check, remove = FakeInteraction(), FakeInteraction()
+    check, remove = FakeInteraction(client=FakeClient({1: "Alice"})), FakeInteraction()
 
     invoke(cog.check_ping, check, cog)
     invoke(cog.remove_ping, remove, cog, character="Lucina")
 
-    assert "Lucina" in check.sent[0].content
+    # Private: only the user sees their pings
+    assert check.response.deferred == [{"ephemeral": True}]
+    assert check.sent == [("### Alice's pings\nLucina", True, ALLOWED_MENTIONS)]
     assert remove.sent[0].content == "Ping for Lucina has been removed"
 
 

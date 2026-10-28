@@ -103,7 +103,8 @@ Preparation: A creates `Lucina` and `Chrom`, and adds the alias `Luci` to Lucina
 | 4.15 | U2 | `~removeping`, `~removeping a b`, `~removeping marth` | Missing-argument, one-name and doesn't-exist errors as above |
 | 4.16 | U2 | `~removeping Robin` (not subscribed) | `Ping for Robin doesn't exist` |
 | 4.17 | U2 | `~removeping chrom` | `Ping for Chrom has been removed` |
-| 4.18 | U2 | `~checkping` | `Lucina` (comma-separated, sorted when there are several) |
+| 4.18 | U2 | `~checkping` | A box: the heading `<U2's name>'s pings`, a separator, `Lucina` (one per line, sorted when there are several). Public, as every `~` reply |
+| 4.18a | U2 | Subscribe U2 to 11 or more characters, then `~checkping` | `(page 1/2)` in the heading, 10 characters, a separator and `◀ Previous` (disabled) / `Next ▶`; `Next ▶` turns the same message to page 2. Anyone may click; a click has the cooldown |
 | 4.19 | new user / U2 after removing all | `~checkping` | `You are not subscribed to any characters` |
 
 ## 5. Characters (admin path)
@@ -119,8 +120,8 @@ Preparation: A creates `Lucina` and `Chrom`, and adds the alias `Luci` to Lucina
 | 5.5 | A | `~addcharacter LUCINA` | `Character Lucina already exists` |
 | 5.6 | A | `~addcharacter luci` (alias) | `Luci is already an alias of Lucina` |
 | 5.7 | A / U1 | `~checkcharacter`, `~checkcharacter a b`, `~checkcharacter marth` | Missing-argument, one-name and doesn't-exist errors |
-| 5.8 | U1 | `~checkcharacter Black_Knight` (no aliases or users) | `Character entry found for Black_Knight` / `Users: ` (no Aliases line) |
-| 5.9 | U1 | `~checkcharacter luci` | Header with **Lucina**, `Aliases: Luci`, `Users: <display names>` |
+| 5.8 | U1 | `~checkcharacter Black_Knight` (no aliases or users) | A box: the heading `Black_Knight's pings` (no Aliases line), a separator, `Nobody is subscribed to Black_Knight` |
+| 5.9 | U1 | `~checkcharacter luci` | The heading `Lucina's pings` with `Aliases: Luci` under it, a separator, the users' names one per line. With 11 or more subscribers: `(page 1/2)` and the page buttons, as in 4.18a; after `~removecharacter`, a page click answers ephemerally `This character doesn't exist anymore` |
 | 5.10 | A | `~removecharacter` / `a b` / `marth` | Missing-argument, one-name and doesn't-exist errors |
 | 5.11 | A | `~removecharacter luci` | `Character Lucina has been removed`. Subscribers' `~checkping` no longer lists it, and `~artping Luci` now says no entry (the alias went too) |
 
@@ -278,7 +279,7 @@ database. Run each command as the account named in the section it comes from.
 | 11.5 | U1 | `/addping character:marth` | Ephemeral `Character Marth doesn't exist` |
 | 11.6 | U1 | `/addping character:Lucina` again | Ephemeral `Ping for Lucina already exists` |
 | 11.7 | U1 | `/removeping character:Lucina`, then again | `Ping for Lucina has been removed`, then ephemeral `Ping for Lucina doesn't exist`. Autocomplete only suggests the characters U1 is subscribed to (no aliases); typing another name still gives that error |
-| 11.8 | U1 | `/checkping` | `Lucina` / `You are not subscribed to any characters` |
+| 11.8 | U1 | `/checkping` | Ephemeral (only U1 sees it): the box of 4.18, its page buttons work / `You are not subscribed to any characters` |
 | 11.9 | U1 | `/artping character:Lucina` | `Lucina: <@U1> <@U2>`, the subscribers are pinged |
 | 11.10 | U1 | `/artping character:Lucina character2:Chrom character3:Luci` | One line per character, sorted, Lucina once; U1 mentioned once |
 | 11.11 | U1 | `/artping character:Lucina character2:Marth` | The ping and the line `No character entry for Marth` |
@@ -289,7 +290,7 @@ database. Run each command as the account named in the section it comes from.
 | 11.16 | U1 | `/addcharacter character:marth2` | A vote message as in 7.3, sent by the bot as a reply to the command. The votes work as in section 7 |
 | 11.17 | U1 in **DM** | `/addcharacter character:x` | `Votes can only be started in a server` |
 | 11.18 | A in **DM** | Type `/` | The admin commands aren't offered (they are server-only) |
-| 11.19 | U1 | `/checkcharacter character:luci` | The header with `Lucina`, `Aliases: Luci` and the users |
+| 11.19 | U1 | `/checkcharacter character:luci` | The box of 5.9, public |
 | 11.20 | A | `/removecharacter character:luci` | `Character Lucina has been removed` |
 | 11.21 | A | `/addalias character:Lucina alias:luci`, `/removealias …`, `/setprimaryname alias:luci` | The same replies as 6.5, 6.11 and 6.15 |
 | 11.22 | U1 | Run any admin command by typing it out (an admin has hidden the permission in the server settings, to test the check: Server settings → Integrations → the bot → allow the command for everyone) | Ephemeral `This command is for admins only`. Restore the permission afterwards |
