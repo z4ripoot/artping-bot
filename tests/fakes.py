@@ -32,13 +32,17 @@ def sent_content(content, view):
     return content
 
 
-def button_labels(view):
-    # The labels of a message's buttons, in order, also of those wrapped in a DynamicItem; [] without a view
+def buttons(view):
+    # A message's buttons, in order, also those wrapped in a DynamicItem; [] without a view
     if view is None:
         return []
     items = view.walk_children() if isinstance(view, discord.ui.LayoutView) else view.children
     items = [getattr(item, "item", item) for item in items]
-    return [item.label for item in items if isinstance(item, discord.ui.Button)]
+    return [item for item in items if isinstance(item, discord.ui.Button)]
+
+
+def button_labels(view):
+    return [button.label for button in buttons(view)]
 
 
 def select_options(view):

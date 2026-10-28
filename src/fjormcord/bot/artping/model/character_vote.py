@@ -19,5 +19,5 @@ class VoteChannel:
     # Where a vote message goes: legacy sends to the message's channel, slash as the interaction's follow-up
     channel_id: str
     in_guild: bool
-    # send(content, view) -> the sent message, whose ID the vote is stored by
-    send: Callable[[str, Any], Awaitable[Any]]
+    # send(view) -> the sent message, whose ID the vote is stored by; view is the vote's layout
+    send: Callable[[Any], Awaitable[Any]]

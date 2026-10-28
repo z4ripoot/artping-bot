@@ -2,8 +2,7 @@ import pytest
 
 from fjormcord.bot.artping.repository import alias_repository, character_repository, character_vote_repository
 from fjormcord.bot.artping.slash.cog.character_cog import CharacterCog
-from fjormcord.bot.artping.view.vote_view import VoteView
-from tests.fakes import FakeInteraction, click, invoke
+from tests.fakes import FakeInteraction, button_labels, click, invoke
 
 ADMIN_ONLY_COMMANDS = ["remove_character", "add_alias", "remove_alias", "set_primary_name"]
 
@@ -21,8 +20,7 @@ def test_admin_add_character(cog):
     assert interaction.response.deferred == [{}]
     assert interaction.sent[0].content == "Character Black_Knight has been added"
     assert character_repository.get_character("Black_Knight") is not None
-    [button] = interaction.channel.last_message().view.children
-    assert button.item.label == "Subscribe to Black_Knight"
+    assert button_labels(interaction.channel.last_message().view) == ["Subscribe to Black_Knight"]
 
 
 def test_non_admin_add_character_starts_a_button_vote(cog):
@@ -31,7 +29,8 @@ def test_non_admin_add_character_starts_a_button_vote(cog):
     invoke(cog.add_character, interaction, cog, character="Lucina")
 
     vote_message = interaction.channel.last_message()
-    assert isinstance(vote_message.view, VoteView)
+    assert vote_message.content == "Vote to add Lucina. Votes needed: 5"
+    assert button_labels(vote_message.view) == ["Vote (1/5)"]
     vote = character_vote_repository.get_vote(str(vote_message.id))
     assert (vote.character_name, vote.proposer) == ("Lucina", "7")
     assert character_repository.get_character("Lucina") is None

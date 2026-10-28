@@ -17,8 +17,9 @@ from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.view.layout import layout_text
 from fjormcord.bot.artping.view.scoreboard_view import PageButton
 from fjormcord.bot.artping.view.subscribe_view import SubscribeButton
+from fjormcord.bot.artping.view.vote_view import VoteButton
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
-from tests.fakes import FakeClock, make_message
+from tests.fakes import FakeClock, button_labels, make_message
 
 
 @pytest.fixture
@@ -42,8 +43,7 @@ def test_reply_is_sent_with_its_buttons(bot):
     message = make_message("~addcharacter Lucina", administrator=True)
 
     assert dispatch(bot, message) == ["Character Lucina has been added"]
-    [button] = message.channel.last_message().view.children
-    assert button.item.label == "Subscribe to Lucina"
+    assert button_labels(message.channel.last_message().view) == ["Subscribe to Lucina"]
 
 
 def test_command_must_match_exactly(bot):
@@ -111,9 +111,9 @@ def test_setup_adds_the_vote_cog_and_the_buttons(bot, monkeypatch):
     asyncio.run(bot.setup_hook())
 
     assert bot.get_cog("CharacterVoteCog") is not None
-    assert [type(view).__name__ for view in bot.persistent_views] == ["VoteView"]
-    # Routes clicks on the Track, scoreboard and Subscribe buttons, also those of messages sent before a restart
-    assert dynamic_items == [TrackButton, PageButton, SubscribeButton]
+    assert bot.persistent_views == []
+    # Routes clicks on every button, also those of messages sent before a restart
+    assert dynamic_items == [TrackButton, PageButton, SubscribeButton, VoteButton]
     # The sync comes last, so it registers the commands of every cog
     assert synced == [(bot.tree, config.read_settings().guild_id)]
 

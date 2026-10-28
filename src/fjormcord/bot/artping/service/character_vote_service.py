@@ -7,10 +7,12 @@ from fjormcord.bot.artping import config
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.model.character_vote import CharacterVote, VoteChannel
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.repository import character_vote_repository
 from fjormcord.bot.artping.service import character_service  # A module: it imports this one too
 from fjormcord.bot.artping.util.user_util import is_administrator
 from fjormcord.bot.artping.view import subscribe_view, vote_view  # Modules: vote_view imports this one too
+from fjormcord.bot.artping.view.layout import to_view
 
 
 def is_voting_enabled() -> bool:
@@ -25,7 +27,7 @@ async def start_vote(vote_channel: VoteChannel, proposer_id: str, name: str) -> 
 
     # The proposer's vote is counted from the start, which saves them a click. Votes are only started when at least
     # 2 are needed, so it can't pass the vote on its own
-    vote_message = await vote_channel.send(_vote_text(name), vote_view.VoteView(1))
+    vote_message = await vote_channel.send(to_view(_vote_layout(name, 1)))
     character_vote_repository.add_vote(
         CharacterVote(str(vote_message.id), vote_channel.channel_id, name, proposer_id, uses_button=True),
         [proposer_id],
@@ -41,8 +43,9 @@ async def toggle_vote(client: discord.Client, vote_message: discord.Message, use
     message_id = str(vote_message.id)
     vote = character_vote_repository.get_vote(message_id)
     if vote is None:
-        # Closed while its message kept the button, e.g. when editing the message failed
-        await _edit(vote_message, view=None)
+        # Closed while its message kept the button, e.g. when editing the message failed. It gets a text without the
+        # button: a layout message has no content to keep
+        await _edit(vote_message, Layout(("This vote has already been closed",)))
         return "This vote has already been closed"
 
     dropped = await _drop_if_name_taken(vote_message, vote)
@@ -87,6 +90,15 @@ def drop_deleted_vote(message_id: str):
     # Called for every deleted message, most of which aren't votes
     if character_vote_repository.get_vote(message_id) is not None:
         character_vote_repository.remove_vote(message_id)
+
+
+def _vote_layout(name: str, count: int) -> Layout:
+    return Layout((_vote_text(name),), ((vote_view.VoteButton(count),),))
+
+
+def _added_layout(text: str, character: Character) -> Layout:
+    # The Vote button makes way for Subscribe, for those who didn't vote
+    return Layout((text,), ((subscribe_view.SubscribeButton.for_character(character),),))
 
 
 def _vote_text(name: str) -> str:
@@ -142,7 +154,7 @@ async def _drop_if_name_taken(vote_message: discord.Message, vote: CharacterVote
     except CommandError as e:
         logging.info("Dropping vote %s: %s", vote.message_id, e)
         character_vote_repository.remove_vote(vote.message_id)
-        await _edit(vote_message, content=str(e), view=None)
+        await _edit(vote_message, Layout((str(e),)))
         return str(e)
     return None
 
@@ -155,7 +167,7 @@ async def _pass_or_show_count(
     if by_administrator or count >= config.read_settings().character_votes_needed:
         await _pass(client, vote_message, vote)
     else:
-        await _edit(vote_message, content=_vote_text(vote.character_name), view=vote_view.VoteView(count))
+        await _edit(vote_message, _vote_layout(vote.character_name, count))
 
 
 async def _pass(client: discord.Client, vote_message: discord.Message, vote: CharacterVote):
@@ -167,12 +179,7 @@ async def _pass(client: discord.Client, vote_message: discord.Message, vote: Cha
     ]
     character_id = character_vote_repository.pass_vote(vote.message_id, vote.character_name)
     character = Character(character_id, vote.character_name)
-    # The Vote button makes way for Subscribe, for those who didn't vote
-    await _edit(
-        vote_message,
-        content=f"Character {character.name} has been added",
-        view=subscribe_view.SubscribeView(character),
-    )
+    await _edit(vote_message, _added_layout(f"Character {character.name} has been added", character))
     await _close(client, other_votes, character)
 
 
@@ -217,16 +224,12 @@ async def _close(client: discord.Client, votes: Iterable[CharacterVote], charact
         except discord.HTTPException as e:
             logging.warning("Failed to fetch the message of closed vote %s. %s", vote.message_id, e)
             continue
-        await _edit(
-            vote_message,
-            content=f"Character {character.name} has already been added",
-            view=subscribe_view.SubscribeView(character),
-        )
+        await _edit(vote_message, _added_layout(f"Character {character.name} has already been added", character))
 
 
-async def _edit(vote_message: discord.Message, **changes):
-    # changes: the content and view as Message.edit takes them, view=None removing the button
+async def _edit(vote_message: discord.Message, layout: Layout):
+    # content=None: a message posted before the layouts loses its content, which a layout message can't have
     try:
-        await vote_message.edit(**changes)
+        await vote_message.edit(content=None, view=to_view(layout))
     except discord.HTTPException as e:
         logging.warning("Failed to edit vote message %s. %s", vote_message.id, e)

@@ -36,10 +36,7 @@ class SubscribeButton(
             reply = "Something went wrong while subscribing"
         await interaction.response.send_message(reply, ephemeral=True)
 
-
-class SubscribeView(discord.ui.View):
-    # No timeout, so the button doesn't stop working
-    def __init__(self, character: Character):
-        super().__init__(timeout=None)
+    @classmethod
+    def for_character(cls, character: Character) -> "SubscribeButton":
         # Discord allows labels of 80 characters at most
-        self.add_item(SubscribeButton(character.id, f"Subscribe to {character.name}"[:80]))
+        return cls(character.id, f"Subscribe to {character.name}"[:80])

@@ -112,7 +112,7 @@ Preparation: A creates `Lucina` and `Chrom`, and adds the alias `Luci` to Lucina
 |---|---|---|---|
 | 5.1 | A | `~addcharacter` | `Character name is missing. Usage: ~addcharacter (character name)` |
 | 5.2 | A | `~addcharacter Black Knight` | Only-one-name error |
-| 5.3 | A | `~addcharacter black_KNIGHT` | `Character Black_Knight has been added`, with a button `Subscribe to Black_Knight` |
+| 5.3 | A | `~addcharacter black_KNIGHT` | A box with a blurple bar: `Character Black_Knight has been added`, a separator line, and the button `Subscribe to Black_Knight` |
 | 5.3a | U1 | Click `Subscribe to Black_Knight`, then again | Ephemeral `Ping for Black_Knight has been added`, then `Ping for Black_Knight already exists` (the button never unsubscribes). Clicking right after another command works: the button has no cooldown |
 | 5.3b | U2 | Restart the bot, then click `Subscribe to Black_Knight` | Ephemeral `Ping for Black_Knight has been added` (the button survives restarts) |
 | 5.4 | A | `~addcharacter m!robin`, `~addcharacter l'arachel`, `~addcharacter Lucina` | `M!Robin`, `L'Arachel`, `Lucina` added |
@@ -152,7 +152,7 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 |---|---|---|
 | 7.1 | U1 in **DM**: `~addcharacter Marth` | `Votes can only be started in a server` |
 | 7.2 | U1: `~addcharacter Lucina` (exists) | `Character Lucina already exists` (no vote) |
-| 7.3 | U1: `~addcharacter marth` | Only the bot's message `Vote to add Marth. Votes needed: 2`, with a button `Vote (1/2)` showing ⭐: U1's own vote is already counted. The bot adds no reaction and sends no other reply |
+| 7.3 | U1: `~addcharacter marth` | Only the bot's message, a box with a blurple bar: `Vote to add Marth. Votes needed: 2`, a separator line, and a button `Vote (1/2)` showing ⭐: U1's own vote is already counted. The bot adds no reaction and sends no other reply |
 | 7.4 | U1 reacts with ⭐ or 👍 on the vote message | Nothing happens (reactions don't count) |
 | 7.5 | U1 clicks the button | Ephemeral `Your vote for Marth has been taken back`; the label becomes `Vote (0/2)` |
 | 7.6 | U1 clicks again | Ephemeral `Your vote for Marth has been added`; the label is `Vote (1/2)` again |
@@ -172,6 +172,7 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 | 7.18 | Set `votes_needed=1`, restart. U1: `~addcharacter lucius` | `Character Lucius has been added` straight away (no vote). Put it back to 2 |
 | 7.19 | Set `emoji=<:yourEmoji:id>` (a custom emoji in the server), restart, start a vote | The button shows the custom emoji |
 | 7.20 | A clicks a vote button, then U1 starts another vote for the same name and A clicks that too | The 1st click passes the vote; the second vote was closed with it, so there is nothing to click |
+| 7.21 | Before updating the bot, start a vote (U1: `~addcharacter tharja`); update and restart | At startup the vote message becomes the box (text, separator, `Vote (1/2)`) without its old text above it; clicking it still counts |
 
 ## 8. Gacha currency
 

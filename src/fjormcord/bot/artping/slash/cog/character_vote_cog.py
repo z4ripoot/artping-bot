@@ -4,17 +4,13 @@ import discord
 from discord.ext import commands
 
 from fjormcord.bot.artping.service.character_vote_service import check_open_votes, drop_deleted_vote
-from fjormcord.bot.artping.view.vote_view import VoteView
 
 
 class CharacterVoteCog(commands.Cog):
-    # No commands: the vote button and the vote listeners. Votes are started by ~addcharacter and /addcharacter.
+    # No commands: the vote listeners (the client registers the Vote button). Votes are started by ~addcharacter and
+    # /addcharacter.
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-
-    async def cog_load(self):
-        # Routes clicks on every vote message, also those sent before a restart, to the button's callback
-        self.bot.add_view(VoteView())
 
     @commands.Cog.listener()
     async def on_ready(self):

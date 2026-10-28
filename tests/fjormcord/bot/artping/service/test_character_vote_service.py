@@ -1,6 +1,7 @@
 import asyncio
 from dataclasses import replace
 
+import discord
 import pytest
 
 from fjormcord.bot.artping import config
@@ -11,7 +12,19 @@ from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_us
 from fjormcord.bot.artping.repository.character_repository import get_character
 from fjormcord.bot.artping.repository.character_vote_repository import count_voters, get_votes
 from fjormcord.bot.artping.service.character_vote_service import check_open_votes, drop_deleted_vote
-from tests.fakes import BOT_USER, FakeChannel, FakeClient, FakeGuild, click, make_member, make_message, make_user, reply
+from tests.fakes import (
+    BOT_USER,
+    FakeChannel,
+    FakeClient,
+    FakeGuild,
+    button_labels,
+    buttons,
+    click,
+    make_member,
+    make_message,
+    make_user,
+    reply,
+)
 
 EMOJI = "⭐"
 # An administrator of the server the votes are in
@@ -68,9 +81,8 @@ def check_votes(client):
 
 
 def label(vote_message):
-    [button] = vote_message.view.children
-    # The Subscribe button of a passed vote is a DynamicItem around the button
-    return getattr(button, "item", button).label
+    [only] = button_labels(vote_message.view)
+    return only
 
 
 def subscribers(name):
@@ -95,7 +107,7 @@ def test_non_admin_add_character_starts_a_vote(client, channel):
 def test_vote_button_shows_the_emoji(client, channel):
     vote_message = start_vote(client, channel, "Lucina")
 
-    [button] = vote_message.view.children
+    [button] = buttons(vote_message.view)
     assert str(button.emoji) == EMOJI
 
 
@@ -201,9 +213,8 @@ def test_only_the_voters_of_the_passing_vote_are_subscribed(client, channel):
 def test_admin_add_closes_open_votes(client, channel):
     vote_message = start_vote(client, channel, "Lucina")
 
-    assert (
-        reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
-        == "Character Lucina has been added"
+    assert reply(add_character, client, make_message("~addcharacter Lucina", administrator=True)).texts == (
+        "Character Lucina has been added",
     )
     assert vote_message.content == "Character Lucina has already been added"
     assert label(vote_message) == "Subscribe to Lucina"
@@ -215,7 +226,9 @@ def test_click_on_a_closed_vote(client, channel):
     reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
 
     assert click(client, vote_message, 1) == "This vote has already been closed"
-    assert vote_message.view is None
+    # The message keeps a text: a layout without its view would be empty
+    assert vote_message.content == "This vote has already been closed"
+    assert button_labels(vote_message.view) == []
     assert subscribers("Lucina") == set()
 
 
@@ -224,7 +237,8 @@ def test_click_on_a_dropped_vote_removes_the_button(client, channel):
     drop_deleted_vote(str(vote_message.id))
 
     assert click(client, vote_message, 1) == "This vote has already been closed"
-    assert vote_message.view is None
+    assert vote_message.content == "This vote has already been closed"
+    assert button_labels(vote_message.view) == []
 
 
 def test_click_on_a_vote_for_a_name_that_became_an_alias_drops_it(client, channel, database):
@@ -234,7 +248,7 @@ def test_click_on_a_vote_for_a_name_that_became_an_alias_drops_it(client, channe
 
     assert click(client, vote_message, 1) == "Focalors is already an alias of Furina"
     assert vote_message.content == "Focalors is already an alias of Furina"
-    assert vote_message.view is None
+    assert button_labels(vote_message.view) == []
     assert get_votes() == []
     assert subscribers("Furina") == set()
 
@@ -251,9 +265,8 @@ def test_clicking_a_passed_vote_again_is_harmless(client, channel, database):
 def test_non_admin_adds_directly_when_fewer_than_two_votes_are_needed(client, channel, monkeypatch):
     set_votes_needed(monkeypatch, 1)
 
-    assert (
-        reply(add_character, client, make_message("~addcharacter Lucina", channel=channel))
-        == "Character Lucina has been added"
+    assert reply(add_character, client, make_message("~addcharacter Lucina", channel=channel)).texts == (
+        "Character Lucina has been added",
     )
     assert channel.sent == []
     assert get_votes() == []
@@ -324,7 +337,7 @@ def test_vote_for_a_name_that_became_an_alias_is_dropped_at_startup(client, chan
     check_votes(client)
 
     assert vote_message.content == "Focalors is already an alias of Furina"
-    assert vote_message.view is None
+    assert button_labels(vote_message.view) == []
     assert get_votes() == []
 
 
@@ -444,3 +457,15 @@ def test_convert_vote_stores_the_voters_and_marks_the_vote():
 
     assert character_vote_repository.count_voters("5") == 2
     assert character_vote_repository.get_vote("5").uses_button
+
+
+def test_old_plain_vote_message_is_rerendered_as_a_layout(client, channel):
+    # A button vote posted before the layouts: its text was the message's content
+    vote_message = channel.post("Vote to add Lucina. Votes needed: 2")
+    character_vote_repository.add_vote(CharacterVote(str(vote_message.id), str(channel.id), "Lucina", "7"))
+
+    check_votes(client)
+
+    assert isinstance(vote_message.view, discord.ui.LayoutView)
+    assert vote_message.content == "Vote to add Lucina. Votes needed: 2"
+    assert label(vote_message) == "Vote (0/2)"

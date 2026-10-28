@@ -20,7 +20,7 @@ class CharacterCog(commands.Cog):
         vote_channel = VoteChannel(
             str(interaction.channel_id),
             interaction.guild is not None,
-            lambda content, view: interaction.followup.send(content, view=view, wait=True),
+            lambda view: interaction.followup.send(view=view, wait=True),
         )
         await run(
             interaction,

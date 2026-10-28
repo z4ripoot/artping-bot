@@ -6,9 +6,8 @@ from tests.fakes import make_message, reply
 
 
 def test_add_character_rejects_duplicates_case_insensitively(client):
-    assert (
-        reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
-        == "Character Lucina has been added"
+    assert reply(add_character, client, make_message("~addcharacter Lucina", administrator=True)).texts == (
+        "Character Lucina has been added",
     )
     assert (
         reply(add_character, client, make_message("~addcharacter lucina", administrator=True))
@@ -48,9 +47,8 @@ def test_add_character_rejects_an_alias(client, database):
 
 
 def test_add_character_normalizes_the_name(client):
-    assert (
-        reply(add_character, client, make_message("~addcharacter m!ROBIN", administrator=True))
-        == "Character M!Robin has been added"
+    assert reply(add_character, client, make_message("~addcharacter m!ROBIN", administrator=True)).texts == (
+        "Character M!Robin has been added",
     )
     assert get_character("m!robin").name == "M!Robin"
 

@@ -3,7 +3,7 @@ import discord
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.model.character_vote import VoteChannel
-from fjormcord.bot.artping.model.reply import Reply
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.repository import alias_repository, art_ping_repository, character_repository
 from fjormcord.bot.artping.service import character_vote_service  # A module: it imports this one too
 from fjormcord.bot.artping.util.message_util import log_info
@@ -31,7 +31,7 @@ def require_unused_name(name: str):
 
 async def add_character(
     client: discord.Client, user: discord.abc.User, name: str, vote_channel: VoteChannel
-) -> str | Reply:
+) -> str | Layout:
     entry = normalize_name(name)
 
     require_unused_name(entry)
@@ -43,7 +43,8 @@ async def add_character(
     character = Character(character_repository.add_character(entry), entry)
     await character_vote_service.close_votes(client, character)
 
-    return Reply(log_info(f"Character {entry} has been added"), subscribe_view.SubscribeView(character))
+    text = log_info(f"Character {entry} has been added")
+    return Layout((text,), ((subscribe_view.SubscribeButton.for_character(character),),))
 
 
 def remove_character(name: str) -> str:
