@@ -204,7 +204,7 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 | 8.22 | U1 | `~scoreboard gems` | `Currency gems doesn't exist` |
 | 8.23 | U1 | `~scoreboard feathers` (A adds `~addcurrency feathers`, nobody has set it) | The box: `Scoreboard for feathers`, a separator, `Nobody has set their feathers yet`, then the currency dropdown |
 | 8.24 | U1 | `~scoreboard orbs` (U1 and U2 have set it) | A box with a blurple bar: the heading `Scoreboard for orbs` (no page info), a separator, `1. … (amount)` in descending order, a separator and a dropdown listing feathers and orbs, orbs selected. No page buttons |
-| 8.24a | U2 | Pick `feathers` in the dropdown of 8.24 | The same message turns to the feathers scoreboard (page 1), feathers selected. Within the cooldown: an ephemeral cooldown error. After a restart the dropdown still works |
+| 8.24a | U2 | Pick `feathers` in the dropdown of 8.24 | The same message turns to the feathers scoreboard (page 1), feathers selected. Within the cooldown: an ephemeral cooldown error, and the dropdown goes back to feathers (the refused pick doesn't stay shown); on page 2 the redraw stays on page 2. After a restart the dropdown still works |
 | 8.24b | A | `~removecurrency feathers`, then U1 picks `feathers` in an older scoreboard's dropdown | Ephemeral `This currency doesn't exist anymore`; the message stays |
 | 8.25 | U1 | `~scoreboard orbs 0` / `orbs 2` | `Page 0 doesn't exist. The scoreboard for orbs has 1 page` |
 | 8.26 | — | Seed fake users (below), then `~scoreboard orbs` | `(page 1/2)` header, ranks 1–10, buttons `◀ Previous` (disabled) and `Next ▶`. Fake IDs show as `Unknown user (<id>)` |

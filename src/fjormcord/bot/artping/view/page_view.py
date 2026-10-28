@@ -53,9 +53,15 @@ def page_buttons(kind: str, subject_id: int, page: int, page_count: int) -> tupl
     )
 
 
-async def show_page(interaction: discord.Interaction, render: Callable[[], Awaitable[Layout]], failure: str):
+async def show_page(
+    interaction: discord.Interaction,
+    render: Callable[[], Awaitable[Layout]],
+    failure: str,
+    redraw: Callable[[], Awaitable[Layout]] | None = None,
+):
     # Edits the clicked message to what render lays out. A click on a page is a command, so it has the cooldown; anyone
-    # who sees the message may click. Errors are answered privately and leave the message as it was
+    # who sees the message may click. Errors are answered privately and leave the message as it was, drawn again by
+    # redraw when given: a dropdown keeps showing a refused pick until its message is edited
     try:
         with interaction.client.cooldowns.command(interaction.user):
             # Looking up the users may take longer than the 3 seconds Discord waits for an answer
@@ -64,13 +70,27 @@ async def show_page(interaction: discord.Interaction, render: Callable[[], Await
     except CommandError as e:
         logging.warning(str(e))
         await _answer_privately(interaction, str(e))
+        await _redraw(interaction, redraw)
         return
     except Exception:
         logging.exception("Showing a page of message %s failed", interaction.message.id)
         await _answer_privately(interaction, failure)
+        await _redraw(interaction, redraw)
         return
 
     await interaction.edit_original_response(content=None, view=to_view(layout))
+
+
+def shown_page(message: discord.Message) -> int:
+    # The page a message shows, read from its Previous button, which leads to the page before; 1 without page buttons
+    components = list(message.components)
+    while components:
+        component = components.pop(0)
+        match = PageButton.__discord_ui_compiled_template__.fullmatch(getattr(component, "custom_id", None) or "")
+        if match:
+            return int(match["page"]) + 1
+        components += getattr(component, "children", [])
+    return 1
 
 
 async def _render(kind: str, client: discord.Client, subject_id: int, page: int) -> Layout:
@@ -86,7 +106,21 @@ async def _render(kind: str, client: discord.Client, subject_id: int, page: int)
 
 
 async def _answer_privately(interaction: discord.Interaction, text: str):
-    if interaction.response.is_done():
-        await interaction.followup.send(text, ephemeral=True)
-    else:
-        await interaction.response.send_message(text, ephemeral=True)
+    # Logged when Discord no longer takes an answer, e.g. when the defer itself failed for an expired click
+    try:
+        if interaction.response.is_done():
+            await interaction.followup.send(text, ephemeral=True)
+        else:
+            await interaction.response.send_message(text, ephemeral=True)
+    except discord.HTTPException as e:
+        logging.warning("Could not answer the click on message %s. %s", interaction.message.id, e)
+
+
+async def _redraw(interaction: discord.Interaction, redraw: Callable[[], Awaitable[Layout]] | None):
+    # Edited as the bot's own message, since the answer to the click may have been a new, private message
+    if redraw is None:
+        return
+    try:
+        await interaction.message.edit(content=None, view=to_view(await redraw()))
+    except Exception:
+        logging.exception("Redrawing message %s failed", interaction.message.id)

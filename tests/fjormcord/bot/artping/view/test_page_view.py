@@ -1,12 +1,13 @@
 import asyncio
 
+import discord
 import pytest
 
 from fjormcord.bot.artping.repository import art_ping_repository, character_repository, currency_repository
 from fjormcord.bot.artping.service import art_ping_service, character_service, currency_service
 from fjormcord.bot.artping.view.layout import to_view
 from fjormcord.bot.artping.view.page_view import PageButton, page_buttons
-from tests.fakes import FakeChannel, FakeClient, FakeInteraction, button_labels
+from tests.fakes import FakeChannel, FakeClient, FakeInteraction, button_labels, http_error
 
 
 @pytest.fixture
@@ -168,3 +169,20 @@ def test_removed_character_is_answered_privately():
     character_repository.remove_character(character_id)
 
     assert click(client, message, "Next ▶") == [("This character doesn't exist anymore", True, None)]
+
+
+def test_click_whose_answer_fails_is_only_logged(client, orbs, caplog):
+    message = post_scoreboard(client)
+    interaction = FakeInteraction(100, client=client, message=message)
+
+    async def expired(*args, **kwargs):
+        # As Discord answers a click it no longer accepts, e.g. after its 3 seconds have passed
+        raise http_error(discord.NotFound, 404)
+
+    interaction.response.defer = expired
+    interaction.response.send_message = expired
+    button = button_after_restart(page_items(message)[1])
+
+    asyncio.run(button.callback(interaction))
+
+    assert "Could not answer the click" in caplog.text

@@ -32,8 +32,15 @@ class CurrencySelect(discord.ui.DynamicItem[discord.ui.Select], template=CURRENC
 
     async def callback(self, interaction: discord.Interaction):
         currency_id = int(self.item.values[0])
+        # The scoreboard the message shows: its selected option, on the page its buttons say
+        current_id = next((int(option.value) for option in self.item.options if option.default), None)
+        page = page_view.shown_page(interaction.message)
         await page_view.show_page(
             interaction,
             lambda: currency_service.get_scoreboard_page(interaction.client, currency_id, 1),
             "Something went wrong while showing that scoreboard",
+            # A refused pick is drawn away; without a selected option there is nothing to draw
+            redraw=None
+            if current_id is None
+            else lambda: currency_service.get_scoreboard_page(interaction.client, current_id, page),
         )
