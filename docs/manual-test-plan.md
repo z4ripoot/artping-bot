@@ -255,7 +255,7 @@ FROM generate_series(1, 11);   -- older sqlite3: use 11 separate INSERTs
 
 | # | Setup | Expected |
 |---|---|---|
-| 10.1 | Channel ID set, bot running on a Monday through 18:00 or 22:00 UTC | Message in the channel: `Coliseum/Aether Raids closes <t:…:R> at <t:…:f>`. The timestamp shows 23:00 UTC in your local time |
+| 10.1 | Channel ID set, bot running on a Monday through 18:00 or 22:00 UTC | A box with a blurple bar in the channel: `Coliseum/Aether Raids closes <t:…:R> at <t:…:f>`. The timestamp shows 23:00 UTC in your local time |
 | 10.2 | Same, on a non-Monday at those times | Nothing |
 | 10.3 | Channel ID set to a channel the bot can't see (or a wrong ID) | At the trigger time, log error `Channel … not found. Task will be skipped` |
 | 10.4 | Disconnect the network briefly so `on_ready` fires again | No `RuntimeError` about the task already running, and no duplicate reminders (nor duplicate Voting Gauntlet scores, section 13) |
@@ -353,8 +353,9 @@ and restart after each change. Don't commit that change. 13.1 needs a real gaunt
 | # | Setup | Expected |
 |---|---|---|
 | 13.1 | Unchanged code, during a real gauntlet round, at 5 past the hour | One message per matchup in the site's order, e.g. `Edelgard (Stronger)` / `123,456` / `Dimitri (Weaker)` / `98,765`, each with the buttons `Track Edelgard` and `Track Dimitri`. Outside a round: nothing |
-| 13.2 | `now` in round 1 | 4 matchup messages, labelled Stronger and Weaker (or Same for both when neither is behind), with a `Track <name>` button per character |
-| 13.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour Theodora is Weaker`. The next minute's message for that matchup ends with `<@U1>`, and U1 is pinged |
+| 13.2 | `now` in round 1 | 4 matchup boxes, labelled Stronger and Weaker (or Same for both when neither is behind), a separator, and a `Track <name>` button per character |
+| 13.2a | Seed 200 trackers of a Weaker character, `now` in that round | The matchup is split over several boxes, every tracker mentioned once (and pinged), the buttons only on the last |
+| 13.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour Theodora is Weaker`. The next minute's message for that matchup has `<@U1>` after a separator, U1 is **pinged**, and U1 is pinged |
 | 13.4 | U1 clicks `Track Edelgard` under Theodora's matchup | Ephemeral `You now track Edelgard instead of Theodora`. The next messages no longer mention U1 there (Edelgard is Stronger) |
 | 13.5 | U1 clicks `Track Edelgard` again | Ephemeral `You no longer track Edelgard` |
 | 13.6 | U1 and U2 track the same Weaker character | The message mentions both, once each |

@@ -4,13 +4,15 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import aiohttp
+import discord
 import pytest
 
 from fjormcord.bot.artping import voting_gauntlet
 from fjormcord.bot.artping.model.voting_gauntlet import Entrant
 from fjormcord.bot.artping.service import voting_gauntlet_service
+from fjormcord.bot.artping.view.layout import to_view
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
-from tests.fakes import FakeChannel, use_settings
+from tests.fakes import FakeChannel, button_labels, buttons, use_settings
 
 # English, UTC pages of tournament 112 (scripts removed): as the site served it after the gauntlet ended, and an
 # archived copy taken during round 3, whose Pacific times were rewritten to the UTC the bot requests
@@ -84,26 +86,28 @@ def test_round_window_reads_afternoon_times():
 
 def test_matchup_message_keeps_the_site_order():
     message = voting_gauntlet.format_matchup(
-        (Entrant("Cai", 1_958_844_520, behind=True), Entrant("Claude", 2_072_857_153, behind=False)), []
+        (Entrant("Cai", 1_958_844_520, behind=True), Entrant("Claude", 2_072_857_153, behind=False)), [], 112
     )
 
-    assert message == "Cai (Weaker)\n1,958,844,520\nClaude (Stronger)\n2,072,857,153"
+    assert message.texts == ("Cai (Weaker)\n1,958,844,520\nClaude (Stronger)\n2,072,857,153",)
+    assert button_labels(to_view(message)) == ["Track Cai", "Track Claude"]
 
 
 def test_matchup_without_a_side_behind_is_same():
     message = voting_gauntlet.format_matchup(
-        (Entrant("Cai", 2_072_857_153, behind=False), Entrant("Claude", 2_072_857_150, behind=False)), []
+        (Entrant("Cai", 2_072_857_153, behind=False), Entrant("Claude", 2_072_857_150, behind=False)), [], 112
     )
 
-    assert message == "Cai (Same)\n2,072,857,153\nClaude (Same)\n2,072,857,150"
+    assert message.texts == ("Cai (Same)\n2,072,857,153\nClaude (Same)\n2,072,857,150",)
 
 
 def test_matchup_message_mentions_the_trackers():
     message = voting_gauntlet.format_matchup(
-        (Entrant("Cai", 1, behind=True), Entrant("Claude", 2, behind=False)), ["11", "22"]
+        (Entrant("Cai", 1, behind=True), Entrant("Claude", 2, behind=False)), ["11", "22"], 112
     )
 
-    assert message.endswith("Claude (Stronger)\n2\n<@11> <@22>")
+    # The mentions after a separator
+    assert message.texts == ("Cai (Weaker)\n1\nClaude (Stronger)\n2", "<@11> <@22>")
 
 
 def run_task(monkeypatch, now, page=ENDED_PAGE, tournament_id=TOURNAMENT_ID, channel_id=CHANNEL_ID):
@@ -128,7 +132,7 @@ def track(name, opponent, user_id, tournament_id=TOURNAMENT_ID):
 
 
 def custom_ids(message):
-    return [item.custom_id for item in message.view.children]
+    return [button.custom_id for button in buttons(message.view)]
 
 
 def test_every_matchup_of_the_running_round_is_posted(monkeypatch):
@@ -141,8 +145,9 @@ def test_every_matchup_of_the_running_round_is_posted(monkeypatch):
 def test_matchup_message_has_a_track_button_per_character(monkeypatch):
     message = run_task(monkeypatch, utc(10, 6, 1, 5), page=ROUND_3_PAGE).last_message()
 
-    assert [item.item.label for item in message.view.children] == ["Track Edelgard", "Track Dimitri"]
-    assert all(isinstance(item, TrackButton) for item in message.view.children)
+    assert button_labels(message.view) == ["Track Edelgard", "Track Dimitri"]
+    assert isinstance(message.view, discord.ui.LayoutView)
+    assert len([item for item in message.view.walk_children() if isinstance(item, TrackButton)]) == 2
     assert custom_ids(message) == ["voting_gauntlet:112:Edelgard:Dimitri", "voting_gauntlet:112:Dimitri:Edelgard"]
     # Persistent, so the buttons keep working after a restart
     assert message.view.timeout is None
@@ -178,10 +183,11 @@ def test_many_trackers_are_split_over_messages_with_the_buttons_on_the_last(monk
     channel = run_task(monkeypatch, utc(10, 6, 2, 5), page=ROUND_3_PAGE)
 
     assert len(channel.sent) > 1
-    assert all(len(part) <= 2000 for part in channel.sent)
     assert " ".join(channel.sent).count("<@") == 200
     messages = list(channel.messages.values())
-    assert [message.view is not None for message in messages] == [False] * (len(messages) - 1) + [True]
+    # Discord allows 4000 characters across the text displays of a layout message
+    assert all(len(message.content) <= 4000 + 1 for message in messages)
+    assert [bool(button_labels(message.view)) for message in messages] == [False] * (len(messages) - 1) + [True]
 
 
 def test_tracking_lasts_across_rounds(monkeypatch):

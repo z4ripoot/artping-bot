@@ -2,6 +2,8 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
+import discord
+
 from fjormcord.bot.artping import coliseum
 from tests.fakes import FakeChannel, use_settings
 
@@ -28,24 +30,26 @@ def run_coliseum_task(monkeypatch, utc_now, host_offset=timedelta(hours=2), chan
     monkeypatch.setattr(coliseum, "datetime", fake_datetime(utc_now, host_offset))
 
     asyncio.run(coliseum.task_coliseum_before_closing_notification.coro(client))
-    return channel.sent
+    return channel
 
 
 def test_coliseum_notification_uses_utc_regardless_of_host_timezone(monkeypatch):
     # Monday 22:00 UTC is already Tuesday 00:00 on a UTC+2 host
-    sent = run_coliseum_task(monkeypatch, datetime(2026, 10, 19, 22, 0, tzinfo=timezone.utc))
+    channel = run_coliseum_task(monkeypatch, datetime(2026, 10, 19, 22, 0, tzinfo=timezone.utc))
 
     closing_time = int(datetime(2026, 10, 19, 23, 0, tzinfo=timezone.utc).timestamp())
-    assert sent == [f"Coliseum/Aether Raids closes <t:{closing_time}:R> at <t:{closing_time}:f>"]
+    assert channel.sent == [f"Coliseum/Aether Raids closes <t:{closing_time}:R> at <t:{closing_time}:f>"]
+    # Laid out: the text in a container, no content
+    assert isinstance(channel.last_message().view, discord.ui.LayoutView)
 
 
 def test_coliseum_notification_skipped_outside_monday(monkeypatch):
     # Sunday 22:00 UTC is already Monday 00:00 on a UTC+2 host
-    assert run_coliseum_task(monkeypatch, datetime(2026, 10, 18, 22, 0, tzinfo=timezone.utc)) == []
+    assert run_coliseum_task(monkeypatch, datetime(2026, 10, 18, 22, 0, tzinfo=timezone.utc)).sent == []
 
 
 def test_coliseum_notification_skipped_for_unknown_channel(monkeypatch, caplog):
-    sent = run_coliseum_task(monkeypatch, datetime(2026, 10, 19, 22, 0, tzinfo=timezone.utc), channel_id=456)
+    sent = run_coliseum_task(monkeypatch, datetime(2026, 10, 19, 22, 0, tzinfo=timezone.utc), channel_id=456).sent
 
     assert sent == []
     assert "456" in caplog.text

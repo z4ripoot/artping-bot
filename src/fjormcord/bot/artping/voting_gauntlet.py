@@ -9,12 +9,13 @@ import discord
 from discord.ext import tasks
 
 from fjormcord.bot.artping import config
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.model.voting_gauntlet import Entrant, Round
 from fjormcord.bot.artping.service import voting_gauntlet_service
-from fjormcord.bot.artping.util.message_util import split_message
 from fjormcord.bot.artping.util.task_util import get_task_channel, start_channel_task
 from fjormcord.bot.artping.util.user_util import mentions
-from fjormcord.bot.artping.view.voting_gauntlet_view import TrackView
+from fjormcord.bot.artping.view.layout import message_options
+from fjormcord.bot.artping.view.voting_gauntlet_view import track_buttons
 
 # Redirects to the page of the latest gauntlet, e.g. /voting_gauntlet/tournaments/112. There is no API, so the page's
 # HTML is read; the redirect drops a query, so the language and timezone are added to the page it redirects to
@@ -76,10 +77,9 @@ async def task_voting_gauntlet_scores(client: discord.Client):
             for user_id in voting_gauntlet_service.get_trackers(tournament_id, entrant.name)
         ]
         try:
-            *parts, last = split_message(format_matchup(matchup, trackers))
-            for part in parts:
-                await channel.send(part)
-            await channel.send(last, view=TrackView(tournament_id, matchup))
+            # A long list of trackers is split over several messages, the buttons on the last
+            for options in message_options(format_matchup(matchup, trackers, tournament_id)):
+                await channel.send(**options)
         except discord.DiscordException:
             # The other matchups are still posted
             logging.exception("Posting the Voting Gauntlet matchup of %s failed", matchup[0].name)
@@ -157,14 +157,14 @@ def _to_datetime(month: str, day: str, hour: str, minute: str, half: str, curren
     return min(candidates, key=lambda candidate: abs(candidate - current_time))
 
 
-def format_matchup(matchup: tuple[Entrant, Entrant], trackers: list[str]) -> str:
-    # In the site's order, labelled as in the game; the trackers of the Weaker character are mentioned below
+def format_matchup(matchup: tuple[Entrant, Entrant], trackers: list[str], tournament_id: int) -> Layout:
+    # In the site's order, labelled as in the game; the trackers of the Weaker character are mentioned after a
+    # separator, then the Track buttons
     lines = []
     for entrant, opponent in (matchup, matchup[::-1]):
         lines += [f"{entrant.name} ({_status(entrant, opponent)})", f"{entrant.score:,}"]
-    if trackers:
-        lines.append(mentions(trackers))
-    return "\n".join(lines)
+    texts = ("\n".join(lines), mentions(trackers)) if trackers else ("\n".join(lines),)
+    return Layout(texts, (track_buttons(tournament_id, matchup),))
 
 
 def _status(entrant: Entrant, opponent: Entrant) -> str:

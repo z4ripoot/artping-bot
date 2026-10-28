@@ -41,10 +41,7 @@ class TrackButton(
         await interaction.response.send_message(reply, ephemeral=True)
 
 
-class TrackView(discord.ui.View):
-    # The two Track buttons of a matchup, in the site's order; no timeout, so they don't stop working
-    def __init__(self, tournament_id: int, matchup: tuple[Entrant, Entrant]):
-        super().__init__(timeout=None)
-        first, second = matchup
-        self.add_item(TrackButton(tournament_id, first.name, second.name))
-        self.add_item(TrackButton(tournament_id, second.name, first.name))
+def track_buttons(tournament_id: int, matchup: tuple[Entrant, Entrant]) -> tuple[TrackButton, TrackButton]:
+    # The two Track buttons of a matchup, in the site's order
+    first, second = matchup
+    return TrackButton(tournament_id, first.name, second.name), TrackButton(tournament_id, second.name, first.name)

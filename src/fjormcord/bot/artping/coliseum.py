@@ -5,7 +5,9 @@ import discord
 from discord.ext import tasks
 
 from fjormcord.bot.artping import config
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.util.task_util import get_task_channel, start_channel_task
+from fjormcord.bot.artping.view.layout import to_view
 
 # Coliseum closes on Monday at 23:00 UTC; all scheduling is done in UTC, independent of the host's timezone
 CLOSING_TIME = time(hour=23, minute=0, second=0, tzinfo=timezone.utc)
@@ -32,4 +34,4 @@ async def task_coliseum_before_closing_notification(client: discord.Client):
             message = f"Coliseum/Aether Raids closes <t:{closing_time}:R> at <t:{closing_time}:f>"
 
             logging.info(message)
-            await channel.send(message)
+            await channel.send(view=to_view(Layout((message,))))
