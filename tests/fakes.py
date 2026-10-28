@@ -10,7 +10,6 @@ import discord
 from fjormcord.bot.artping import config
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.exception.command_error import CommandError
-from fjormcord.bot.artping.model.reply import Reply
 from fjormcord.bot.artping.service import character_vote_service
 from fjormcord.bot.artping.view.layout import layout_text
 
@@ -325,10 +324,10 @@ def invoke(command, interaction, cog=None, **options):
 
 def reply(handler, client, message):
     # Runs a handler as the bot does: awaited when it is async, and a CommandError's message, or layout, is the reply.
-    # Returns a Reply's text and a Layout as it is, so tests compare its texts
+    # A Layout is returned as it is, so tests compare its texts
     try:
         out = handler(client, message)
         out = asyncio.run(out) if inspect.isawaitable(out) else out
     except CommandError as e:
         return e.layout or str(e)
-    return out.content if isinstance(out, Reply) else out
+    return out

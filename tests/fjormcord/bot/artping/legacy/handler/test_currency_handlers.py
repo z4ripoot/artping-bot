@@ -56,7 +56,7 @@ def test_scoreboard_orders_by_amount(client, orbs):
 
     out = reply(get_scoreboard, client, make_message("~scoreboard orbs"))
 
-    assert out == "Scoreboard for Orbs:\n1. Bob (30)\n2. Alice (10)"
+    assert out.texts == ("### Scoreboard for Orbs", "1. Bob (30)\n2. Alice (10)")
 
 
 def test_currency_commands_reject_spaces_in_names(client):
@@ -83,8 +83,9 @@ def test_scoreboard_shows_first_page_of_ten(orbs):
 
     out = reply(get_scoreboard, client, make_message("~scoreboard orbs"))
 
-    assert out == "\n".join(
-        ["Scoreboard for Orbs (page 1/3):"] + [f"{rank}. User{26 - rank} ({(26 - rank) * 10})" for rank in range(1, 11)]
+    assert out.texts == (
+        "### Scoreboard for Orbs (page 1/3)",
+        "\n".join(f"{rank}. User{26 - rank} ({(26 - rank) * 10})" for rank in range(1, 11)),
     )
     assert len(client.fetched) == 10
 
@@ -94,9 +95,9 @@ def test_scoreboard_last_page_continues_ranking(orbs):
 
     out = reply(get_scoreboard, client, make_message("~scoreboard orbs 3"))
 
-    assert out == "\n".join(
-        ["Scoreboard for Orbs (page 3/3):"]
-        + [f"{rank}. User{26 - rank} ({(26 - rank) * 10})" for rank in range(21, 26)]
+    assert out.texts == (
+        "### Scoreboard for Orbs (page 3/3)",
+        "\n".join(f"{rank}. User{26 - rank} ({(26 - rank) * 10})" for rank in range(21, 26)),
     )
     assert len(client.fetched) == 5
 
@@ -115,7 +116,10 @@ def test_scoreboard_rejects_page_out_of_range(orbs):
 
 
 def test_scoreboard_without_entries(client, orbs):
-    assert reply(get_scoreboard, client, make_message("~scoreboard orbs")) == "Nobody has set their Orbs yet"
+    assert reply(get_scoreboard, client, make_message("~scoreboard orbs")).texts == (
+        "### Scoreboard for Orbs",
+        "Nobody has set their Orbs yet",
+    )
 
 
 def test_scoreboard_rejects_more_than_name_and_page(client, orbs):

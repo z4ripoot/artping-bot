@@ -15,7 +15,8 @@ from fjormcord.bot.artping.legacy import commands
 from fjormcord.bot.artping.legacy.commands import Command
 from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.view.layout import layout_text
-from fjormcord.bot.artping.view.scoreboard_view import PageButton
+from fjormcord.bot.artping.view.page_view import PageButton
+from fjormcord.bot.artping.view.scoreboard_view import CurrencySelect
 from fjormcord.bot.artping.view.subscribe_view import SubscribeButton
 from fjormcord.bot.artping.view.vote_view import VoteButton
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
@@ -113,7 +114,7 @@ def test_setup_adds_the_vote_cog_and_the_buttons(bot, monkeypatch):
     assert bot.get_cog("CharacterVoteCog") is not None
     assert bot.persistent_views == []
     # Routes clicks on every button, also those of messages sent before a restart
-    assert dynamic_items == [TrackButton, PageButton, SubscribeButton, VoteButton]
+    assert dynamic_items == [TrackButton, PageButton, CurrencySelect, SubscribeButton, VoteButton]
     # The sync comes last, so it registers the commands of every cog
     assert synced == [(bot.tree, config.read_settings().guild_id)]
 

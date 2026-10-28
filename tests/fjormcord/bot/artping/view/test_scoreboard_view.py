@@ -4,119 +4,72 @@ import pytest
 
 from fjormcord.bot.artping.repository import currency_repository
 from fjormcord.bot.artping.service import currency_service
-from fjormcord.bot.artping.view.scoreboard_view import PageButton, ScoreboardView
-from tests.fakes import FakeChannel, FakeClient, FakeInteraction
+from fjormcord.bot.artping.view.layout import to_view
+from fjormcord.bot.artping.view.scoreboard_view import CurrencySelect
+from tests.fakes import FakeChannel, FakeClient, FakeInteraction, select_options
 
 
 @pytest.fixture
-def orbs():
-    # 25 users, so 3 pages; user n has n Orbs
-    currency_repository.add_currency("Orbs")
-    currency = currency_repository.get_currency("Orbs")
-    for user_id in range(1, 26):
-        currency_repository.set_currency(str(user_id), currency.id, user_id)
-    return currency
+def currencies():
+    # Orbs and Gems, user 1 has 5 of each
+    for name in ("Orbs", "Gems"):
+        currency_repository.add_currency(name)
+        currency_repository.set_currency("1", currency_repository.get_currency(name).id, 5)
+    return {name: currency_repository.get_currency(name) for name in ("Orbs", "Gems")}
 
 
 @pytest.fixture
 def client():
-    return FakeClient({user_id: f"User{user_id}" for user_id in range(1, 26)})
+    return FakeClient({1: "Alice"})
 
 
-def post_scoreboard(client, page=1):
-    reply = asyncio.run(currency_service.get_scoreboard(client, "Orbs", page))
-    return FakeChannel().post(reply.content, reply.view)
+def post_scoreboard(client, name="Orbs"):
+    layout = asyncio.run(currency_service.get_scoreboard(client, name))
+    return asyncio.run(FakeChannel().send(view=to_view(layout)))
 
 
-def button_after_restart(button):
-    # Rebuilt from its custom_id, as discord.py does for a click on a message sent before a restart
-    match = PageButton.__discord_ui_compiled_template__.fullmatch(button.custom_id)
-    return asyncio.run(PageButton.from_custom_id(FakeInteraction(), button.item, match))
-
-
-def click(client, message, label, user_id=100):
-    # Clicks the button with this label; returns what was sent in answer, the clicked message is edited in place
-    button = next(button for button in message.view.children if button.item.label == label)
+def pick(client, message, currency, user_id=100):
+    # Picks a currency in the message's dropdown, rebuilt from its custom_id as after a restart; returns the answer
+    [select] = [item for item in message.view.walk_children() if isinstance(item, CurrencySelect)]
+    match = CurrencySelect.__discord_ui_compiled_template__.fullmatch(select.custom_id)
+    rebuilt = asyncio.run(CurrencySelect.from_custom_id(FakeInteraction(), select.item, match))
+    rebuilt.item._values = [str(currency.id)]
     interaction = FakeInteraction(user_id, client=client, message=message)
-    asyncio.run(button_after_restart(button).callback(interaction))
+    asyncio.run(rebuilt.callback(interaction))
     return interaction.sent
 
 
-def pages(message):
-    return [(button.item.label, button.page, button.item.disabled) for button in message.view.children]
+def test_dropdown_lists_the_currencies_alphabetically_with_the_current_one_selected(client, currencies):
+    view = post_scoreboard(client).view
+
+    assert select_options(view) == ["Gems", "Orbs"]
+    [select] = [item for item in view.walk_children() if isinstance(item, CurrencySelect)]
+    assert [option.default for option in select.item.options] == [False, True]
 
 
-def test_view_is_persistent():
-    view = ScoreboardView(1, 2, 3)
-
-    assert view.is_persistent()
-    assert [button.item.custom_id for button in view.children] == ["scoreboard:1:1", "scoreboard:1:3"]
-
-
-def test_next_turns_the_message_to_the_next_page(client, orbs):
+def test_picking_a_currency_shows_its_scoreboard(client, currencies):
     message = post_scoreboard(client)
 
-    assert click(client, message, "Next ▶") == []
+    assert pick(client, message, currencies["Gems"]) == []
 
-    assert message.content.splitlines()[:2] == ["Scoreboard for Orbs (page 2/3):", "11. User15 (15)"]
-    assert pages(message) == [("◀ Previous", 1, False), ("Next ▶", 3, False)]
-
-
-def test_buttons_are_disabled_at_the_ends(client, orbs):
-    message = post_scoreboard(client, page=2)
-
-    click(client, message, "Next ▶")
-
-    assert message.content.splitlines()[0] == "Scoreboard for Orbs (page 3/3):"
-    assert pages(message) == [("◀ Previous", 2, False), ("Next ▶", 4, True)]
-    assert pages(post_scoreboard(client))[0] == ("◀ Previous", 0, True)
+    assert message.content.splitlines()[0] == "### Scoreboard for Gems"
+    [select] = [item for item in message.view.walk_children() if isinstance(item, CurrencySelect)]
+    assert [option.default for option in select.item.options] == [True, False]
 
 
-def test_turning_a_page_has_the_cooldown(client, orbs):
+def test_picking_a_removed_currency_is_answered_privately(client, currencies):
     message = post_scoreboard(client)
-    click(client, message, "Next ▶")
+    currency_repository.remove_currency(currencies["Gems"].id)
 
-    sent = click(client, message, "◀ Previous")
+    assert pick(client, message, currencies["Gems"]) == [("This currency doesn't exist anymore", True, None)]
+    assert message.content.splitlines()[0] == "### Scoreboard for Orbs"
+
+
+def test_picking_a_currency_has_the_cooldown(client, currencies):
+    message = post_scoreboard(client)
+    pick(client, message, currencies["Gems"])
+
+    sent = pick(client, message, currencies["Orbs"])
 
     assert sent == [("You used a command recently. Try again in 1 second", True, None)]
-    assert message.content.splitlines()[0] == "Scoreboard for Orbs (page 2/3):"
-
-
-def test_page_that_no_longer_exists_is_answered_privately(client, orbs):
-    message = post_scoreboard(client, page=2)
-    for user_id in range(11, 26):
-        currency_repository.clear_currency(str(user_id), orbs.id)
-
-    assert click(client, message, "Next ▶") == [
-        ("Page 3 doesn't exist. The scoreboard for Orbs has 1 pages", True, None)
-    ]
-
-
-def test_scoreboard_that_shrank_to_one_page_loses_its_buttons(client, orbs):
-    message = post_scoreboard(client, page=2)
-    for user_id in range(11, 26):
-        currency_repository.clear_currency(str(user_id), orbs.id)
-
-    click(client, message, "◀ Previous")
-
-    assert message.content.splitlines()[0] == "Scoreboard for Orbs:"
-    assert message.view is None
-
-
-def test_removed_currency_is_answered_privately(client, orbs):
-    message = post_scoreboard(client)
-    currency_repository.remove_currency(orbs.id)
-
-    assert click(client, message, "Next ▶") == [("This currency doesn't exist anymore", True, None)]
-
-
-def test_failed_click_is_answered_privately(client, orbs, monkeypatch, caplog):
-    message = post_scoreboard(client)
-
-    async def failing_get_scoreboard_page(client, currency_id, page):
-        raise RuntimeError("database is locked")
-
-    monkeypatch.setattr(currency_service, "get_scoreboard_page", failing_get_scoreboard_page)
-
-    assert click(client, message, "Next ▶") == [("Something went wrong while turning the page", True, None)]
-    assert "database is locked" in caplog.text
+    assert message.content.splitlines()[0] == "### Scoreboard for Gems"

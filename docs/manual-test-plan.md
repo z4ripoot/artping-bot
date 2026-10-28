@@ -200,15 +200,17 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 | 8.20 | U1 | `~scoreboard` | `Currency name is missing. Usage: ~scoreboard (currency name) (optional page number)` |
 | 8.21 | U1 | `~scoreboard orbs 1 2` / `~scoreboard orbs abc` | Only-one-name error (both) |
 | 8.22 | U1 | `~scoreboard gems` | `Currency gems doesn't exist` |
-| 8.23 | U1 | `~scoreboard feathers` (A adds `~addcurrency feathers`, nobody has set it) | `Nobody has set their feathers yet` |
-| 8.24 | U1 | `~scoreboard orbs` (U1 and U2 have set it) | `Scoreboard for orbs:` / `1. … (amount)` in descending order, no page info, no buttons |
-| 8.25 | U1 | `~scoreboard orbs 0` / `orbs 2` | `Page 0 doesn't exist. The scoreboard for orbs has 1 pages` |
+| 8.23 | U1 | `~scoreboard feathers` (A adds `~addcurrency feathers`, nobody has set it) | The box: `Scoreboard for feathers`, a separator, `Nobody has set their feathers yet`, then the currency dropdown |
+| 8.24 | U1 | `~scoreboard orbs` (U1 and U2 have set it) | A box with a blurple bar: the heading `Scoreboard for orbs` (no page info), a separator, `1. … (amount)` in descending order, a separator and a dropdown listing feathers and orbs, orbs selected. No page buttons |
+| 8.24a | U2 | Pick `feathers` in the dropdown of 8.24 | The same message turns to the feathers scoreboard (page 1), feathers selected. Within the cooldown: an ephemeral cooldown error. After a restart the dropdown still works |
+| 8.24b | A | `~removecurrency feathers`, then U1 picks `feathers` in an older scoreboard's dropdown | Ephemeral `This currency doesn't exist anymore`; the message stays |
+| 8.25 | U1 | `~scoreboard orbs 0` / `orbs 2` | `Page 0 doesn't exist. The scoreboard for orbs has 1 page` |
 | 8.26 | — | Seed fake users (below), then `~scoreboard orbs` | `(page 1/2)` header, ranks 1–10, buttons `◀ Previous` (disabled) and `Next ▶`. Fake IDs show as `Unknown user (<id>)` |
 | 8.27 | U1 | `~scoreboard orbs 2` | `(page 2/2)`, ranks starting at 11, `◀ Previous` enabled and `Next ▶` disabled |
 | 8.27a | U2 | Click `Next ▶` on the message of 8.26 | The same message is edited to page 2 (nothing new is posted); anyone may click |
 | 8.27b | U2 | Click `◀ Previous` within the cooldown | Ephemeral cooldown error; the page stays. After the cooldown it turns back to page 1. A has no cooldown |
 | 8.27c | U1 | Restart the bot, click a page button | Still works |
-| 8.27d | U1 | Delete the seeded rows, then click `Next ▶` on a page 1 message | Ephemeral `Page 2 doesn't exist. The scoreboard for orbs has 1 pages`; `◀ Previous` on a page 2 message turns it into the one-page scoreboard without buttons |
+| 8.27d | U1 | Delete the seeded rows, then click `Next ▶` on a page 1 message | Ephemeral `Page 2 doesn't exist. The scoreboard for orbs has 1 page`; `◀ Previous` on a page 2 message turns it into the one-page scoreboard without buttons |
 | 8.28 | A | `~removecurrency` / `a b` / `gems` | Missing-argument / one-name / doesn't-exist errors |
 | 8.29 | A | `~removecurrency ORBS` | `Currency orbs has been removed`. U1's `~checkwallet` no longer shows orbs, and a page button on an orbs scoreboard answers ephemerally `This currency doesn't exist anymore` |
 
@@ -299,7 +301,7 @@ database. Run each command as the account named in the section it comes from.
 | 11.28 | U1 | `/clearcurrency currency:orbs`, then again | `Your orbs has been cleared`, then ephemeral `You don't have any orbs set` |
 | 11.29 | U2 | `/checkwallet` (empty) | `Your wallet is empty. Use /setcurrency to add a currency` (the slash form) |
 | 11.30 | U1 | `/checkwallet` with two currencies set | `User <display name>'s wallet:` and the sorted lines |
-| 11.31 | U1 | `/scoreboard currency:orbs` | Scoreboard for orbs, with the usernames resolved |
+| 11.31 | U1 | `/scoreboard currency:orbs` | The scoreboard box of 8.24, with the usernames resolved |
 | 11.32 | U1 | `/scoreboard currency:orbs page:0` | Discord refuses the option (minimum 1) |
 | 11.33 | U1 | `/scoreboard currency:orbs page:5` | Ephemeral `Page 5 doesn't exist. The scoreboard for orbs has N pages` |
 | 11.34 | U1 | `/scoreboard currency:orbs` with the 11 seeded users (8.26) | `(page 1/2)` with the page buttons, which turn the page as in 8.27a; `page:2` shows page 2 |

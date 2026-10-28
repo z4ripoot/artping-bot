@@ -1,7 +1,6 @@
 import discord
 
 from fjormcord.bot.artping.model.layout import Layout
-from fjormcord.bot.artping.model.reply import Reply
 from fjormcord.bot.artping.util.message_util import split_layout, split_message
 
 # The bar on the left of every layout
@@ -29,12 +28,9 @@ def layout_text(view: discord.ui.LayoutView) -> str:
     return "\n".join(item.content for item in view.walk_children() if isinstance(item, discord.ui.TextDisplay))
 
 
-def message_options(reply: str | Reply | Layout) -> list[dict]:
+def message_options(reply: str | Layout) -> list[dict]:
     # The keyword arguments of each message a reply is sent as: a string split to Discord's length limit, a layout
     # split to its own limit, as views without content. An empty reply sends nothing
     if isinstance(reply, Layout):
         return [{"view": to_view(part)} for part in split_layout(reply)]
-    if isinstance(reply, Reply):
-        *chunks, last = split_message(reply.content)
-        return [{"content": chunk} for chunk in chunks] + [{"content": last, "view": reply.view}]
     return [{"content": chunk} for chunk in split_message(reply)]

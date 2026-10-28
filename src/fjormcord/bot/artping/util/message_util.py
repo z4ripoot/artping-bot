@@ -7,7 +7,6 @@ import discord
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.exception.missing_argument import MissingArgument
 from fjormcord.bot.artping.model.layout import Layout
-from fjormcord.bot.artping.model.reply import Reply
 
 # Arguments are split on whitespace, so names of several words are written with underscores
 MULTI_WORD_HINT = "Use underscores for multi-word names, e.g. Black_Knight"
@@ -26,7 +25,7 @@ def log_info(reply: str) -> str:
     return reply
 
 
-async def await_reply(reply: str | Reply | Layout | Awaitable[str | Reply | Layout]) -> str | Reply | Layout:
+async def await_reply(reply: str | Layout | Awaitable[str | Layout]) -> str | Layout:
     # Handlers and services return their reply directly, or as a coroutine when they wait on Discord
     return await reply if inspect.isawaitable(reply) else reply
 

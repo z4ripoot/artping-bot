@@ -14,6 +14,18 @@ def get_currency(currency_name: str) -> Currency | None:
     return fetch_one(Currency, sql, (currency_name,))
 
 
+def get_currencies(limit: int) -> list[Currency]:
+    # The first currencies alphabetically, ignoring case
+    sql = """
+        SELECT C.GACHA_CURRENCY_ID AS id, C.NAME AS name
+        FROM GACHA_CURRENCY C
+        ORDER BY C.NAME COLLATE NOCASE
+        LIMIT ?
+        """
+
+    return fetch_all(Currency, sql, (limit,))
+
+
 def get_currency_by_id(currency_id: int) -> Currency | None:
     sql = """
         SELECT C.GACHA_CURRENCY_ID AS id, C.NAME AS name

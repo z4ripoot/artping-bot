@@ -10,7 +10,9 @@ from fjormcord.bot.artping.service.alias_service import add_alias
 from fjormcord.bot.artping.service.art_ping_service import add_ping, do_art_ping
 from fjormcord.bot.artping.service.currency_service import add_currency, check_wallet, get_scoreboard, set_currency
 from fjormcord.bot.artping.service.resource_service import list_resources, post_resource, set_resource
-from tests.fakes import FakeClient
+from fjormcord.bot.artping.view.layout import to_view
+from fjormcord.bot.artping.view.scoreboard_view import CurrencySelect
+from tests.fakes import FakeClient, button_labels, select_options
 
 
 def test_add_ping_takes_user_and_name():
@@ -53,20 +55,43 @@ def test_scoreboard_of_several_pages_has_buttons_to_turn_them():
     for user_id in range(1, 12):
         set_currency(str(user_id), "Orbs", user_id)
 
+    out = asyncio.run(get_scoreboard(FakeClient({n: f"user{n}" for n in range(1, 12)}), "Orbs"))
+
+    assert out.texts == (
+        "### Scoreboard for Orbs (page 1/2)",
+        "\n".join(f"{rank}. user{12 - rank} ({12 - rank})" for rank in range(1, 11)),
+    )
+    assert button_labels(to_view(out)) == ["◀ Previous", "Next ▶"]
+    # One currency: nothing to switch to
+    assert all(not isinstance(item, CurrencySelect) for item in to_view(out).walk_children())
+
+
+def test_scoreboard_offers_the_other_currencies():
+    add_currency("Orbs")
+    add_currency("Gems")
+    set_currency("1", "Orbs", 5)
+
+    assert select_options(to_view(asyncio.run(get_scoreboard(FakeClient(), "Orbs")))) == ["Gems", "Orbs"]
+
+
+def test_empty_scoreboard_keeps_its_header_and_dropdown():
+    add_currency("Orbs")
+    add_currency("Gems")
+
     out = asyncio.run(get_scoreboard(FakeClient(), "Orbs"))
 
-    assert out.content.splitlines()[0] == "Scoreboard for Orbs (page 1/2):"
-    assert [(button.item.label, button.item.disabled, button.page) for button in out.view.children] == [
-        ("◀ Previous", True, 0),
-        ("Next ▶", False, 2),
-    ]
+    assert out.texts == ("### Scoreboard for Orbs", "Nobody has set their Orbs yet")
+    assert select_options(to_view(out)) == ["Gems", "Orbs"]
 
 
 def test_scoreboard_of_one_page_has_no_buttons():
     add_currency("Orbs")
     set_currency("1", "Orbs", 5)
 
-    assert asyncio.run(get_scoreboard(FakeClient({1: "Alice"}), "Orbs")) == "Scoreboard for Orbs:\n1. Alice (5)"
+    out = asyncio.run(get_scoreboard(FakeClient({1: "Alice"}), "Orbs"))
+
+    assert out.texts == ("### Scoreboard for Orbs", "1. Alice (5)")
+    assert out.rows == ()
 
 
 def test_set_currency_takes_an_int():

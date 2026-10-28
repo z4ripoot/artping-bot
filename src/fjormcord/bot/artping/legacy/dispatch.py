@@ -7,7 +7,6 @@ from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.exception.missing_argument import MissingArgument
 from fjormcord.bot.artping.legacy.commands import COMMAND_PREFIX, COMMANDS_BY_NAME, Command, format_usage
 from fjormcord.bot.artping.model.layout import Layout
-from fjormcord.bot.artping.model.reply import Reply
 from fjormcord.bot.artping.service.resource_service import get_resource_content
 from fjormcord.bot.artping.util.message_util import await_reply, split_message
 from fjormcord.bot.artping.util.user_util import is_administrator
@@ -67,7 +66,7 @@ async def send_resource(client: discord.Client, message: discord.Message, name: 
         await message.channel.send(str(e))
 
 
-async def get_message(client: discord.Client, command: Command, message: discord.Message) -> str | Reply | Layout:
+async def get_message(client: discord.Client, command: Command, message: discord.Message) -> str | Layout:
     try:
         with client.cooldowns.command(message.author):
             out = await await_reply(command.handler(client, message))

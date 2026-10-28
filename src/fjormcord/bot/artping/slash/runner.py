@@ -6,7 +6,6 @@ from discord import app_commands
 
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.layout import Layout
-from fjormcord.bot.artping.model.reply import Reply
 from fjormcord.bot.artping.util.message_util import ALLOWED_MENTIONS, await_reply
 from fjormcord.bot.artping.util.user_util import is_administrator
 from fjormcord.bot.artping.view.layout import message_options
@@ -29,7 +28,7 @@ def _is_admin_command(interaction: discord.Interaction) -> bool:
 
 async def run(
     interaction: discord.Interaction,
-    call: Callable[[], str | Reply | Layout | Awaitable[str | Reply | Layout]],
+    call: Callable[[], str | Layout | Awaitable[str | Layout]],
     *,
     defer: bool = False,
     ephemeral: bool = False,

@@ -2,8 +2,7 @@ import pytest
 
 from fjormcord.bot.artping.repository import currency_repository
 from fjormcord.bot.artping.slash.cog.currency_cog import CurrencyCog
-from fjormcord.bot.artping.view.scoreboard_view import ScoreboardView
-from tests.fakes import FakeClient, FakeInteraction, invoke
+from tests.fakes import FakeClient, FakeInteraction, button_labels, invoke
 
 
 @pytest.fixture
@@ -71,7 +70,7 @@ def test_scoreboard_is_sent_with_its_buttons(cog):
 
     assert interaction.response.deferred == [{}]
     assert interaction.sent[0].content.splitlines()[-1] == "10. user3 (3)"
-    assert isinstance(interaction.channel.last_message().view, ScoreboardView)
+    assert button_labels(interaction.channel.last_message().view) == ["◀ Previous", "Next ▶"]
 
 
 def test_admin_currency_commands_are_admin_only(cog):

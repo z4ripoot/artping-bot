@@ -2,7 +2,7 @@ import discord
 
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.exception.missing_argument import MissingArgument
-from fjormcord.bot.artping.model.reply import Reply
+from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.service import currency_service
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY, get_entries, get_single_name, get_two_entries
 
@@ -34,7 +34,7 @@ def check_wallet(client: discord.Client, message: discord.Message) -> str:
     return currency_service.check_wallet(str(message.author.id), message.author.display_name)
 
 
-async def get_scoreboard(client: discord.Client, message: discord.Message) -> str | Reply:
+async def get_scoreboard(client: discord.Client, message: discord.Message) -> Layout:
     entries = get_entries(message.content)
 
     if not entries:
