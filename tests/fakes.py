@@ -98,14 +98,22 @@ class FakeReaction:
 
 class FakeSentMessage:
     # A message the bot sent: users can react to it, the bot can edit its content and its view (the vote button)
-    def __init__(self, content, guild, view=None):
+    def __init__(self, content, guild, view=None, channel=None):
         self.id = next(_message_ids)
         self.content = content
         self.guild = guild
         self.view = view
+        self.channel = channel
         self.reactions = []
         # The number of next edits that fail, as when Discord has an outage
         self.failing_edits = 0
+
+    @property
+    def components(self):
+        # The message's controls, flat; each has the custom_id the message was sent with, as Discord's components do
+        if self.view is None:
+            return []
+        return list(self.view.walk_children() if isinstance(self.view, discord.ui.LayoutView) else self.view.children)
 
     def react(self, emoji, user):
         reaction = next((reaction for reaction in self.reactions if reaction.emoji == emoji), None)
@@ -152,7 +160,7 @@ class FakeChannel:
 
     def post(self, content, view=None):
         # A message in the channel, e.g. one a user wrote earlier
-        message = FakeSentMessage(content, self.guild, view)
+        message = FakeSentMessage(content, self.guild, view, channel=self)
         self.messages[message.id] = message
         return message
 

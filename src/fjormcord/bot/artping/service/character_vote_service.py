@@ -43,9 +43,11 @@ async def toggle_vote(client: discord.Client, vote_message: discord.Message, use
     message_id = str(vote_message.id)
     vote = character_vote_repository.get_vote(message_id)
     if vote is None:
-        # Closed while its message kept the button, e.g. when editing the message failed. It gets a text without the
-        # button: a layout message has no content to keep
-        await _edit(vote_message, Layout(("This vote has already been closed",)))
+        # Closed while its message kept the button, e.g. when editing the message failed: it gets a text without the
+        # button, as a layout message has no content to keep. Unless the message has been edited since: a click that
+        # raced the one that passed the vote must not overwrite its announcement and Subscribe button
+        if await _shows_vote_button(vote_message):
+            await _edit(vote_message, Layout(("This vote has already been closed",)))
         return "This vote has already been closed"
 
     dropped = await _drop_if_name_taken(vote_message, vote)
@@ -225,6 +227,23 @@ async def _close(client: discord.Client, votes: Iterable[CharacterVote], charact
             logging.warning("Failed to fetch the message of closed vote %s. %s", vote.message_id, e)
             continue
         await _edit(vote_message, _added_layout(f"Character {character.name} has already been added", character))
+
+
+async def _shows_vote_button(vote_message: discord.Message) -> bool:
+    # Whether the message, as it is now rather than as it was clicked, still has the Vote button, at any depth of its
+    # layout
+    try:
+        current = await vote_message.channel.fetch_message(vote_message.id)
+    except discord.HTTPException as e:
+        logging.warning("Failed to fetch vote message %s. %s", vote_message.id, e)
+        return False
+    components = list(current.components)
+    while components:
+        component = components.pop()
+        if getattr(component, "custom_id", None) == vote_view.VOTE_BUTTON_ID:
+            return True
+        components += getattr(component, "children", [])
+    return False
 
 
 async def _edit(vote_message: discord.Message, layout: Layout):

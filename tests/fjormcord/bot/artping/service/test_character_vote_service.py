@@ -226,9 +226,9 @@ def test_click_on_a_closed_vote(client, channel):
     reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
 
     assert click(client, vote_message, 1) == "This vote has already been closed"
-    # The message keeps a text: a layout without its view would be empty
-    assert vote_message.content == "This vote has already been closed"
-    assert button_labels(vote_message.view) == []
+    # The message already says so, with Subscribe: a late click leaves it
+    assert vote_message.content == "Character Lucina has already been added"
+    assert label(vote_message) == "Subscribe to Lucina"
     assert subscribers("Lucina") == set()
 
 
@@ -260,6 +260,9 @@ def test_clicking_a_passed_vote_again_is_harmless(client, channel, database):
     assert click(client, vote_message, 3) == "This vote has already been closed"
     assert database.execute("SELECT COUNT(*) FROM CHARACTERS").fetchone()[0] == 1
     assert subscribers("Lucina") == {"1", "2"}
+    # A click that raced the one that passed the vote keeps its announcement and Subscribe button
+    assert vote_message.content == "Character Lucina has been added"
+    assert label(vote_message) == "Subscribe to Lucina"
 
 
 def test_non_admin_adds_directly_when_fewer_than_two_votes_are_needed(client, channel, monkeypatch):
