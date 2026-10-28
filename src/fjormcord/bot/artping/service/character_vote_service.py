@@ -247,7 +247,7 @@ async def _shows_vote_button(vote_message: discord.Message) -> bool:
 
 
 async def _edit(vote_message: discord.Message, layout: Layout):
-    # content=None: a message posted before the layouts loses its content, which a layout message can't have
+    # content=None: a ⭐ vote's message, converted at startup, loses its content, which a layout message can't have
     try:
         await vote_message.edit(content=None, view=to_view(layout))
     except discord.HTTPException as e:

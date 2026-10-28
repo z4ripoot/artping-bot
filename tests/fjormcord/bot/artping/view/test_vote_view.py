@@ -9,8 +9,8 @@ from fjormcord.bot.artping.view.vote_view import VoteButton
 from tests.fakes import FakeChannel, FakeClient, FakeInteraction
 
 
-def test_vote_button_keeps_the_custom_id_of_old_vote_messages():
-    # Vote messages posted before the layouts carry this custom_id; their clicks must still reach the vote
+def test_every_vote_button_has_the_same_custom_id():
+    # The vote is found by the clicked message, so one registered pattern serves every vote message
     assert VoteButton(1).custom_id == "character_vote"
     assert VoteButton.__discord_ui_compiled_template__.fullmatch("character_vote")
 

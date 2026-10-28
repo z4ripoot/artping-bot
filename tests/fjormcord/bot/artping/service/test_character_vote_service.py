@@ -1,7 +1,6 @@
 import asyncio
 from dataclasses import replace
 
-import discord
 import pytest
 
 from fjormcord.bot.artping import config
@@ -460,15 +459,3 @@ def test_convert_vote_stores_the_voters_and_marks_the_vote():
 
     assert character_vote_repository.count_voters("5") == 2
     assert character_vote_repository.get_vote("5").uses_button
-
-
-def test_old_plain_vote_message_is_rerendered_as_a_layout(client, channel):
-    # A button vote posted before the layouts: its text was the message's content
-    vote_message = channel.post("Vote to add Lucina. Votes needed: 2")
-    character_vote_repository.add_vote(CharacterVote(str(vote_message.id), str(channel.id), "Lucina", "7"))
-
-    check_votes(client)
-
-    assert isinstance(vote_message.view, discord.ui.LayoutView)
-    assert vote_message.content == "Vote to add Lucina. Votes needed: 2"
-    assert label(vote_message) == "Vote (0/2)"

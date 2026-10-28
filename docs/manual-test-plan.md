@@ -174,7 +174,6 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 | 7.18 | Set `votes_needed=1`, restart. U1: `~addcharacter lucius` | `Character Lucius has been added` straight away (no vote). Put it back to 2 |
 | 7.19 | Set `emoji=<:yourEmoji:id>` (a custom emoji in the server), restart, start a vote | The button shows the custom emoji |
 | 7.20 | A clicks a vote button, then U1 starts another vote for the same name and A clicks that too | The 1st click passes the vote; the second vote was closed with it, so there is nothing to click |
-| 7.21 | Before updating the bot, start a vote (U1: `~addcharacter tharja`); update and restart | At startup the vote message becomes the box (text, separator, `Vote (1/2)`) without its old text above it; clicking it still counts |
 
 ## 8. Gacha currency
 
