@@ -6,7 +6,10 @@ from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.repository import art_ping_repository, character_repository
-from fjormcord.bot.artping.service import character_service  # A module: it imports this one too, via subscribe_view
+from fjormcord.bot.artping.service import (  # Modules: they import this one too, via the views
+    character_service,
+    character_vote_service,
+)
 from fjormcord.bot.artping.util.message_util import log_info
 from fjormcord.bot.artping.util.name_util import normalize_name
 from fjormcord.bot.artping.util.page_util import get_page, paged_header
@@ -39,22 +42,39 @@ def _ping(characters: list[Character]) -> str:
     logging.info("Pinged %s users for %s", len(user_ids), character_names)
     if not user_ids:
         return f"Nobody is subscribed to {character_names}"
-    return f"{character_names}: {mentions(user_ids)}"
+    return mentions(user_ids)
 
 
-def do_art_ping(names: list[str]) -> str:
-    # Unknown characters are reported in the same reply as the ping for the rest
-    lines = []
+def _add_character_hint(name: str, administrator: bool, prefix: str) -> str:
+    # A non-admin's addcharacter starts a vote, unless voting is off; an admin's adds the character
+    if administrator or not character_vote_service.is_voting_enabled():
+        return f"Use {prefix}addcharacter {name} to add it"
+    return f"Use {prefix}addcharacter {name} to start a vote to add it"
 
+
+def do_art_ping(names: list[str], administrator: bool, slash: bool = False) -> Layout:
+    # The header names the characters that exist; the body reports the unknown names, then pings. The footer reminds of
+    # addping for the first character and hints at addcharacter for the first unknown name, in the syntax used
+    prefix = "/" if slash else "~"
     characters, missing_names = _find_characters(names)
+
+    body = []
+    footer = []
     if missing_names:
-        lines.append(f"No character entry for {', '.join(missing_names)}")
+        body.append(f"No character entry for {', '.join(missing_names)}")
+    if characters:
+        first = characters[0].name
+        body.append(_ping(characters))
+        footer.append(f"Want to be pinged for {first}? Use {prefix}addping {first}")
+    if missing_names:
+        footer.append(_add_character_hint(missing_names[0], administrator, prefix))
 
     if not characters:
-        raise CommandError("\n".join(lines))
+        # Turned down, so it starts no cooldown and stays private for slash, but laid out with its hint
+        raise CommandError(body[0], layout=Layout((body[0], "\n".join(footer))))
 
-    lines.append(_ping(characters))
-    return "\n".join(lines)
+    header = "### " + ", ".join(character.name for character in characters)
+    return Layout(("\n".join([header, *body]), "\n".join(footer)))
 
 
 def add_ping(user_id: str, name: str) -> str:

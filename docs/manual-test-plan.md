@@ -87,14 +87,15 @@ Preparation: A creates `Lucina` and `Chrom`, and adds the alias `Luci` to Lucina
 | # | Who | Message | Expected |
 |---|---|---|---|
 | 4.1 | U1 | `~artping` | `Character name is missing. Usage: ~artping (character name)` |
-| 4.2 | U1 | `~artping marth` | `No character entry for Marth` |
-| 4.3 | U1 | `~artping black_KNIGHT` | `No character entry for Black_Knight` (normalized) |
-| 4.4 | U1 | `~artping Robin` (exists, no subscribers) | `Nobody is subscribed to Robin` |
-| 4.5 | U1 | `~artping lucina` | `Lucina: <@U1> <@U2>`, and both get pinged |
-| 4.6 | U1 | `~artping Luci` | `Lucina: …` (the alias resolves to the name) |
+| 4.2 | U1 | `~artping marth` | A box: `No character entry for Marth`, a separator, `Use ~addcharacter Marth to start a vote to add it` (A gets `… to add it`) |
+| 4.3 | U1 | `~artping black_KNIGHT` | As 4.2 with `Black_Knight` (normalized) |
+| 4.4 | U1 | `~artping Robin` (exists, no subscribers) | A box: the heading `Robin`, `Nobody is subscribed to Robin`, a separator, `Want to be pinged for Robin? Use ~addping Robin` |
+| 4.5 | U1 | `~artping lucina` | A box with a blurple bar: the heading `Lucina`, `@U1 @U2` under it, a separator, `Want to be pinged for Lucina? Use ~addping Lucina`. **Both get pinged** (a notification, not only the mention) |
+| 4.5a | — | Seed 200 subscribers to Lucina (fake IDs), `~artping Lucina` | Several boxes: the first with the heading, the last with the footer; every mention once |
+| 4.6 | U1 | `~artping Luci` | The heading `Lucina` (the alias resolves to the name) |
 | 4.7 | U1 | `~artping Lucina Luci` | Lucina is listed once |
-| 4.8 | U1 | `~artping Lucina Chrom` | `Chrom, Lucina: …` (sorted), U1 mentioned **once** |
-| 4.9 | U1 | `~artping Lucina Marth` | Line 1 `No character entry for Marth`, line 2 the ping |
+| 4.8 | U1 | `~artping Lucina Chrom` | The heading `Chrom, Lucina` (sorted), U1 mentioned **once**, the footer about Chrom |
+| 4.9 | U1 | `~artping Lucina Marth` | The heading `Lucina`, then `No character entry for Marth`, then the ping; the footer has the addping reminder and the addcharacter hint |
 | 4.10 | U1 | `~addping` | `Character name is missing. Usage: ~addping (character name)` |
 | 4.11 | U1 | `~addping Lucina Chrom` | `Only one name is allowed. Use underscores for multi-word names, e.g. Black_Knight` |
 | 4.12 | U1 | `~addping marth` | `Character Marth doesn't exist` |
@@ -280,9 +281,9 @@ database. Run each command as the account named in the section it comes from.
 | 11.6 | U1 | `/addping character:Lucina` again | Ephemeral `Ping for Lucina already exists` |
 | 11.7 | U1 | `/removeping character:Lucina`, then again | `Ping for Lucina has been removed`, then ephemeral `Ping for Lucina doesn't exist`. Autocomplete only suggests the characters U1 is subscribed to (no aliases); typing another name still gives that error |
 | 11.8 | U1 | `/checkping` | Ephemeral (only U1 sees it): the box of 4.18, its page buttons work / `You are not subscribed to any characters` |
-| 11.9 | U1 | `/artping character:Lucina` | `Lucina: <@U1> <@U2>`, the subscribers are pinged |
-| 11.10 | U1 | `/artping character:Lucina character2:Chrom character3:Luci` | One line per character, sorted, Lucina once; U1 mentioned once |
-| 11.11 | U1 | `/artping character:Lucina character2:Marth` | The ping and the line `No character entry for Marth` |
+| 11.9 | U1 | `/artping character:Lucina` | The box of 4.5 with `/addping` in the footer; the subscribers are pinged. `/artping character:Marth` alone: the box of 4.2 with `/addcharacter`, ephemeral |
+| 11.10 | U1 | `/artping character:Lucina character2:Chrom character3:Luci` | The heading `Chrom, Lucina` (sorted, Lucina once); U1 mentioned once |
+| 11.11 | U1 | `/artping character:Lucina character2:Marth` | As 4.9, with `/addping` and `/addcharacter` in the footer |
 | 11.12 | U1 | `/artping`, then `~checkping` or `/checkping` (cooldown 10 s) | The 2nd: `You used a command recently. Try again in N seconds` (ephemeral for the slash one): one cooldown for every command of both syntaxes. A failed attempt doesn't start it, and A is never held back |
 | 11.13 | U1 | `/artping` | The options go up to `character10` (`slash_max_characters=10`), and there is no `character11`. Set it to 2 and restart: only `character` and `character2` |
 | 11.14 | A | `/addcharacter character:black knight` | `Character Black_Knight has been added` (deferred, so the reply may take a moment) |

@@ -13,6 +13,7 @@ from fjormcord.bot.artping.slash.options import (
     to_name,
 )
 from fjormcord.bot.artping.slash.runner import run
+from fjormcord.bot.artping.util.user_util import is_administrator
 
 
 def build_art_ping_command(max_characters: int) -> app_commands.Command:
@@ -22,7 +23,9 @@ def build_art_ping_command(max_characters: int) -> app_commands.Command:
 
     async def art_ping(interaction: discord.Interaction, **characters: str | None):
         values = [value for value in characters.values() if value is not None]
-        await run(interaction, lambda: art_ping_service.do_art_ping([to_name(value) for value in values]))
+        names = [to_name(value) for value in values]
+        administrator = is_administrator(interaction.user)
+        await run(interaction, lambda: art_ping_service.do_art_ping(names, administrator, slash=True))
 
     keyword_only = inspect.Parameter.KEYWORD_ONLY
     parameters = [

@@ -25,9 +25,25 @@ def test_do_art_ping_takes_names():
     add_character("Lucina")
 
     with pytest.raises(CommandError) as error:
-        do_art_ping(["Nobody"])
-    assert str(error.value).startswith("No character entry for Nobody")
-    assert do_art_ping(["Lucina", "Nobody"]).startswith("No character entry for Nobody")
+        do_art_ping(["Nobody"], administrator=False)
+    assert str(error.value) == "No character entry for Nobody"
+    assert error.value.layout.texts == (
+        "No character entry for Nobody",
+        "Use ~addcharacter Nobody to start a vote to add it",
+    )
+    assert (
+        do_art_ping(["Lucina", "Nobody"], administrator=False)
+        .texts[0]
+        .startswith("### Lucina\nNo character entry for Nobody")
+    )
+
+
+def test_art_ping_names_the_slash_commands():
+    add_character("Lucina")
+
+    assert do_art_ping(["Lucina", "Nobody"], administrator=False, slash=True).texts[1] == (
+        "Want to be pinged for Lucina? Use /addping Lucina\nUse /addcharacter Nobody to start a vote to add it"
+    )
 
 
 def test_add_alias_normalizes():

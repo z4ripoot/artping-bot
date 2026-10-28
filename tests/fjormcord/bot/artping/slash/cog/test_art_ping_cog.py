@@ -40,7 +40,19 @@ def test_art_ping_pings_subscribers():
 
     invoke(build_art_ping_command(3), interaction, character="Lucina")
 
-    assert [(content, ephemeral) for content, ephemeral, _ in interaction.sent] == [("Lucina: <@5>", False)]
+    assert interaction.sent == [
+        ("### Lucina\n<@5>\nWant to be pinged for Lucina? Use /addping Lucina", False, ALLOWED_MENTIONS)
+    ]
+
+
+def test_art_ping_of_unknown_characters_is_private():
+    interaction = FakeInteraction()
+
+    invoke(build_art_ping_command(3), interaction, character="Marth")
+
+    assert interaction.sent == [
+        ("No character entry for Marth\nUse /addcharacter Marth to start a vote to add it", True, ALLOWED_MENTIONS)
+    ]
 
 
 def test_art_ping_pings_a_character_once():
@@ -49,7 +61,7 @@ def test_art_ping_pings_a_character_once():
 
     invoke(build_art_ping_command(3), interaction, character="Lucina", character2="marth mask")
 
-    assert [content for content, _, _ in interaction.sent] == ["Lucina: <@5>"]
+    assert interaction.sent[0].content.startswith("### Lucina\n<@5>\n")
 
 
 def test_art_ping_has_a_cooldown():

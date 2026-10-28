@@ -4,15 +4,16 @@ from fjormcord.bot.artping.exception.missing_argument import MissingArgument
 from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.service import art_ping_service
 from fjormcord.bot.artping.util.message_util import get_entries, get_single_name
+from fjormcord.bot.artping.util.user_util import is_administrator
 
 
-def do_art_ping(client: discord.Client, message: discord.Message) -> str:
+def do_art_ping(client: discord.Client, message: discord.Message) -> Layout:
     entries = get_entries(message.content)
 
     if not entries:
         raise MissingArgument("character name")
 
-    return art_ping_service.do_art_ping(entries)
+    return art_ping_service.do_art_ping(entries, is_administrator(message.author))
 
 
 def add_ping(client: discord.Client, message: discord.Message) -> str:

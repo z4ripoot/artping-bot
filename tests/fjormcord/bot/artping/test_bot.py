@@ -22,6 +22,9 @@ from fjormcord.bot.artping.view.vote_view import VoteButton
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
 from tests.fakes import FakeClock, button_labels, make_message
 
+# ~artping Lucina, with U1 subscribed
+LUCINA_PING = "### Lucina\n<@1>\nWant to be pinged for Lucina? Use ~addping Lucina"
+
 
 @pytest.fixture
 def bot():
@@ -189,7 +192,9 @@ def test_missing_argument_names_what_is_missing(bot):
 
 
 def test_replies_cannot_mention_everyone_or_roles(bot):
-    assert dispatch(bot, make_message("~artping @everyone")) == ["No character entry for @everyone"]
+    assert dispatch(bot, make_message("~artping @everyone")) == [
+        "No character entry for @everyone\nUse ~addcharacter @everyone to start a vote to add it"
+    ]
     assert bot.allowed_mentions.everyone is False
     assert bot.allowed_mentions.roles is False
     assert bot.allowed_mentions.users is True
@@ -201,10 +206,14 @@ def test_long_reply_is_split_into_messages_within_discord_limit(bot):
     for user_id in user_ids:
         dispatch(bot, make_message("~addping Lucina", user_id=user_id))
 
-    sent = dispatch(bot, make_message("~artping Lucina"))
+    message = make_message("~artping Lucina")
+    sent = dispatch(bot, message)
 
     assert len(sent) > 1
-    assert all(len(chunk) <= 2000 for chunk in sent)
+    # Discord allows 4000 characters across the text displays of a layout message
+    views = [sent_message.view for sent_message in message.channel.messages.values()]
+    lengths = [sum(len(item.content) for item in view.walk_children() if hasattr(item, "content")) for view in views]
+    assert all(length <= 4000 for length in lengths)
     assert all(f"<@{user_id}>" in " ".join(sent) for user_id in user_ids)
 
 
@@ -242,13 +251,13 @@ def test_command_is_allowed_after_cooldown(bot, clock, lucina):
 
     clock.advance(1)
 
-    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == ["Lucina: <@1>"]
+    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == [LUCINA_PING]
 
 
 def test_cooldown_only_holds_back_that_user(bot, clock, lucina):
     dispatch(bot, make_message("~artping Lucina", user_id=2))
 
-    assert dispatch(bot, make_message("~artping Lucina", user_id=3)) == ["Lucina: <@1>"]
+    assert dispatch(bot, make_message("~artping Lucina", user_id=3)) == [LUCINA_PING]
 
 
 def test_cooldown_holds_back_every_command(bot, clock, lucina):
@@ -273,13 +282,13 @@ def test_resource_has_the_cooldown(bot, clock, lucina):
 def test_turned_down_command_does_not_start_cooldown(bot, clock, lucina):
     dispatch(bot, make_message("~artping Lucin", user_id=2))
 
-    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == ["Lucina: <@1>"]
+    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == [LUCINA_PING]
 
 
 def test_admins_are_not_held_back_by_cooldown(bot, clock, lucina):
     dispatch(bot, make_message("~artping Lucina", administrator=True))
 
-    assert dispatch(bot, make_message("~artping Lucina", administrator=True)) == ["Lucina: <@1>"]
+    assert dispatch(bot, make_message("~artping Lucina", administrator=True)) == [LUCINA_PING]
 
 
 def test_cooldown_follows_the_configured_length(monkeypatch):
