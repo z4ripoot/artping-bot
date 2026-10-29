@@ -6,7 +6,7 @@ from fjormcord.bot.artping.model.character_vote import CharacterVote
 
 _SELECT_VOTE = """
     SELECT V.MESSAGE_ID AS message_id, V.CHANNEL_ID AS channel_id, V.CHARACTER_NAME AS character_name,
-           V.PROPOSER AS proposer, V.USES_BUTTON AS uses_button
+           V.PROPOSER AS proposer
     FROM CHARACTER_VOTE V
     """
 _REMOVE_VOTES_FOR = """
@@ -22,13 +22,13 @@ _ADD_VOTER = """
 def add_vote(vote: CharacterVote, voter_ids: Iterable[str] = ()):
     # Stores the vote with its first voters, all or nothing
     sql = """
-        INSERT INTO CHARACTER_VOTE (MESSAGE_ID, CHANNEL_ID, CHARACTER_NAME, PROPOSER, USES_BUTTON)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO CHARACTER_VOTE (MESSAGE_ID, CHANNEL_ID, CHARACTER_NAME, PROPOSER)
+        VALUES (?, ?, ?, ?)
         """
 
     logging.info("Adding vote %s for character %s", vote.message_id, vote.character_name)
     with get_database_connection() as conn:
-        conn.execute(sql, (vote.message_id, vote.channel_id, vote.character_name, vote.proposer, vote.uses_button))
+        conn.execute(sql, (vote.message_id, vote.channel_id, vote.character_name, vote.proposer))
         conn.executemany(_ADD_VOTER, [(vote.message_id, voter_id) for voter_id in voter_ids])
 
 
@@ -90,20 +90,6 @@ def count_voters(message_id: str) -> int:
         """
 
     return fetch_value(sql, (message_id,))
-
-
-def convert_vote(message_id: str, user_ids: Iterable[str]):
-    # Stores the voters counted from the reactions and marks the vote as counting stored voters, all or nothing
-    mark_vote = """
-        UPDATE CHARACTER_VOTE
-        SET USES_BUTTON = 1
-        WHERE MESSAGE_ID = ?
-        """
-
-    logging.info("Converting vote %s to a button vote", message_id)
-    with get_database_connection() as conn:
-        conn.executemany(_ADD_VOTER, [(message_id, user_id) for user_id in user_ids])
-        conn.execute(mark_vote, (message_id,))
 
 
 def pass_vote(message_id: str, character_name: str) -> int:

@@ -2,7 +2,7 @@
 
 Commands to test every branch of the bot by hand in Discord. Expected replies are in `code`; "silence" means the bot
 sends nothing at all. Sections 1 to 10 are mostly about the `~` commands, section 11 repeats every command as a
-slash command, sections 7 and 12 cover the vote button, and section 13 the Voting Gauntlet scores.
+slash command, section 7 covers the vote button, and section 12 the Voting Gauntlet scores.
 
 ## Setup
 
@@ -23,8 +23,8 @@ slash command, sections 7 and 12 cover the vote button, and section 13 the Votin
   ```
 - **Database:** start with a fresh one (delete `test.db`).
 
-Some steps need the bot's log to check the result: 1.4, 1.8, 2.16, 7.12, 7.14, 7.15, 10.3, 11.45, 13.10, 13.11
-and 13.12.
+Some steps need the bot's log to check the result: 1.4, 1.8, 2.16, 7.12, 7.14, 7.15, 10.3, 11.45, 12.10, 12.11
+and 12.12.
 
 ## 1. Startup and config
 
@@ -325,23 +325,7 @@ database. Run each command as the account named in the section it comes from.
 | 11.51 | U1 | `/help`, then `/checkping` (cooldown 10 s) | The 2nd: ephemeral `You used a command recently…`: `/help` is a command, like `~help` |
 | 11.52 | A | Empty `guild_id`, restart, wait until the global commands show up, `/help`; then set `guild_id` again and restart | The same overview as 11.48 (the commands are read from where the sync put them, globally here and in the server with `guild_id`), not an empty list |
 
-## 12. Converting a ⭐ vote (the first start after the button was released)
-
-Needs a database with an open reaction vote: use the previous release (or `git stash` the button code), start a
-vote with `~addcharacter conv1`, have U1 react with ⭐ (the bot adds its own ⭐ too), then start this version. The
-vote row has `USES_BUTTON = 0` (`sqlite3 test.db "select message_id, uses_button from character_vote"`).
-
-| # | Setup | Expected |
-|---|---|---|
-| 12.1 | One ⭐ vote with U1's reaction, `votes_needed=2` | At startup the message is edited to `Vote to add Conv1. Votes needed: 2` with a `Vote (1/2)` button. `uses_button` is 1, and U1 is a stored voter: U1 clicking now takes the vote back (`… has been taken back`) |
-| 12.2 | Restart the bot | Nothing changes and no voter is lost (a converted vote isn't converted twice) |
-| 12.3 | A ⭐ vote with ⭐ from U1 and U2, `votes_needed=2` | Passes during the conversion: `Character … has been added`, U1 and U2 subscribed, a `Subscribe to …` button |
-| 12.4 | A ⭐ vote with an admin's ⭐ only | Passes during the conversion, and the admin is subscribed |
-| 12.5 | A ⭐ vote with a 👍 only, and with the bot's own ⭐ only | Converted with `Vote (0/2)`: other emoji and the bot's reaction don't count |
-| 12.6 | A ⭐ vote whose message was deleted while the bot was offline | Dropped with the log line of 7.14 |
-| 12.7 | A ⭐ vote and Read Message History removed | Log warning `Can't read the message of vote …`, kept unconverted; restored and restarted, it converts |
-
-## 13. Voting Gauntlet scores (hourly at 5 past, UTC, while a round runs)
+## 12. Voting Gauntlet scores (hourly at 5 past, UTC, while a round runs)
 
 The bot reads the official page (https://support.fire-emblem-heroes.com/voting_gauntlet/current). A live gauntlet
 only runs a few days a month, so test with the saved pages instead: temporarily change `voting_gauntlet.py` so that
@@ -353,24 +337,24 @@ only runs a few days a month, so test with the saved pages instead: temporarily 
   `datetime(2026, 10, 6, 12, …)` in the final round (1 matchup, Edelgard against Dimitri) and
   `datetime(2026, 10, 7, 5, …)` after the end
 
-and restart after each change. Don't commit that change. 13.1 needs a real gauntlet.
+and restart after each change. Don't commit that change. 12.1 needs a real gauntlet.
 
 | # | Setup | Expected |
 |---|---|---|
-| 13.1 | Unchanged code, during a real gauntlet round, at 5 past the hour | One message per matchup in the site's order, e.g. `Edelgard (Stronger)` / `123,456` / `Dimitri (Weaker)` / `98,765`, each with the buttons `Track Edelgard` and `Track Dimitri`. Outside a round: nothing |
-| 13.2 | `now` in round 1 | 4 matchup boxes, labelled Stronger and Weaker (or Same for both when neither is behind), a separator, and a `Track <name>` button per character |
-| 13.2a | Seed 200 trackers of a Weaker character, `now` in that round | The matchup is split over several boxes, every tracker mentioned once (and pinged), the buttons only on the last |
-| 13.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour Theodora is Weaker`. The next minute's message for that matchup has `<@U1>` after a separator, and U1 is **pinged** |
-| 13.4 | U1 clicks `Track Edelgard` under Theodora's matchup | Ephemeral `You now track Edelgard instead of Theodora`. The next messages no longer mention U1 there (Edelgard is Stronger) |
-| 13.5 | U1 clicks `Track Edelgard` again | Ephemeral `You no longer track Edelgard` |
-| 13.6 | U1 and U2 track the same Weaker character | The message mentions both, once each |
-| 13.7 | U1 tracks a Weaker character, stop the bot, U1 clicks a button (`This interaction failed`), start it, clicks again | The click works after the restart (the buttons are rebuilt from their `custom_id`), and the tracking survived it |
-| 13.8 | U1 tracks Dimitri, then `now` in the final round | The final round's single message mentions U1 under Dimitri (tracking lasts across rounds) |
-| 13.9 | Then `now` after the end | No messages. `sqlite3 test.db "select * from voting_gauntlet_tracker"` is empty, and clicks on the old buttons answer `This Voting Gauntlet has ended` |
-| 13.10 | `fetch_page` returns `113` with the same page, after U1 tracked something in 112 | The trackers of 112 are gone; old 112 buttons answer `This Voting Gauntlet has ended`, the new messages track in 113 |
-| 13.11 | `fetch_page` raises `aiohttp.ClientError()`, or returns a page with the `tournaments-art` classes changed (`normal` → `ahead`) | Log `Voting Gauntlet scores could not be read. Task will be skipped` with a traceback, no messages; the next minute tries again (the loop keeps running) |
-| 13.12 | `voting_gauntlet_channel_id` set to a channel the bot can't see | Log error `Channel … not found. Task will be skipped` |
-| 13.13 | U1 runs `~artping …` straight after clicking a Track button | Works: clicks are not commands and start no cooldown |
+| 12.1 | Unchanged code, during a real gauntlet round, at 5 past the hour | One message per matchup in the site's order, e.g. `Edelgard (Stronger)` / `123,456` / `Dimitri (Weaker)` / `98,765`, each with the buttons `Track Edelgard` and `Track Dimitri`. Outside a round: nothing |
+| 12.2 | `now` in round 1 | 4 matchup boxes, labelled Stronger and Weaker (or Same for both when neither is behind), a separator, and a `Track <name>` button per character |
+| 12.2a | Seed 200 trackers of a Weaker character, `now` in that round | The matchup is split over several boxes, every tracker mentioned once (and pinged), the buttons only on the last |
+| 12.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour Theodora is Weaker`. The next minute's message for that matchup has `<@U1>` after a separator, and U1 is **pinged** |
+| 12.4 | U1 clicks `Track Edelgard` under Theodora's matchup | Ephemeral `You now track Edelgard instead of Theodora`. The next messages no longer mention U1 there (Edelgard is Stronger) |
+| 12.5 | U1 clicks `Track Edelgard` again | Ephemeral `You no longer track Edelgard` |
+| 12.6 | U1 and U2 track the same Weaker character | The message mentions both, once each |
+| 12.7 | U1 tracks a Weaker character, stop the bot, U1 clicks a button (`This interaction failed`), start it, clicks again | The click works after the restart (the buttons are rebuilt from their `custom_id`), and the tracking survived it |
+| 12.8 | U1 tracks Dimitri, then `now` in the final round | The final round's single message mentions U1 under Dimitri (tracking lasts across rounds) |
+| 12.9 | Then `now` after the end | No messages. `sqlite3 test.db "select * from voting_gauntlet_tracker"` is empty, and clicks on the old buttons answer `This Voting Gauntlet has ended` |
+| 12.10 | `fetch_page` returns `113` with the same page, after U1 tracked something in 112 | The trackers of 112 are gone; old 112 buttons answer `This Voting Gauntlet has ended`, the new messages track in 113 |
+| 12.11 | `fetch_page` raises `aiohttp.ClientError()`, or returns a page with the `tournaments-art` classes changed (`normal` → `ahead`) | Log `Voting Gauntlet scores could not be read. Task will be skipped` with a traceback, no messages; the next minute tries again (the loop keeps running) |
+| 12.12 | `voting_gauntlet_channel_id` set to a channel the bot can't see | Log error `Channel … not found. Task will be skipped` |
+| 12.13 | U1 runs `~artping …` straight after clicking a Track button | Works: clicks are not commands and start no cooldown |
 
 ## Not testable by hand
 
@@ -378,4 +362,3 @@ These branches are covered by the unit tests instead:
 
 - A failing `vote_message.edit` (only logs a warning).
 - Two button clicks racing to pass the same vote.
-- A converted ⭐ vote that gains a reaction between its fetch and its conversion.

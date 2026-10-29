@@ -13,7 +13,7 @@ from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.service import character_vote_service
 from fjormcord.bot.artping.view.layout import layout_text
 
-# The bot's own user, e.g. on the reaction it added to vote messages before they had a button
+# The bot's own user
 BOT_USER = SimpleNamespace(id=999, bot=True)
 
 _message_ids = itertools.count(1000)
@@ -56,11 +56,6 @@ def use_settings(monkeypatch, **changes):
     monkeypatch.setattr(config, "_settings", replace(config.read_settings(), **changes))
 
 
-def make_user(user_id, bot=False):
-    # A user as reactions list them when the member isn't cached: without guild permissions
-    return SimpleNamespace(id=user_id, bot=bot)
-
-
 def make_member(user_id, administrator=False):
     return SimpleNamespace(
         id=user_id,
@@ -74,37 +69,13 @@ def http_error(error, status):
     return error(SimpleNamespace(status=status, reason=error.__name__), error.__name__)
 
 
-class FakeGuild:
-    # administrators: IDs of the members with administrator permissions; members: everyone still in the server
-    def __init__(self, members=(), administrators=()):
-        self.members = set(members) | set(administrators)
-        self.administrators = set(administrators)
-
-    async def fetch_member(self, user_id):
-        if user_id not in self.members:
-            raise http_error(discord.NotFound, 404)
-        return make_member(user_id, administrator=user_id in self.administrators)
-
-
-class FakeReaction:
-    def __init__(self, emoji):
-        self.emoji = emoji
-        self.reactors = []
-
-    async def users(self):
-        for user in self.reactors:
-            yield user
-
-
 class FakeSentMessage:
-    # A message the bot sent: users can react to it, the bot can edit its content and its view (the vote button)
-    def __init__(self, content, guild, view=None, channel=None):
+    # A message the bot sent: the bot can edit its content and its view (the vote button)
+    def __init__(self, content, view=None, channel=None):
         self.id = next(_message_ids)
         self.content = content
-        self.guild = guild
         self.view = view
         self.channel = channel
-        self.reactions = []
         # The number of next edits that fail, as when Discord has an outage
         self.failing_edits = 0
 
@@ -114,16 +85,6 @@ class FakeSentMessage:
         if self.view is None:
             return []
         return list(self.view.walk_children() if isinstance(self.view, discord.ui.LayoutView) else self.view.children)
-
-    def react(self, emoji, user):
-        reaction = next((reaction for reaction in self.reactions if reaction.emoji == emoji), None)
-        if reaction is None:
-            reaction = FakeReaction(emoji)
-            self.reactions.append(reaction)
-        reaction.reactors.append(user)
-
-    async def add_reaction(self, emoji):
-        self.react(emoji, BOT_USER)
 
     async def edit(self, content=_UNCHANGED, view=_UNCHANGED):
         if self.failing_edits > 0:
@@ -142,10 +103,9 @@ class FakeSentMessage:
 
 class FakeChannel:
     # forbidden: the bot lacks the permissions to read the channel's messages
-    def __init__(self, channel_id=10, forbidden=False, guild=None):
+    def __init__(self, channel_id=10, forbidden=False):
         self.id = channel_id
         self.forbidden = forbidden
-        self.guild = guild or FakeGuild()
         self.sent = []
         # The allowed_mentions each message was sent with, None for the client's default
         self.sent_allowed_mentions = []
@@ -160,7 +120,7 @@ class FakeChannel:
 
     def post(self, content, view=None):
         # A message in the channel, e.g. one a user wrote earlier
-        message = FakeSentMessage(content, self.guild, view, channel=self)
+        message = FakeSentMessage(content, view, channel=self)
         self.messages[message.id] = message
         return message
 

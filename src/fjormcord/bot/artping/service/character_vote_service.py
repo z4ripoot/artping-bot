@@ -30,7 +30,7 @@ async def start_vote(vote_channel: VoteChannel, proposer_id: str, name: str) -> 
     # 2 are needed, so it can't pass the vote on its own
     vote_message = await vote_channel.send(to_view(_vote_layout(name, 1)))
     character_vote_repository.add_vote(
-        CharacterVote(str(vote_message.id), vote_channel.channel_id, name, proposer_id, uses_button=True),
+        CharacterVote(str(vote_message.id), vote_channel.channel_id, name, proposer_id),
         [proposer_id],
     )
 
@@ -73,8 +73,8 @@ async def toggle_vote(client: discord.Client, vote_message: discord.Message, use
 
 
 async def check_open_votes(client: discord.Client):
-    # Run at startup: votes_needed or the names may have changed while the bot was offline, votes still counted by
-    # their reactions get the button, and the messages of the votes that stay open are re-rendered
+    # Run at startup: votes_needed or the names may have changed while the bot was offline, so the messages of the
+    # votes that stay open are re-rendered
     for vote in character_vote_repository.get_votes():
         try:
             await _check_open_vote(client, vote)
@@ -109,8 +109,8 @@ def _vote_text(name: str) -> str:
 
 
 async def _check_open_vote(client: discord.Client, vote: CharacterVote):
-    # Adds the character once enough users voted, or an admin reacted before the conversion; drops the vote when its
-    # message is gone or its name got taken; otherwise re-renders its message with the current text and count
+    # Adds the character once enough users voted; drops the vote when its message is gone or its name got taken;
+    # otherwise re-renders its message with the current text and count
     message_id = vote.message_id
     try:
         vote_message = await _fetch_vote_message(client, vote)
@@ -119,33 +119,19 @@ async def _check_open_vote(client: discord.Client, vote: CharacterVote):
         character_vote_repository.remove_vote(message_id)
         return
     except discord.Forbidden as e:
-        # Kept, so the vote is checked, or converted, again once the bot may read the channel
+        # Kept, so the vote is checked again once the bot may read the channel
         logging.warning("Can't read the message of vote %s, check the bot's permissions. %s", message_id, e)
         return
 
-    settings = config.read_settings()
-    voters = []
-    has_administrator = False
-    if not vote.uses_button:
-        voters = await _get_voters(vote_message, settings.character_vote_emoji)
-        short = len(voters) < settings.character_votes_needed
-        has_administrator = short and await _has_administrator(vote_message.guild, voters)
-
-    # Another event may have closed the vote while the reactions and members were fetched, or another check
-    # converted it; nothing awaits from here to the commit
-    current = character_vote_repository.get_vote(message_id)
-    if current is None:
+    # Another event may have closed the vote while its message was fetched; nothing awaits from here to the commit
+    if character_vote_repository.get_vote(message_id) is None:
         return
     if await _drop_if_name_taken(vote_message, vote) is not None:
         return
 
-    converting = not current.uses_button
-    if converting:
-        character_vote_repository.convert_vote(message_id, [str(voter.id) for voter in voters])
-
-    # Re-rendered at every start, so the text and label follow a changed votes_needed, and a conversion whose edit
-    # failed gets its button on the next start
-    await _pass_or_show_count(client, vote_message, vote, converting and has_administrator)
+    # Re-rendered at every start, so the text and label follow a changed votes_needed, and a message whose edit failed
+    # is repaired on the next start
+    await _pass_or_show_count(client, vote_message, vote, by_administrator=False)
 
 
 async def _drop_if_name_taken(vote_message: discord.Message, vote: CharacterVote) -> str | None:
@@ -193,31 +179,6 @@ async def _fetch_vote_message(client: discord.Client, vote: CharacterVote) -> di
     return await channel.fetch_message(int(vote.message_id))
 
 
-async def _get_voters(vote_message: discord.Message, emoji: str) -> list[discord.abc.User]:
-    # Users who reacted with the vote emoji, without bots such as this one; only read to convert a vote that was
-    # counted by its reactions
-    for reaction in vote_message.reactions:
-        if str(reaction.emoji) == emoji:
-            return [user async for user in reaction.users() if not user.bot]
-    return []
-
-
-async def _has_administrator(guild: discord.Guild, voters: list[discord.abc.User]) -> bool:
-    # Only asked while a vote is short, so this costs fewer requests than the votes needed
-    for voter in voters:
-        # Reactions list a voter as a member, with permissions, only when the member is cached
-        if getattr(voter, "guild_permissions", None) is None:
-            try:
-                voter = await guild.fetch_member(voter.id)
-            except discord.HTTPException as e:
-                # E.g. a voter who left the server; their vote still counts, but not as an admin's
-                logging.info("Failed to fetch member %s. %s", voter.id, e)
-                continue
-        if is_administrator(voter):
-            return True
-    return False
-
-
 async def _close(client: discord.Client, votes: Iterable[CharacterVote], character: Character):
     # The votes are already gone from the database; this only tells their messages, and swaps their Vote button for
     # Subscribe
@@ -245,7 +206,7 @@ async def _shows_vote_button(vote_message: discord.Message) -> bool:
 
 
 async def _edit(vote_message: discord.Message, layout: Layout):
-    # content=None: a ⭐ vote's message, converted at startup, loses its content, which a layout message can't have
+    # content=None: a layout message can't have content
     try:
         await vote_message.edit(content=None, view=to_view(layout))
     except discord.HTTPException as e:

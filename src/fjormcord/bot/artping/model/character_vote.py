@@ -10,8 +10,6 @@ class CharacterVote:
     channel_id: str
     character_name: str
     proposer: str
-    # False for a vote still counted by its reactions
-    uses_button: bool = True
 
 
 @dataclass(frozen=True)

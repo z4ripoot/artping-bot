@@ -14,7 +14,7 @@ class CharacterVoteCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        # Also runs after a reconnect, which is harmless: a vote is only added and converted once
+        # Also runs after a reconnect, which is harmless: it only re-renders the open votes, or passes or drops them
         try:
             await check_open_votes(self.bot)
         except Exception:

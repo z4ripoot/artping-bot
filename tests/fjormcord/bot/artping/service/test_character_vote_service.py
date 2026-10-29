@@ -12,16 +12,12 @@ from fjormcord.bot.artping.repository.character_repository import get_character
 from fjormcord.bot.artping.repository.character_vote_repository import count_voters, get_votes
 from fjormcord.bot.artping.service.character_vote_service import check_open_votes, drop_deleted_vote
 from tests.fakes import (
-    BOT_USER,
     FakeChannel,
     FakeClient,
-    FakeGuild,
     button_labels,
     buttons,
     click,
-    make_member,
     make_message,
-    make_user,
     reply,
 )
 
@@ -45,7 +41,7 @@ def settings(monkeypatch):
 
 @pytest.fixture
 def channel():
-    return FakeChannel(guild=FakeGuild(members={1, 2, 3}, administrators={ADMIN_ID}))
+    return FakeChannel()
 
 
 @pytest.fixture
@@ -61,18 +57,6 @@ def start_vote(client, channel, name, user_id=1):
 def vote(client, vote_message, *user_ids):
     for user_id in user_ids:
         click(client, vote_message, user_id)
-
-
-def reaction_vote(channel, name, *reactors):
-    # A vote started before votes had a button: counted by its ⭐ reactions, the bot's own among them
-    vote_message = channel.post(f"Vote to add {name}: react with {EMOJI}. Votes needed: 2")
-    vote_message.react(EMOJI, BOT_USER)
-    for reactor in reactors:
-        vote_message.react(EMOJI, reactor)
-    character_vote_repository.add_vote(
-        CharacterVote(str(vote_message.id), str(channel.id), name, "7", uses_button=False)
-    )
-    return vote_message
 
 
 def check_votes(client):
@@ -95,7 +79,6 @@ def test_non_admin_add_character_starts_a_vote(client, channel):
     assert out == ""
     assert channel.sent == ["Vote to add Black_Knight. Votes needed: 2"]
     assert label(vote_message) == "Vote (1/2)"
-    assert vote_message.reactions == []
     assert get_votes() == [CharacterVote(str(vote_message.id), "10", "Black_Knight", "7")]
     # The proposer's vote is counted from the start
     assert character_vote_repository.has_voter(str(vote_message.id), "7")
@@ -282,7 +265,7 @@ def test_deleted_vote_message_drops_the_vote(client, channel):
     assert get_votes() == []
 
 
-# At startup: the open votes are checked, and the votes counted by reactions get the button
+# At startup: the open votes are checked
 
 
 def test_open_votes_are_checked_at_startup(client, channel, monkeypatch):
@@ -320,15 +303,32 @@ def test_vote_whose_message_is_gone_is_dropped_at_startup(client, channel):
     assert get_votes() == []
 
 
-def test_vote_is_kept_when_the_bot_may_not_read_the_channel(client, channel):
-    reaction_vote(channel, "Lucina", make_user(1), make_user(2))
+def test_vote_is_kept_when_the_bot_may_not_read_the_channel(client, channel, monkeypatch):
+    set_votes_needed(monkeypatch, 3)
+    vote_message = start_vote(client, channel, "Lucina")
+    vote(client, vote_message, 2)
+    # Enough votes now, but the bot can't read the vote message to pass it
+    set_votes_needed(monkeypatch, 2)
     channel.forbidden = True
 
     check_votes(client)
 
     assert get_character("Lucina") is None
     assert len(get_votes()) == 1
-    assert not get_votes()[0].uses_button
+    assert label(vote_message) == "Vote (2/3)"
+
+
+def test_failed_edit_is_repaired_at_the_next_startup(client, channel, monkeypatch):
+    vote_message = start_vote(client, channel, "Lucina")
+    set_votes_needed(monkeypatch, 3)
+    vote_message.failing_edits = 1
+    check_votes(client)
+    assert label(vote_message) == "Vote (1/2)"
+
+    check_votes(client)
+
+    assert vote_message.content == "Vote to add Lucina. Votes needed: 3"
+    assert label(vote_message) == "Vote (1/3)"
 
 
 def test_vote_for_a_name_that_became_an_alias_is_dropped_at_startup(client, channel, database):
@@ -341,91 +341,6 @@ def test_vote_for_a_name_that_became_an_alias_is_dropped_at_startup(client, chan
     assert vote_message.content == "Focalors is already an alias of Furina"
     assert button_labels(vote_message.view) == []
     assert get_votes() == []
-
-
-def test_reaction_vote_is_converted_at_startup(client, channel):
-    vote_message = reaction_vote(channel, "Black_Knight", make_user(1))
-
-    check_votes(client)
-
-    assert count_voters(str(vote_message.id)) == 1
-    assert vote_message.content == "Vote to add Black_Knight. Votes needed: 2"
-    assert label(vote_message) == "Vote (1/2)"
-    assert get_votes()[0].uses_button
-    assert get_character("Black_Knight") is None
-
-
-def test_failed_conversion_edit_is_repaired_at_the_next_startup(client, channel):
-    vote_message = reaction_vote(channel, "Black_Knight", make_user(1))
-    vote_message.failing_edits = 1
-    check_votes(client)
-    assert vote_message.view is None
-
-    check_votes(client)
-
-    assert vote_message.content == "Vote to add Black_Knight. Votes needed: 2"
-    assert label(vote_message) == "Vote (1/2)"
-    assert count_voters(str(vote_message.id)) == 1
-
-
-def test_reaction_vote_passes_during_conversion(client, channel):
-    vote_message = reaction_vote(channel, "Lucina", make_user(1), make_user(2))
-
-    check_votes(client)
-
-    assert subscribers("Lucina") == {"1", "2"}
-    assert vote_message.content == "Character Lucina has been added"
-    assert label(vote_message) == "Subscribe to Lucina"
-    assert get_votes() == []
-
-
-def test_reaction_vote_with_admin_passes_during_conversion(client, channel):
-    vote_message = reaction_vote(channel, "Lucina", make_member(ADMIN_ID, administrator=True))
-
-    check_votes(client)
-
-    assert subscribers("Lucina") == {str(ADMIN_ID)}
-    assert vote_message.content == "Character Lucina has been added"
-
-
-def test_reaction_vote_with_admin_passes_when_the_member_is_not_cached(client, channel):
-    reaction_vote(channel, "Lucina", make_user(ADMIN_ID))
-
-    check_votes(client)
-
-    assert subscribers("Lucina") == {str(ADMIN_ID)}
-
-
-def test_bots_and_other_emoji_are_not_counted_during_conversion(client, channel):
-    vote_message = reaction_vote(channel, "Lucina", make_user(1), make_user(3, bot=True))
-    vote_message.react("👍", make_user(2))
-    vote_message.react("👍", make_member(ADMIN_ID, administrator=True))
-
-    check_votes(client)
-
-    assert get_character("Lucina") is None
-    assert label(vote_message) == "Vote (1/2)"
-
-
-def test_reaction_of_a_user_who_left_the_server_still_counts(client, channel):
-    reaction_vote(channel, "Lucina", make_user(1), make_user(42))
-
-    check_votes(client)
-
-    assert subscribers("Lucina") == {"1", "42"}
-
-
-def test_conversion_happens_once(client, channel):
-    vote_message = reaction_vote(channel, "Lucina", make_user(1))
-    check_votes(client)
-    # A reaction added after the conversion no longer counts
-    vote_message.react(EMOJI, make_user(2))
-
-    check_votes(client)
-
-    assert count_voters(str(vote_message.id)) == 1
-    assert click(client, vote_message, 3) == "Your vote for Lucina has been added"
-    assert subscribers("Lucina") == {"1", "3"}
 
 
 # The repository: the stored voters
@@ -449,13 +364,3 @@ def test_pass_vote_subscribes_the_stored_voters():
 
     assert subscribers("Lucina") == {"1", "2"}
     assert get_votes() == []
-
-
-def test_convert_vote_stores_the_voters_and_marks_the_vote():
-    character_vote_repository.add_vote(CharacterVote("5", "10", "Lucina", "7", uses_button=False))
-    character_vote_repository.add_voter("5", "1")
-
-    character_vote_repository.convert_vote("5", ["1", "2"])
-
-    assert character_vote_repository.count_voters("5") == 2
-    assert character_vote_repository.get_vote("5").uses_button

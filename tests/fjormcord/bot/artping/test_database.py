@@ -146,28 +146,24 @@ def test_migrations_are_committed(tmp_path):
     connection.close()
 
 
-def test_existing_votes_are_marked_as_reaction_votes(tmp_path):
+def test_vote_marks_are_dropped_and_the_votes_kept(tmp_path):
     path = tmp_path / "live.db"
-    old = connect(path)
-    old.close()
+    connect(path).close()
     old = sqlite3.connect(path)
-    # Back to version 6: drop what 007 and later added and rebuild the vote table as 005 made it
+    # Back to version 8: the vote table with the USES_BUTTON mark that 007 added
     old.executescript("""
-        DROP TABLE VOTING_GAUNTLET_TRACKER;
-        DROP TABLE VOTING_GAUNTLET;
-        DROP TABLE CHARACTER_VOTE_VOTER;
-        DROP TABLE CHARACTER_VOTE;
-        CREATE TABLE CHARACTER_VOTE (
-            MESSAGE_ID TEXT NOT NULL PRIMARY KEY, CHANNEL_ID TEXT NOT NULL,
-            CHARACTER_NAME TEXT NOT NULL COLLATE NOCASE, PROPOSER TEXT NOT NULL);
-        INSERT INTO CHARACTER_VOTE VALUES ('5', '10', 'Lucina', '7');
-        PRAGMA user_version = 6;
+        ALTER TABLE CHARACTER_VOTE ADD COLUMN USES_BUTTON INTEGER NOT NULL DEFAULT 0;
+        INSERT INTO CHARACTER_VOTE VALUES ('5', '10', 'Lucina', '7', 1);
+        INSERT INTO CHARACTER_VOTE_VOTER VALUES ('5', '7');
+        PRAGMA user_version = 8;
         """)
     old.close()
 
     connection = connect(path)
 
     assert user_version(connection) == latest_version()
-    assert connection.execute("SELECT USES_BUTTON FROM CHARACTER_VOTE").fetchall() == [(0,)]
-    assert connection.execute("SELECT COUNT(*) FROM CHARACTER_VOTE_VOTER").fetchone() == (0,)
+    columns = [row[1] for row in connection.execute("PRAGMA table_info(CHARACTER_VOTE)")]
+    assert columns == ["MESSAGE_ID", "CHANNEL_ID", "CHARACTER_NAME", "PROPOSER"]
+    assert connection.execute("SELECT * FROM CHARACTER_VOTE").fetchall() == [("5", "10", "Lucina", "7")]
+    assert connection.execute("SELECT * FROM CHARACTER_VOTE_VOTER").fetchall() == [("5", "7")]
     connection.close()
