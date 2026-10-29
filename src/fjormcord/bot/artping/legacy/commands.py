@@ -1,4 +1,4 @@
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 
 import discord
@@ -45,26 +45,31 @@ def format_usage(command: Command) -> str:
     return " ".join([command.name] + [f"({argument})" for argument in command.usage])
 
 
+def help_layout(tips: list[str], entries: Iterable[tuple[str, str, str]]) -> Layout:
+    # The title with the tips, then one part per section, in the order the entries name them, each command's usage in
+    # bold over its description. entries are (section, usage, description); ~help and /help both lay out this way
+    sections: dict[str, list[str]] = {}
+    for section, usage, description in entries:
+        sections.setdefault(section, []).append(f"**{usage}**\n{description}")
+
+    parts = ["\n".join([f"### {section}", *lines]) for section, lines in sections.items()]
+    return Layout(("\n".join(["## Commands", *tips]), *parts))
+
+
 def show_help(client: discord.Client, message: discord.Message) -> Layout:
-    # The title with the tips, then one part per section, each command's usage in bold over its description. Generated
-    # from COMMANDS, which keeps each section together; the admin section is only shown to admins
+    # Generated from COMMANDS, which keeps each section together; the admin section is only shown to admins
     show_admin = is_administrator(message.author)
-    title = [
-        "## Commands",
+    tips = [
         "Content in brackets is what to add when using a command",
         MULTI_WORD_HINT,
         "All commands are also available as slash commands, type /",
     ]
-
-    sections: dict[str, list[str]] = {}
-    for command in COMMANDS:
-        if command.admin_only and not show_admin:
-            continue
-        section = SECTION_ADMIN if command.admin_only else command.section
-        sections.setdefault(section, []).append(f"**{format_usage(command)}**\n{command.description}")
-
-    parts = ["\n".join([f"### {section}", *entries]) for section, entries in sections.items()]
-    return Layout(("\n".join(title), *parts))
+    entries = [
+        (SECTION_ADMIN if command.admin_only else command.section, format_usage(command), command.description)
+        for command in COMMANDS
+        if show_admin or not command.admin_only
+    ]
+    return help_layout(tips, entries)
 
 
 # The ~ commands; slash commands are in fjormcord.bot.artping.slash

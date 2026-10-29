@@ -21,8 +21,9 @@ def admin_command(name: str, description: str):
     return decorator
 
 
-def _is_admin_command(interaction: discord.Interaction) -> bool:
-    permissions = getattr(interaction.command, "default_permissions", None)
+def is_admin_command(command: app_commands.Command | None) -> bool:
+    # Declared with admin_command; None, e.g. for a click, is no command
+    permissions = getattr(command, "default_permissions", None)
     return permissions is not None and permissions.administrator
 
 
@@ -38,7 +39,7 @@ async def run(
     # command's work and returns the reply, directly or as a coroutine; it raises CommandError to turn the user down.
     # ephemeral makes the reply private, and the defer's placeholder with it.
     try:
-        if _is_admin_command(interaction) and not is_administrator(interaction.user):
+        if is_admin_command(interaction.command) and not is_administrator(interaction.user):
             raise CommandError("This command is for admins only")
         # One cooldown per user, shared with the ~ commands
         with interaction.client.cooldowns.command(interaction.user):

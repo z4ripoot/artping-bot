@@ -46,7 +46,7 @@ Every command above is also available as a slash command with the same name, e.g
  * `/resource <name>` posts a resource, as `~<resource>` does, and `/resources` lists them.
  * `/lorenz` and `/chromk` post the same emoji as the "thanks lorenz" and "chromk" messages.
  * Errors are only shown to the user who made them. Admin commands can only be used in a server, and for a non-admin they answer "This command is for admins only".
- * There is no `/help`: Discord's command list already shows them all.
+ * `/help` shows the overview of `~help` in slash syntax, only to the user who asked. `/lorenz` and `/chromk` aren't listed.
 
 # Local setup
 1. Create a bot of your own in the [Discord developer portal](https://discord.com/developers/applications), enable the "Message Content Intent" and invite it to a test server with the `bot` and `applications.commands` scopes. The slash commands need the second one: a bot that was invited before they existed (such as the production bot) has to be invited again, which keeps its settings.
