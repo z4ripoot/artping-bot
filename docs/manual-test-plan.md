@@ -271,7 +271,7 @@ database. Run each command as the account named in the section it comes from.
 
 | # | Who | Command | Expected |
 |---|---|---|---|
-| 11.1 | U1 | Type `/` | The admin commands (`removecharacter`, `addalias`, `removealias`, `setprimaryname`, `addcurrency`, `removecurrency`, `setresource` and `removeresource`) aren't listed for U1; A sees them all. There is no `/help` |
+| 11.1 | U1 | Type `/` | The admin commands (`removecharacter`, `addalias`, `removealias`, `setprimaryname`, `addcurrency`, `removecurrency`, `setresource` and `removeresource`) aren't listed for U1; A sees them all. `/help` is listed for both |
 | 11.2 | A | Type `/` | All commands of the README table, plus `/resource`, `/lorenz` and `/chromk`, each with a description |
 | 11.3 | U1 | `/addping character:Lucina` | Public `Ping for Lucina has been added`. Autocomplete suggested `Lucina` while typing `lu` (names and aliases) |
 | 11.3a | U1 | Set `autocomplete_max_choices=2`, restart, type `/addping character:` with more than 2 characters, then type `l` | At most 2 suggestions, the first names alphabetically; `l` (and `L`) narrows them to names starting with L. Put it back to 20 |
@@ -318,6 +318,12 @@ database. Run each command as the account named in the section it comes from.
 | 11.44 | U1 | `/lorenz`, wait out the cooldown, `/chromk` | The LorenzSmile emoji, the 3×4 chromk grid; public. Like every command they start the cooldown |
 | 11.45 | A | Lock the DB as in 2.16, then `/addcurrency currency:Lock` | After about 5 s: ephemeral `Something went wrong while running /addcurrency`, with a traceback in the log. Then `ROLLBACK;` |
 | 11.46 | U1 | `/resource` on a resource of over 2000 characters (9.16) | Posted as 2 or more messages |
+| 11.47 | U1 in server | `/help` | Ephemeral (only U1 sees it): a box with the title `Commands`, `Options in brackets are optional` and `The same commands also work with ~, type ~help`; then the headings **Art Ping Commands** and **Gacha Currency Commands**, each command's slash usage in bold with its slash description on the next line, e.g. `/artping character [character2 … character10]`, `/addping character`, `/scoreboard currency [page]`. `/resource name` comes right after `/resources`, `/help` itself is listed, and `/lorenz` and `/chromk` aren't. No **Admin Commands** section |
+| 11.48 | A in server | `/help` | Also **Admin Commands** (`/removecharacter character` to `/removecurrency currency`, in the order of `~help`), still one message |
+| 11.49 | A in **DM** | `/help` | No admin section (DMs have no permissions), and none of the admin commands |
+| 11.50 | U1 | Set `slash_max_characters=2`, restart, `/help` | `/artping character [character2]`; with 3, `/artping character [character2] [character3]`. Put it back to 10 |
+| 11.51 | U1 | `/help`, then `/checkping` (cooldown 10 s) | The 2nd: ephemeral `You used a command recently…`: `/help` is a command, like `~help` |
+| 11.52 | A | Empty `guild_id`, restart, wait until the global commands show up, `/help`; then set `guild_id` again and restart | The same overview as 11.48 (the commands are read from where the sync put them, globally here and in the server with `guild_id`), not an empty list |
 
 ## 12. Converting a ⭐ vote (the first start after the button was released)
 
