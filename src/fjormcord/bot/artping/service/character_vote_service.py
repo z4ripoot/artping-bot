@@ -72,16 +72,6 @@ async def toggle_vote(client: discord.Client, vote_message: discord.Message, use
     return out
 
 
-async def check_open_votes(client: discord.Client):
-    # Run at startup: votes_needed or the names may have changed while the bot was offline, so the messages of the
-    # votes that stay open are re-rendered
-    for vote in character_vote_repository.get_votes():
-        try:
-            await _check_open_vote(client, vote)
-        except Exception:
-            logging.exception("Checking vote %s failed", vote.message_id)
-
-
 async def close_votes(client: discord.Client, character: Character):
     # The character has been added without them, so the open votes for its name have nothing left to decide
     votes = character_vote_repository.get_votes_for(character.name)
@@ -106,32 +96,6 @@ def _added_layout(text: str, character: Character) -> Layout:
 
 def _vote_text(name: str) -> str:
     return f"Vote to add {name}. Votes needed: {config.read_settings().character_votes_needed}"
-
-
-async def _check_open_vote(client: discord.Client, vote: CharacterVote):
-    # Adds the character once enough users voted; drops the vote when its message is gone or its name got taken;
-    # otherwise re-renders its message with the current text and count
-    message_id = vote.message_id
-    try:
-        vote_message = await _fetch_vote_message(client, vote)
-    except discord.NotFound:
-        logging.info("The message of vote %s is gone, dropping the vote", message_id)
-        character_vote_repository.remove_vote(message_id)
-        return
-    except discord.Forbidden as e:
-        # Kept, so the vote is checked again once the bot may read the channel
-        logging.warning("Can't read the message of vote %s, check the bot's permissions. %s", message_id, e)
-        return
-
-    # Another event may have closed the vote while its message was fetched; nothing awaits from here to the commit
-    if character_vote_repository.get_vote(message_id) is None:
-        return
-    if await _drop_if_name_taken(vote_message, vote) is not None:
-        return
-
-    # Re-rendered at every start, so the text and label follow a changed votes_needed, and a message whose edit failed
-    # is repaired on the next start
-    await _pass_or_show_count(client, vote_message, vote, by_administrator=False)
 
 
 async def _drop_if_name_taken(vote_message: discord.Message, vote: CharacterVote) -> str | None:

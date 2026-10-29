@@ -1,4 +1,3 @@
-import asyncio
 from dataclasses import replace
 
 import pytest
@@ -10,7 +9,7 @@ from fjormcord.bot.artping.repository import character_vote_repository
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users
 from fjormcord.bot.artping.repository.character_repository import get_character
 from fjormcord.bot.artping.repository.character_vote_repository import count_voters, get_votes
-from fjormcord.bot.artping.service.character_vote_service import check_open_votes, drop_deleted_vote
+from fjormcord.bot.artping.service.character_vote_service import drop_deleted_vote
 from tests.fakes import (
     FakeChannel,
     FakeClient,
@@ -57,10 +56,6 @@ def start_vote(client, channel, name, user_id=1):
 def vote(client, vote_message, *user_ids):
     for user_id in user_ids:
         click(client, vote_message, user_id)
-
-
-def check_votes(client):
-    asyncio.run(check_open_votes(client))
 
 
 def label(vote_message):
@@ -262,84 +257,6 @@ def test_deleted_vote_message_drops_the_vote(client, channel):
 
     drop_deleted_vote(str(vote_message.id))
 
-    assert get_votes() == []
-
-
-# At startup: the open votes are checked
-
-
-def test_open_votes_are_checked_at_startup(client, channel, monkeypatch):
-    set_votes_needed(monkeypatch, 3)
-    passing = start_vote(client, channel, "Lucina", user_id=1)
-    start_vote(client, channel, "Marth", user_id=1)
-    vote(client, passing, 2)
-    set_votes_needed(monkeypatch, 2)
-
-    check_votes(client)
-
-    assert subscribers("Lucina") == {"1", "2"}
-    assert passing.content == "Character Lucina has been added"
-    assert label(passing) == "Subscribe to Lucina"
-    assert get_character("Marth") is None
-    assert [open_vote.character_name for open_vote in get_votes()] == ["Marth"]
-
-
-def test_open_votes_follow_a_changed_votes_needed_at_startup(client, channel, monkeypatch):
-    vote_message = start_vote(client, channel, "Lucina")
-    set_votes_needed(monkeypatch, 3)
-
-    check_votes(client)
-
-    assert vote_message.content == "Vote to add Lucina. Votes needed: 3"
-    assert label(vote_message) == "Vote (1/3)"
-
-
-def test_vote_whose_message_is_gone_is_dropped_at_startup(client, channel):
-    vote_message = start_vote(client, channel, "Lucina")
-    del channel.messages[vote_message.id]
-
-    check_votes(client)
-
-    assert get_votes() == []
-
-
-def test_vote_is_kept_when_the_bot_may_not_read_the_channel(client, channel, monkeypatch):
-    set_votes_needed(monkeypatch, 3)
-    vote_message = start_vote(client, channel, "Lucina")
-    vote(client, vote_message, 2)
-    # Enough votes now, but the bot can't read the vote message to pass it
-    set_votes_needed(monkeypatch, 2)
-    channel.forbidden = True
-
-    check_votes(client)
-
-    assert get_character("Lucina") is None
-    assert len(get_votes()) == 1
-    assert label(vote_message) == "Vote (2/3)"
-
-
-def test_failed_edit_is_repaired_at_the_next_startup(client, channel, monkeypatch):
-    vote_message = start_vote(client, channel, "Lucina")
-    set_votes_needed(monkeypatch, 3)
-    vote_message.failing_edits = 1
-    check_votes(client)
-    assert label(vote_message) == "Vote (1/2)"
-
-    check_votes(client)
-
-    assert vote_message.content == "Vote to add Lucina. Votes needed: 3"
-    assert label(vote_message) == "Vote (1/3)"
-
-
-def test_vote_for_a_name_that_became_an_alias_is_dropped_at_startup(client, channel, database):
-    vote_message = start_vote(client, channel, "Focalors")
-    reply(add_character, client, make_message("~addcharacter Furina", administrator=True))
-    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
-
-    check_votes(client)
-
-    assert vote_message.content == "Focalors is already an alias of Furina"
-    assert button_labels(vote_message.view) == []
     assert get_votes() == []
 
 

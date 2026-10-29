@@ -76,8 +76,6 @@ class FakeSentMessage:
         self.content = content
         self.view = view
         self.channel = channel
-        # The number of next edits that fail, as when Discord has an outage
-        self.failing_edits = 0
 
     @property
     def components(self):
@@ -87,9 +85,6 @@ class FakeSentMessage:
         return list(self.view.walk_children() if isinstance(self.view, discord.ui.LayoutView) else self.view.children)
 
     async def edit(self, content=_UNCHANGED, view=_UNCHANGED):
-        if self.failing_edits > 0:
-            self.failing_edits -= 1
-            raise http_error(discord.HTTPException, 500)
         if isinstance(view, discord.ui.LayoutView):
             # As in Discord, a message that becomes a layout must lose its content, explicitly
             if content is not None:

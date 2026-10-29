@@ -167,10 +167,10 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 | 7.11 | U1: `~addcharacter hector`. A: `~addalias Lucina hector`. U2 clicks the vote | U2 gets an ephemeral `Hector is already an alias of Lucina`, and the vote message is edited to that text without a button. The vote is dropped |
 | 7.12 | U1: `~addcharacter lyn`, then **delete** the vote message. A: `~addcharacter lyn` | Added, with no errors in the log about fetching the deleted vote (it was dropped on delete) |
 | 7.13 | U1: `~addcharacter ephraim`. Stop the bot, U2 tries to click (`This interaction failed`), start the bot, U2 clicks | The vote and U1's vote survived the restart; U2's click now passes it (button votes survive restarts) |
-| 7.14 | U1: `~addcharacter eirika`. Stop the bot, delete the vote message, start | Log: `The message of vote … is gone, dropping the vote` |
-| 7.15 | U1: `~addcharacter seliph`. Remove the bot's **Read Message History** in that channel, restart | Log warning `Can't read the message of vote …`; the vote is kept. Clicks still work. Restore the permission and restart: no warning |
-| 7.16 | U1: `~addcharacter alm` (U1's vote counts already; don't click). Stop the bot, set `votes_needed=1`, start | The vote passes at startup (`Character Alm has been added`) |
-| 7.17 | U1: `~addcharacter celica`. Stop the bot, set `votes_needed=3`, start | At startup the message is re-rendered: `Vote to add Celica. Votes needed: 3` and `Vote (0/3)`. Put `votes_needed` back to 2 |
+| 7.14 | U1: `~addcharacter eirika`. Stop the bot, delete the vote message, start. A: `~addcharacter eirika` | Nothing about the vote at startup. Added; the log warns `Failed to fetch the message of closed vote …` |
+| 7.15 | U1 starts 6 votes in one channel (`~addcharacter` with 6 new names). Restart | The vote messages are left as they are, and the log has no `We are being rate limited` warnings |
+| 7.16 | U1: `~addcharacter alm`. Stop the bot, set `votes_needed=3`, start | The message still says `Votes needed: 2`. U2 clicks: `Vote to add Alm. Votes needed: 3` and `Vote (2/3)` |
+| 7.17 | With `votes_needed=3`, U1: `~addcharacter celica`, U2 clicks (`Vote (2/3)`). Stop the bot, set `votes_needed=2`, start | Nothing changes at startup. U3 clicks: `Character Celica has been added` |
 | 7.18 | Set `votes_needed=1`, restart. U1: `~addcharacter lucius` | `Character Lucius has been added` straight away (no vote). Put it back to 2 |
 | 7.19 | Set `emoji=<:yourEmoji:id>` (a custom emoji in the server), restart, start a vote | The button shows the custom emoji |
 | 7.20 | A clicks a vote button, then U1 starts another vote for the same name and A clicks that too | The 1st click passes the vote; the second vote was closed with it, so there is nothing to click |
