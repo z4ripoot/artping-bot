@@ -27,14 +27,18 @@ def unversioned_database(path):
 def test_new_database_gets_schema(tmp_path):
     connection = connect(tmp_path / "new.db")
 
-    assert {
+    assert table_names(connection) == {
         "CHARACTERS",
+        "ALIAS",
         "PINGS",
         "GACHA_CURRENCY",
         "GACHA_CURRENCY_WALLET",
         "CHARACTER_VOTE",
+        "CHARACTER_VOTE_VOTER",
         "RESOURCE",
-    } <= table_names(connection)
+        "VOTING_GAUNTLET",
+        "VOTING_GAUNTLET_TRACKER",
+    }
     assert user_version(connection) == latest_version()
     connection.close()
 
@@ -146,24 +150,13 @@ def test_migrations_are_committed(tmp_path):
     connection.close()
 
 
-def test_vote_marks_are_dropped_and_the_votes_kept(tmp_path):
-    path = tmp_path / "live.db"
+def test_database_newer_than_the_migrations_is_refused(tmp_path):
+    # E.g. a development database that ran migrations which were later merged into fewer
+    path = tmp_path / "dev.db"
     connect(path).close()
     old = sqlite3.connect(path)
-    # Back to version 8: the vote table with the USES_BUTTON mark that 007 added
-    old.executescript("""
-        ALTER TABLE CHARACTER_VOTE ADD COLUMN USES_BUTTON INTEGER NOT NULL DEFAULT 0;
-        INSERT INTO CHARACTER_VOTE VALUES ('5', '10', 'Lucina', '7', 1);
-        INSERT INTO CHARACTER_VOTE_VOTER VALUES ('5', '7');
-        PRAGMA user_version = 8;
-        """)
+    old.execute(f"PRAGMA user_version = {latest_version() + 7}")
     old.close()
 
-    connection = connect(path)
-
-    assert user_version(connection) == latest_version()
-    columns = [row[1] for row in connection.execute("PRAGMA table_info(CHARACTER_VOTE)")]
-    assert columns == ["MESSAGE_ID", "CHANNEL_ID", "CHARACTER_NAME", "PROPOSER"]
-    assert connection.execute("SELECT * FROM CHARACTER_VOTE").fetchall() == [("5", "10", "Lucina", "7")]
-    assert connection.execute("SELECT * FROM CHARACTER_VOTE_VOTER").fetchall() == [("5", "7")]
-    connection.close()
+    with pytest.raises(sqlite3.DatabaseError, match="Delete a development database"):
+        connect(path)

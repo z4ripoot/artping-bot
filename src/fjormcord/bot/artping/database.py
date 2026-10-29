@@ -80,9 +80,16 @@ def connect(path: str | Path) -> sqlite3.Connection:
 def migrate(connection: sqlite3.Connection):
     # A new database and one created before versioning are both at 0; 001 only creates tables that don't exist yet
     version = connection.execute("PRAGMA user_version").fetchone()[0]
+    migrations = {int(path.name.split("_")[0]): path for path in MIGRATIONS_PATH.glob("*.sql")}
 
-    for path in sorted(MIGRATIONS_PATH.glob("*.sql")):
-        number = int(path.name.split("_")[0])
+    # E.g. a development database that ran migrations which were later merged into fewer: it would skip new ones
+    if version > max(migrations):
+        raise sqlite3.DatabaseError(
+            f"The database is at version {version}, but the latest migration is {max(migrations)}. "
+            "Delete a development database to recreate it"
+        )
+
+    for number, path in sorted(migrations.items()):
         if number <= version:
             continue
 
