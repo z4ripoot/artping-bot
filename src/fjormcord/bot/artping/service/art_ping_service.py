@@ -10,7 +10,7 @@ from fjormcord.bot.artping.service import (  # Modules: they import this one too
     character_service,
     character_vote_service,
 )
-from fjormcord.bot.artping.util.message_util import log_info
+from fjormcord.bot.artping.util.message_util import command_name, log_info
 from fjormcord.bot.artping.util.name_util import normalize_name
 from fjormcord.bot.artping.util.page_util import get_page, paged_header
 from fjormcord.bot.artping.util.user_util import get_username, mentions
@@ -45,17 +45,17 @@ def _ping(characters: list[Character]) -> str:
     return mentions(user_ids)
 
 
-def _add_character_hint(name: str, administrator: bool, prefix: str) -> str:
+def _add_character_hint(name: str, administrator: bool, slash: bool) -> str:
     # A non-admin's addcharacter starts a vote, unless voting is off; an admin's adds the character
+    add_character = command_name("addcharacter", slash)
     if administrator or not character_vote_service.is_voting_enabled():
-        return f"Use {prefix}addcharacter {name} to add it"
-    return f"Use {prefix}addcharacter {name} to start a vote to add it"
+        return f"Use {add_character} {name} to add it"
+    return f"Use {add_character} {name} to start a vote to add it"
 
 
 def do_art_ping(names: list[str], administrator: bool, slash: bool = False) -> Layout:
     # The header names the characters that exist; the body reports the unknown names, then pings. The footer reminds of
     # addping for the first character and hints at addcharacter for the first unknown name, in the syntax used
-    prefix = "/" if slash else "~"
     characters, missing_names = _find_characters(names)
 
     body = []
@@ -65,9 +65,9 @@ def do_art_ping(names: list[str], administrator: bool, slash: bool = False) -> L
     if characters:
         first = characters[0].name
         body.append(_ping(characters))
-        footer.append(f"Want to be pinged for {first}? Use {prefix}addping {first}")
+        footer.append(f"Want to be pinged for {first}? Use {command_name('addping', slash)} {first}")
     if missing_names:
-        footer.append(_add_character_hint(missing_names[0], administrator, prefix))
+        footer.append(_add_character_hint(missing_names[0], administrator, slash))
 
     if not characters:
         # Turned down, so it starts no cooldown and stays private for slash, but laid out with its hint
@@ -120,8 +120,8 @@ async def check_ping(client: discord.Client, user_id: str, page: int = 1) -> str
     name = await get_username(client, user_id)
     entries, page_count = get_page(characters, page, f"The list of {name}'s pings")
     header = paged_header(f"### {name}'s pings", page, page_count)
-    buttons = page_view.page_buttons("pings", int(user_id), page, page_count)
-    return Layout((header, "\n".join(character.name for character in entries)), (buttons,) if buttons else ())
+    rows = page_view.page_rows("pings", int(user_id), page, page_count)
+    return Layout((header, "\n".join(character.name for character in entries)), rows)
 
 
 async def check_ping_page(client: discord.Client, user_id: int, page: int) -> Layout:

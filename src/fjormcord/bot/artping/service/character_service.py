@@ -81,5 +81,4 @@ async def _render_character(client: discord.Client, character: Character, page: 
     header = paged_header(f"### {character.name}'s pings", page, page_count) + aliases_line
     # Only the users on this page are looked up
     usernames = [await get_username(client, user_id) for user_id in entries]
-    buttons = page_view.page_buttons("character", character.id, page, page_count)
-    return Layout((header, "\n".join(usernames)), (buttons,) if buttons else ())
+    return Layout((header, "\n".join(usernames)), page_view.page_rows("character", character.id, page, page_count))

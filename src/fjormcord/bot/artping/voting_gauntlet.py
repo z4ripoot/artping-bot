@@ -48,12 +48,20 @@ def start_voting_gauntlet_notification(client: discord.Client):
 
 @tasks.loop(time=POSTING_TIMES)
 async def task_voting_gauntlet_scores(client: discord.Client):
+    # The loop only survives network errors: any other exception, e.g. a database error, would stop it for good. The
+    # next hour tries again
+    try:
+        await _post_scores(client)
+    except Exception:
+        logging.exception("Posting the Voting Gauntlet scores failed. Task will be skipped")
+
+
+async def _post_scores(client: discord.Client):
     try:
         current_time = now()
         tournament_id, page = await fetch_page()
         rounds = parse_rounds(page, current_time)
     except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
-        # An exception would stop the loop; the next hour tries again
         logging.exception("Voting Gauntlet scores could not be read. Task will be skipped")
         return
 

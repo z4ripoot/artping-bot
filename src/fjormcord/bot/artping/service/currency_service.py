@@ -4,7 +4,7 @@ from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.currency import Currency
 from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.repository import currency_repository
-from fjormcord.bot.artping.util.message_util import log_info
+from fjormcord.bot.artping.util.message_util import command_name, log_info
 from fjormcord.bot.artping.util.page_util import PAGE_SIZE, get_page, paged_header
 from fjormcord.bot.artping.util.user_util import get_username
 from fjormcord.bot.artping.view import page_view, scoreboard_view  # Modules: they import this one too
@@ -69,8 +69,7 @@ def check_wallet(user_id: str, display_name: str, slash: bool = False) -> str | 
     wallet = currency_repository.get_wallet(user_id)
 
     if not wallet:
-        set_command = "/setcurrency" if slash else "~setcurrency"
-        return f"Your wallet is empty. Use {set_command} to add a currency"
+        return f"Your wallet is empty. Use {command_name('setcurrency', slash)} to add a currency"
 
     lines = [f"{entry.currency_name}: {entry.amount}" for entry in wallet]
     return Layout((f"### {display_name}'s wallet", "\n".join(lines)))
@@ -112,7 +111,5 @@ async def _render_scoreboard(client: discord.Client, currency: Currency, page: i
         for rank, entry in enumerate(entries, start=first_rank)
     ]
 
-    buttons = page_view.page_buttons("scoreboard", currency.id, page, page_count)
-    if buttons:
-        rows.append(buttons)
+    rows += page_view.page_rows("scoreboard", currency.id, page, page_count)
     return Layout((header, "\n".join(lines)), tuple(rows))

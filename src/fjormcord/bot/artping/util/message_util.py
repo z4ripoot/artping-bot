@@ -25,6 +25,11 @@ def log_info(reply: str) -> str:
     return reply
 
 
+def command_name(name: str, slash: bool) -> str:
+    # A command as a reply tells the user to type it, in the syntax they used: ~addping or /addping
+    return f"/{name}" if slash else f"~{name}"
+
+
 async def await_reply(reply: str | Layout | Awaitable[str | Layout]) -> str | Layout:
     # Handlers and services return their reply directly, or as a coroutine when they wait on Discord
     return await reply if inspect.isawaitable(reply) else reply

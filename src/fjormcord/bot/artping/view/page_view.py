@@ -7,6 +7,7 @@ import discord
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.service import art_ping_service, character_service, currency_service  # Modules: cycle
+from fjormcord.bot.artping.util.interaction_util import answer_privately, walk_components
 from fjormcord.bot.artping.view.layout import to_view
 
 
@@ -44,13 +45,19 @@ class PageButton(
 
 
 def page_buttons(kind: str, subject_id: int, page: int, page_count: int) -> tuple[PageButton, ...]:
-    # None for a single page; otherwise Previous and Next, disabled on the first and the last page
+    # () for a single page; otherwise Previous and Next, disabled on the first and the last page
     if page_count == 1:
         return ()
     return (
         PageButton(kind, subject_id, page - 1, "◀ Previous", disabled=page == 1),
         PageButton(kind, subject_id, page + 1, "Next ▶", disabled=page == page_count),
     )
+
+
+def page_rows(kind: str, subject_id: int, page: int, page_count: int) -> tuple[tuple[PageButton, ...], ...]:
+    # The page buttons as a layout's rows: none for a single page
+    buttons = page_buttons(kind, subject_id, page, page_count)
+    return (buttons,) if buttons else ()
 
 
 async def show_page(
@@ -69,12 +76,12 @@ async def show_page(
             layout = await render()
     except CommandError as e:
         logging.warning(str(e))
-        await _answer_privately(interaction, str(e))
+        await answer_privately(interaction, str(e))
         await _redraw(interaction, redraw)
         return
     except Exception:
         logging.exception("Showing a page of message %s failed", interaction.message.id)
-        await _answer_privately(interaction, failure)
+        await answer_privately(interaction, failure)
         await _redraw(interaction, redraw)
         return
 
@@ -83,13 +90,10 @@ async def show_page(
 
 def shown_page(message: discord.Message) -> int:
     # The page a message shows, read from its Previous button, which leads to the page before; 1 without page buttons
-    components = list(message.components)
-    while components:
-        component = components.pop(0)
+    for component in walk_components(message.components):
         match = PageButton.__discord_ui_compiled_template__.fullmatch(getattr(component, "custom_id", None) or "")
         if match:
             return int(match["page"]) + 1
-        components += getattr(component, "children", [])
     return 1
 
 
@@ -103,17 +107,6 @@ async def _render(kind: str, client: discord.Client, subject_id: int, page: int)
         case "character":
             return await character_service.check_character_page(client, subject_id, page)
     raise ValueError(f"Unknown page kind {kind}")
-
-
-async def _answer_privately(interaction: discord.Interaction, text: str):
-    # Logged when Discord no longer takes an answer, e.g. when the defer itself failed for an expired click
-    try:
-        if interaction.response.is_done():
-            await interaction.followup.send(text, ephemeral=True)
-        else:
-            await interaction.response.send_message(text, ephemeral=True)
-    except discord.HTTPException as e:
-        logging.warning("Could not answer the click on message %s. %s", interaction.message.id, e)
 
 
 async def _redraw(interaction: discord.Interaction, redraw: Callable[[], Awaitable[Layout]] | None):

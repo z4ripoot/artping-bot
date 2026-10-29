@@ -1,11 +1,10 @@
-import logging
 import re
 
 import discord
 
-from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.service import art_ping_service  # A module: it imports this one too, via character_service
+from fjormcord.bot.artping.util.interaction_util import answer_click
 
 
 class SubscribeButton(
@@ -26,15 +25,12 @@ class SubscribeButton(
         return cls(int(match["character_id"]), item.label)
 
     async def callback(self, interaction: discord.Interaction):
-        try:
-            reply = art_ping_service.subscribe(str(interaction.user.id), self.character_id)
-        except CommandError as e:
-            logging.warning(str(e))
-            reply = str(e)
-        except Exception:
-            logging.exception("Subscribing to character %s failed", self.character_id)
-            reply = "Something went wrong while subscribing"
-        await interaction.response.send_message(reply, ephemeral=True)
+        await answer_click(
+            self,
+            interaction,
+            lambda: art_ping_service.subscribe(str(interaction.user.id), self.character_id),
+            "Something went wrong while subscribing",
+        )
 
     @classmethod
     def for_character(cls, character: Character) -> "SubscribeButton":

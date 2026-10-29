@@ -32,9 +32,10 @@ class Settings:
     voting_gauntlet_channel_id: int | None
     # How many characters the /artping command takes, between 1 and MAX_SLASH_OPTIONS
     art_ping_slash_max_characters: int
-    # Reactions a non-admin's ~addcharacter vote needs before the character is added; below 2 there are no votes
+    # Votes a non-admin's addcharacter vote needs before the character is added; below 2 there are no votes
     character_votes_needed: int
-    # The emoji that counts as a vote, as str() of a Discord emoji: the Unicode character or <:name:id>
+    # The Vote button's emoji, and the reaction that counted as a vote before the button, for converting those votes;
+    # str() of a Discord emoji: the Unicode character or <:name:id>
     character_vote_emoji: str
     # Name -> custom emoji, e.g. 'lorenz_smile' -> '<:LorenzSmile:...>'
     emoji: Mapping[str, str]

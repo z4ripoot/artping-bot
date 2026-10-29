@@ -3,37 +3,23 @@ import logging
 from fjormcord.bot.artping.database import execute, exists, fetch_all, fetch_names, fetch_one
 from fjormcord.bot.artping.model.currency import Currency, ScoreboardEntry, WalletEntry
 
+_SELECT_CURRENCY = """
+    SELECT C.GACHA_CURRENCY_ID AS id, C.NAME AS name
+    FROM GACHA_CURRENCY C
+    """
+
 
 def get_currency(currency_name: str) -> Currency | None:
-    sql = """
-        SELECT C.GACHA_CURRENCY_ID AS id, C.NAME AS name
-        FROM GACHA_CURRENCY C
-        WHERE C.NAME = ?
-        """
-
-    return fetch_one(Currency, sql, (currency_name,))
+    return fetch_one(Currency, _SELECT_CURRENCY + "WHERE C.NAME = ?", (currency_name,))
 
 
 def get_currencies(limit: int) -> list[Currency]:
     # The first currencies alphabetically, ignoring case
-    sql = """
-        SELECT C.GACHA_CURRENCY_ID AS id, C.NAME AS name
-        FROM GACHA_CURRENCY C
-        ORDER BY C.NAME COLLATE NOCASE
-        LIMIT ?
-        """
-
-    return fetch_all(Currency, sql, (limit,))
+    return fetch_all(Currency, _SELECT_CURRENCY + "ORDER BY C.NAME COLLATE NOCASE LIMIT ?", (limit,))
 
 
 def get_currency_by_id(currency_id: int) -> Currency | None:
-    sql = """
-        SELECT C.GACHA_CURRENCY_ID AS id, C.NAME AS name
-        FROM GACHA_CURRENCY C
-        WHERE C.GACHA_CURRENCY_ID = ?
-        """
-
-    return fetch_one(Currency, sql, (currency_id,))
+    return fetch_one(Currency, _SELECT_CURRENCY + "WHERE C.GACHA_CURRENCY_ID = ?", (currency_id,))
 
 
 def add_currency(currency_name: str):

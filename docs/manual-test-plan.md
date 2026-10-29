@@ -169,7 +169,7 @@ Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply
 | 7.13 | U1: `~addcharacter ephraim`. Stop the bot, U2 tries to click (`This interaction failed`), start the bot, U2 clicks | The vote and U1's vote survived the restart; U2's click now passes it (button votes survive restarts) |
 | 7.14 | U1: `~addcharacter eirika`. Stop the bot, delete the vote message, start | Log: `The message of vote … is gone, dropping the vote` |
 | 7.15 | U1: `~addcharacter seliph`. Remove the bot's **Read Message History** in that channel, restart | Log warning `Can't read the message of vote …`; the vote is kept. Clicks still work. Restore the permission and restart: no warning |
-| 7.16 | U1: `~addcharacter alm`, U1 clicks. Stop the bot, set `votes_needed=1`, start | The vote passes at startup (`Character Alm has been added`) |
+| 7.16 | U1: `~addcharacter alm` (U1's vote counts already; don't click). Stop the bot, set `votes_needed=1`, start | The vote passes at startup (`Character Alm has been added`) |
 | 7.17 | U1: `~addcharacter celica`. Stop the bot, set `votes_needed=3`, start | At startup the message is re-rendered: `Vote to add Celica. Votes needed: 3` and `Vote (0/3)`. Put `votes_needed` back to 2 |
 | 7.18 | Set `votes_needed=1`, restart. U1: `~addcharacter lucius` | `Character Lucius has been added` straight away (no vote). Put it back to 2 |
 | 7.19 | Set `emoji=<:yourEmoji:id>` (a custom emoji in the server), restart, start a vote | The button shows the custom emoji |
@@ -354,7 +354,7 @@ and restart after each change. Don't commit that change. 13.1 needs a real gaunt
 | 13.1 | Unchanged code, during a real gauntlet round, at 5 past the hour | One message per matchup in the site's order, e.g. `Edelgard (Stronger)` / `123,456` / `Dimitri (Weaker)` / `98,765`, each with the buttons `Track Edelgard` and `Track Dimitri`. Outside a round: nothing |
 | 13.2 | `now` in round 1 | 4 matchup boxes, labelled Stronger and Weaker (or Same for both when neither is behind), a separator, and a `Track <name>` button per character |
 | 13.2a | Seed 200 trackers of a Weaker character, `now` in that round | The matchup is split over several boxes, every tracker mentioned once (and pinged), the buttons only on the last |
-| 13.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour Theodora is Weaker`. The next minute's message for that matchup has `<@U1>` after a separator, U1 is **pinged**, and U1 is pinged |
+| 13.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour Theodora is Weaker`. The next minute's message for that matchup has `<@U1>` after a separator, and U1 is **pinged** |
 | 13.4 | U1 clicks `Track Edelgard` under Theodora's matchup | Ephemeral `You now track Edelgard instead of Theodora`. The next messages no longer mention U1 there (Edelgard is Stronger) |
 | 13.5 | U1 clicks `Track Edelgard` again | Ephemeral `You no longer track Edelgard` |
 | 13.6 | U1 and U2 track the same Weaker character | The message mentions both, once each |

@@ -10,6 +10,7 @@ from fjormcord.bot.artping.model.character_vote import CharacterVote, VoteChanne
 from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.repository import character_vote_repository
 from fjormcord.bot.artping.service import character_service  # A module: it imports this one too
+from fjormcord.bot.artping.util.interaction_util import walk_components
 from fjormcord.bot.artping.util.user_util import is_administrator
 from fjormcord.bot.artping.view import subscribe_view, vote_view  # Modules: vote_view imports this one too
 from fjormcord.bot.artping.view.layout import to_view
@@ -237,13 +238,10 @@ async def _shows_vote_button(vote_message: discord.Message) -> bool:
     except discord.HTTPException as e:
         logging.warning("Failed to fetch vote message %s. %s", vote_message.id, e)
         return False
-    components = list(current.components)
-    while components:
-        component = components.pop()
-        if getattr(component, "custom_id", None) == vote_view.VOTE_BUTTON_ID:
-            return True
-        components += getattr(component, "children", [])
-    return False
+    return any(
+        getattr(component, "custom_id", None) == vote_view.VOTE_BUTTON_ID
+        for component in walk_components(current.components)
+    )
 
 
 async def _edit(vote_message: discord.Message, layout: Layout):

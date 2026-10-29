@@ -1,4 +1,5 @@
 import asyncio
+import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -244,6 +245,17 @@ def test_nothing_is_posted_outside_a_round(monkeypatch, now):
 def test_failure_is_logged_and_skipped(monkeypatch, caplog, page):
     assert run_task(monkeypatch, utc(10, 2, 15, 5), page=page).sent == []
     assert "Voting Gauntlet scores could not be read" in caplog.text
+
+
+def test_any_other_failure_is_logged_and_skipped(monkeypatch, caplog):
+    # discord.py's loop only survives network errors; anything else, e.g. a database error, must not stop it
+    def fail(tournament_id):
+        raise sqlite3.OperationalError("database is locked")
+
+    monkeypatch.setattr(voting_gauntlet_service, "start_gauntlet", fail)
+
+    assert run_task(monkeypatch, utc(10, 2, 15, 5)).sent == []
+    assert "Posting the Voting Gauntlet scores failed" in caplog.text
 
 
 def test_unknown_channel_is_logged(monkeypatch, caplog):

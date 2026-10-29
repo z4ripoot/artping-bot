@@ -26,6 +26,14 @@ def start_coliseum_notification(client: discord.Client):
 
 @tasks.loop(time=[ONE_HOUR_BEFORE_CLOSING_TIME, FIVE_HOUR_BEFORE_CLOSING_TIME])
 async def task_coliseum_before_closing_notification(client: discord.Client):
+    # The loop only survives network errors: any other exception, e.g. a missing permission, would stop it for good
+    try:
+        await _send_notification(client)
+    except Exception:
+        logging.exception("Sending the Coliseum notification failed. Task will be skipped")
+
+
+async def _send_notification(client: discord.Client):
     now = datetime.now(timezone.utc)
     if now.weekday() == 0:
         channel = get_task_channel(client, config.read_settings().coliseum_channel_id)

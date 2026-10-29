@@ -1,10 +1,10 @@
-import logging
 import re
 
 import discord
 
 from fjormcord.bot.artping.model.voting_gauntlet import Entrant
 from fjormcord.bot.artping.service import voting_gauntlet_service
+from fjormcord.bot.artping.util.interaction_util import answer_click
 
 
 class TrackButton(
@@ -31,14 +31,14 @@ class TrackButton(
         return cls(int(match["tournament_id"]), match["name"], match["opponent"])
 
     async def callback(self, interaction: discord.Interaction):
-        try:
-            reply = voting_gauntlet_service.toggle_tracking(
+        await answer_click(
+            self,
+            interaction,
+            lambda: voting_gauntlet_service.toggle_tracking(
                 self.tournament_id, str(interaction.user.id), self.name, self.opponent
-            )
-        except Exception:
-            logging.exception("Tracking %s in Voting Gauntlet %s failed", self.name, self.tournament_id)
-            reply = "Something went wrong while tracking"
-        await interaction.response.send_message(reply, ephemeral=True)
+            ),
+            "Something went wrong while tracking",
+        )
 
 
 def track_buttons(tournament_id: int, matchup: tuple[Entrant, Entrant]) -> tuple[TrackButton, TrackButton]:

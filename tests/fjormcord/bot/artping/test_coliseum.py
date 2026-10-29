@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import discord
 
 from fjormcord.bot.artping import coliseum
-from tests.fakes import FakeChannel, use_settings
+from tests.fakes import FakeChannel, http_error, use_settings
 
 
 def fake_datetime(utc_now, host_offset):
@@ -23,8 +23,8 @@ def fake_datetime(utc_now, host_offset):
 CHANNEL_ID = 123
 
 
-def run_coliseum_task(monkeypatch, utc_now, host_offset=timedelta(hours=2), channel_id=CHANNEL_ID):
-    channel = FakeChannel()
+def run_coliseum_task(monkeypatch, utc_now, host_offset=timedelta(hours=2), channel_id=CHANNEL_ID, channel=None):
+    channel = channel or FakeChannel()
     client = SimpleNamespace(get_channel=lambda channel_id: channel if channel_id == CHANNEL_ID else None)
     use_settings(monkeypatch, coliseum_channel_id=channel_id)
     monkeypatch.setattr(coliseum, "datetime", fake_datetime(utc_now, host_offset))
@@ -53,6 +53,17 @@ def test_coliseum_notification_skipped_for_unknown_channel(monkeypatch, caplog):
 
     assert sent == []
     assert "456" in caplog.text
+
+
+def test_coliseum_notification_failure_is_logged_and_skipped(monkeypatch, caplog):
+    # discord.py's loop only survives network errors; a missing permission must not stop the weekly reminder
+    class ForbiddenChannel(FakeChannel):
+        async def send(self, content=None, allowed_mentions=None, view=None):
+            raise http_error(discord.Forbidden, 403)
+
+    run_coliseum_task(monkeypatch, datetime(2026, 10, 19, 22, 0, tzinfo=timezone.utc), channel=ForbiddenChannel())
+
+    assert "Sending the Coliseum notification failed" in caplog.text
 
 
 def test_coliseum_notification_not_started_without_channel_id(monkeypatch, caplog):
