@@ -1,4 +1,5 @@
 from fjormcord.bot.artping.legacy.handler.character_handlers import add_character, check_character, remove_character
+from fjormcord.bot.artping.repository import alias_repository, character_repository
 from fjormcord.bot.artping.repository.art_ping_repository import add_ping
 from fjormcord.bot.artping.repository.character_repository import get_character
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
@@ -16,8 +17,7 @@ def test_add_character_rejects_duplicates_case_insensitively(client):
 
 
 def test_remove_character_cascades_to_pings(client, database):
-    reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
-    add_ping(get_character("Lucina").id, "1")
+    add_ping(character_repository.add_character("Lucina"), "1")
 
     assert (
         reply(remove_character, client, make_message("~removecharacter lucina")) == "Character Lucina has been removed"
@@ -26,8 +26,7 @@ def test_remove_character_cascades_to_pings(client, database):
 
 
 def test_check_character_lists_usernames_and_survives_unknown_users(client):
-    reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
-    character_id = get_character("Lucina").id
+    character_id = character_repository.add_character("Lucina")
     add_ping(character_id, "1")
     add_ping(character_id, "99")
 
@@ -36,9 +35,8 @@ def test_check_character_lists_usernames_and_survives_unknown_users(client):
     assert out.texts == ("### Lucina's pings", "Alice\nUnknown user (99)")
 
 
-def test_add_character_rejects_an_alias(client, database):
-    reply(add_character, client, make_message("~addcharacter Furina", administrator=True))
-    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+def test_add_character_rejects_an_alias(client):
+    alias_repository.add_alias(character_repository.add_character("Furina"), "Focalors")
 
     assert (
         reply(add_character, client, make_message("~addcharacter focalors", administrator=True))
@@ -61,8 +59,7 @@ def test_unknown_character_is_named_normalized(client):
 
 
 def test_remove_character_by_alias_cascades_to_aliases(client, database):
-    reply(add_character, client, make_message("~addcharacter Furina", administrator=True))
-    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+    alias_repository.add_alias(character_repository.add_character("Furina"), "Focalors")
 
     assert (
         reply(remove_character, client, make_message("~removecharacter Focalors"))
@@ -71,11 +68,10 @@ def test_remove_character_by_alias_cascades_to_aliases(client, database):
     assert database.execute("SELECT COUNT(*) FROM ALIAS").fetchone()[0] == 0
 
 
-def test_check_character_lists_aliases(client, database):
-    reply(add_character, client, make_message("~addcharacter Furina", administrator=True))
-    character_id = get_character("Furina").id
-    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (character_id,))
-    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Archon')", (character_id,))
+def test_check_character_lists_aliases(client):
+    character_id = character_repository.add_character("Furina")
+    alias_repository.add_alias(character_id, "Focalors")
+    alias_repository.add_alias(character_id, "Archon")
     add_ping(character_id, "1")
 
     out = reply(check_character, client, make_message("~checkcharacter focalors"))
@@ -84,7 +80,7 @@ def test_check_character_lists_aliases(client, database):
 
 
 def test_check_character_without_subscribers_says_so(client):
-    reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
+    character_repository.add_character("Lucina")
 
     out = reply(check_character, client, make_message("~checkcharacter lucina"))
 
@@ -92,8 +88,7 @@ def test_check_character_without_subscribers_says_so(client):
 
 
 def test_check_character_of_many_subscribers_has_pages(client):
-    reply(add_character, client, make_message("~addcharacter Lucina", administrator=True))
-    character_id = get_character("Lucina").id
+    character_id = character_repository.add_character("Lucina")
     for user_id in range(1, 13):
         add_ping(character_id, str(user_id))
 
@@ -114,7 +109,7 @@ def test_add_character_rejects_spaces_with_underscore_hint(client):
 
 
 def test_remove_and_check_character_reject_spaces(client):
-    reply(add_character, client, make_message("~addcharacter Black", administrator=True))
+    character_repository.add_character("Black")
 
     assert reply(remove_character, client, make_message("~removecharacter Black Knight")) == MESSAGE_ONE_NAME_ONLY
     assert reply(check_character, client, make_message("~checkcharacter Black Knight")) == MESSAGE_ONE_NAME_ONLY

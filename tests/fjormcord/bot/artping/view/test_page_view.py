@@ -7,7 +7,15 @@ from fjormcord.bot.artping.repository import art_ping_repository, character_repo
 from fjormcord.bot.artping.service import art_ping_service, character_service, currency_service
 from fjormcord.bot.artping.view.layout import to_view
 from fjormcord.bot.artping.view.page_view import PageButton, page_buttons
-from tests.fakes import FakeChannel, FakeClient, FakeInteraction, button_labels, http_error
+from tests.fakes import (
+    FakeChannel,
+    FakeClient,
+    FakeInteraction,
+    after_restart,
+    button_labels,
+    http_error,
+    items_of_type,
+)
 
 
 @pytest.fixture
@@ -25,26 +33,23 @@ def client():
     return FakeClient({user_id: f"User{user_id}" for user_id in range(1, 26)})
 
 
-def post_scoreboard(client, page=1):
-    layout = asyncio.run(currency_service.get_scoreboard(client, "Orbs", page))
+def post(layout):
     return asyncio.run(FakeChannel().send(view=to_view(layout)))
 
 
+def post_scoreboard(client, page=1):
+    return post(asyncio.run(currency_service.get_scoreboard(client, "Orbs", page)))
+
+
 def page_items(message):
-    return [item for item in message.view.walk_children() if isinstance(item, PageButton)]
-
-
-def button_after_restart(button):
-    # Rebuilt from its custom_id, as discord.py does for a click on a message sent before a restart
-    match = PageButton.__discord_ui_compiled_template__.fullmatch(button.custom_id)
-    return asyncio.run(PageButton.from_custom_id(FakeInteraction(), button.item, match))
+    return items_of_type(message.view, PageButton)
 
 
 def click(client, message, label, user_id=100):
     # Clicks the button with this label; returns what was sent in answer, the clicked message is edited in place
     button = next(button for button in page_items(message) if button.item.label == label)
     interaction = FakeInteraction(user_id, client=client, message=message)
-    asyncio.run(button_after_restart(button).callback(interaction))
+    asyncio.run(after_restart(button).callback(interaction))
     return interaction.sent
 
 
@@ -132,10 +137,6 @@ def test_failed_click_is_answered_privately(client, orbs, monkeypatch, caplog):
     assert "database is locked" in caplog.text
 
 
-def post(layout):
-    return asyncio.run(FakeChannel().send(view=to_view(layout)))
-
-
 def test_next_turns_a_ping_list_to_the_next_page():
     client = FakeClient({1: "Alice"})
     for number in range(1, 13):
@@ -181,7 +182,7 @@ def test_click_whose_answer_fails_is_only_logged(client, orbs, caplog):
 
     interaction.response.defer = expired
     interaction.response.send_message = expired
-    button = button_after_restart(page_items(message)[1])
+    button = after_restart(page_items(message)[1])
 
     asyncio.run(button.callback(interaction))
 

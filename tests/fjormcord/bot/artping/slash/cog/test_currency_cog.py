@@ -73,20 +73,12 @@ def test_scoreboard_is_sent_with_its_buttons(cog):
     assert button_labels(interaction.channel.last_message().view) == ["◀ Previous", "Next ▶"]
 
 
-def test_admin_currency_commands_are_admin_only(cog):
-    for command in (cog.add_currency, cog.remove_currency):
-        assert command.default_permissions.administrator
-        assert command.guild_only
-    refused = FakeInteraction()
-    added = FakeInteraction(administrator=True)
+def test_add_and_remove_currency(cog):
+    added, removed = FakeInteraction(administrator=True), FakeInteraction(administrator=True)
 
-    invoke(cog.add_currency, refused, cog, currency="Orbs")
     invoke(cog.add_currency, added, cog, currency="Orbs")
-    removed = FakeInteraction(administrator=True)
     invoke(cog.remove_currency, removed, cog, currency="orbs")
 
-    assert refused.sent[0].content == "This command is for admins only"
-    assert refused.sent[0].ephemeral is True
     assert added.sent[0].content == "Currency Orbs has been added"
     assert removed.sent[0].content == "Currency Orbs has been removed"
     assert currency_repository.get_currency_names() == []

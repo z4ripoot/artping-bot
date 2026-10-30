@@ -1,11 +1,8 @@
-from dataclasses import replace
-
 import pytest
 
-from fjormcord.bot.artping import config
 from fjormcord.bot.artping.legacy.handler.character_handlers import add_character
 from fjormcord.bot.artping.model.character_vote import CharacterVote
-from fjormcord.bot.artping.repository import character_vote_repository
+from fjormcord.bot.artping.repository import alias_repository, character_vote_repository
 from fjormcord.bot.artping.repository.art_ping_repository import get_art_ping_users
 from fjormcord.bot.artping.repository.character_repository import get_character
 from fjormcord.bot.artping.repository.character_vote_repository import count_voters, get_votes
@@ -18,6 +15,7 @@ from tests.fakes import (
     click,
     make_message,
     reply,
+    use_settings,
 )
 
 EMOJI = "⭐"
@@ -26,11 +24,7 @@ ADMIN_ID = 9
 
 
 def set_votes_needed(monkeypatch, votes_needed):
-    monkeypatch.setattr(
-        config,
-        "_settings",
-        replace(config.read_settings(), character_votes_needed=votes_needed, character_vote_emoji=EMOJI),
-    )
+    use_settings(monkeypatch, character_votes_needed=votes_needed, character_vote_emoji=EMOJI)
 
 
 @pytest.fixture(autouse=True)
@@ -213,15 +207,16 @@ def test_click_on_a_dropped_vote_removes_the_button(client, channel):
     vote_message = start_vote(client, channel, "Lucina")
     drop_deleted_vote(str(vote_message.id))
 
+    assert get_votes() == []
     assert click(client, vote_message, 1) == "This vote has already been closed"
     assert vote_message.content == "This vote has already been closed"
     assert button_labels(vote_message.view) == []
 
 
-def test_click_on_a_vote_for_a_name_that_became_an_alias_drops_it(client, channel, database):
+def test_click_on_a_vote_for_a_name_that_became_an_alias_drops_it(client, channel):
     vote_message = start_vote(client, channel, "Focalors")
     reply(add_character, client, make_message("~addcharacter Furina", administrator=True))
-    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+    alias_repository.add_alias(get_character("Furina").id, "Focalors")
 
     assert click(client, vote_message, 1) == "Focalors is already an alias of Furina"
     assert vote_message.content == "Focalors is already an alias of Furina"
@@ -249,14 +244,6 @@ def test_non_admin_adds_directly_when_fewer_than_two_votes_are_needed(client, ch
         "Character Lucina has been added",
     )
     assert channel.sent == []
-    assert get_votes() == []
-
-
-def test_deleted_vote_message_drops_the_vote(client, channel):
-    vote_message = start_vote(client, channel, "Lucina")
-
-    drop_deleted_vote(str(vote_message.id))
-
     assert get_votes() == []
 
 

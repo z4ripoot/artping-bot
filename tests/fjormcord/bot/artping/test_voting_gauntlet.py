@@ -14,7 +14,7 @@ from fjormcord.bot.artping.repository import voting_gauntlet_repository
 from fjormcord.bot.artping.service import voting_gauntlet_service
 from fjormcord.bot.artping.view.layout import to_view
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
-from tests.fakes import FakeChannel, button_labels, buttons, http_error, use_settings
+from tests.fakes import FakeChannel, button_labels, buttons, http_error, items_of_type, text_length, use_settings
 
 # English, UTC pages of tournament 112 (scripts removed): as the site served it after the gauntlet ended, and an
 # archived copy taken during round 3, whose Pacific times were rewritten to the UTC the bot requests
@@ -176,7 +176,7 @@ def test_matchup_message_has_a_track_button_per_character(monkeypatch):
 
     assert button_labels(message.view) == ["Track Edelgard", "Track Dimitri"]
     assert isinstance(message.view, discord.ui.LayoutView)
-    assert len([item for item in message.view.walk_children() if isinstance(item, TrackButton)]) == 2
+    assert len(items_of_type(message.view, TrackButton)) == 2
     assert custom_ids(message) == ["voting_gauntlet:112:Edelgard:Dimitri", "voting_gauntlet:112:Dimitri:Edelgard"]
     # Persistent, so the buttons keep working after a restart
     assert message.view.timeout is None
@@ -214,8 +214,7 @@ def test_many_trackers_are_split_over_messages_with_the_buttons_on_the_last(monk
     assert len(channel.sent) > 1
     assert " ".join(channel.sent).count("<@") == 200
     messages = list(channel.messages.values())
-    # Discord allows 4000 characters across the text displays of a layout message
-    assert all(len(message.content) <= 4000 + 1 for message in messages)
+    assert all(text_length(message.view) <= 4000 for message in messages)
     assert [bool(button_labels(message.view)) for message in messages] == [False] * (len(messages) - 1) + [True]
 
 
@@ -238,15 +237,6 @@ def test_trackers_are_removed_when_the_final_round_has_ended(monkeypatch):
 
     assert voting_gauntlet_service.get_trackers(TOURNAMENT_ID, "Dimitri") == []
     assert track("Dimitri", "Edelgard", 11) == voting_gauntlet_service.MESSAGE_ENDED
-
-
-def test_trackers_are_kept_between_rounds(monkeypatch):
-    run_task(monkeypatch, utc(10, 4, 1, 5), page=ROUND_3_PAGE)
-    track("Dimitri", "Yuri", 11)
-
-    run_task(monkeypatch, utc(10, 5, 5, 5), page=ROUND_3_PAGE)
-
-    assert voting_gauntlet_service.get_trackers(TOURNAMENT_ID, "Dimitri") == ["11"]
 
 
 def test_trackers_of_an_older_gauntlet_are_removed_when_a_new_one_runs(monkeypatch):

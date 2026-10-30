@@ -4,22 +4,16 @@ from fjormcord.bot.artping.model.character import Character
 from fjormcord.bot.artping.repository import alias_repository, art_ping_repository, character_repository
 from fjormcord.bot.artping.service import art_ping_service
 from fjormcord.bot.artping.view.subscribe_view import SubscribeButton
-from tests.fakes import FakeInteraction
+from tests.fakes import FakeInteraction, after_restart
 
 
 def add_character(name):
     return Character(character_repository.add_character(name), name)
 
 
-def button_after_restart(button):
-    # Rebuilt from its custom_id, as discord.py does for a click on a message sent before a restart
-    match = SubscribeButton.__discord_ui_compiled_template__.fullmatch(button.custom_id)
-    return asyncio.run(SubscribeButton.from_custom_id(FakeInteraction(), button.item, match))
-
-
 def click(button, user_id=7):
     interaction = FakeInteraction(user_id)
-    asyncio.run(button_after_restart(button).callback(interaction))
+    asyncio.run(after_restart(button).callback(interaction))
     return interaction.sent
 
 

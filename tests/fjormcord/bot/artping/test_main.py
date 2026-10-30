@@ -1,13 +1,12 @@
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
 
 from fjormcord.bot.artping import __main__ as main_module
 from fjormcord.bot.artping import config, database
-from fjormcord.bot.artping.config import Settings
+from tests.fakes import use_settings
 
 
 class RecordingClient:
@@ -25,26 +24,8 @@ def reset_recording_client(monkeypatch):
     monkeypatch.setattr(RecordingClient, "started_with", None)
 
 
-def use_token(monkeypatch, token):
-    settings = Settings(
-        discord_token=token,
-        database_path=Path("test.db"),
-        cooldown_seconds=1,
-        autocomplete_max_choices=20,
-        coliseum_channel_id=None,
-        divine_games_channel_id=None,
-        voting_gauntlet_channel_id=None,
-        guild_id=None,
-        art_ping_slash_max_characters=10,
-        character_votes_needed=5,
-        character_vote_emoji="⭐",
-        emoji={},
-    )
-    monkeypatch.setattr(config, "read_settings", lambda: settings)
-
-
 def test_missing_token_exits_with_setup_hint(monkeypatch):
-    use_token(monkeypatch, "")
+    use_settings(monkeypatch, discord_token="")
     monkeypatch.setattr(main_module, "ArtPingClient", RecordingClient)
 
     with pytest.raises(SystemExit, match="config.ini"):
@@ -82,7 +63,7 @@ def test_missing_config_is_reported_before_any_module_reads_it(tmp_path):
 
 def test_database_is_opened_before_connecting_to_discord(monkeypatch):
     # A failing migration then stops the bot at startup instead of failing every command
-    use_token(monkeypatch, "secret")
+    use_settings(monkeypatch, discord_token="secret")
     monkeypatch.setattr(main_module, "ArtPingClient", RecordingClient)
 
     def broken_database():

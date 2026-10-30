@@ -57,6 +57,8 @@ def test_scoreboard_orders_by_amount(client, orbs):
     out = reply(get_scoreboard, client, make_message("~scoreboard orbs"))
 
     assert out.texts == ("### Scoreboard for Orbs", "1. Bob (30)\n2. Alice (10)")
+    # One page and one currency: no buttons, no dropdown
+    assert out.rows == ()
 
 
 def test_currency_commands_reject_spaces_in_names(client):

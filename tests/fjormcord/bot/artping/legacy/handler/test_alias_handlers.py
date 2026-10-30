@@ -20,10 +20,7 @@ def test_add_alias_normalizes_the_alias(client):
     assert (
         reply(add_alias, client, make_message("~addalias Furina FOCALORS")) == "Alias Focalors has been added to Furina"
     )
-    assert (
-        reply(set_primary_name, client, make_message("~setprimaryname focalors"))
-        == "Focalors is now the primary name; Furina has become an alias"
-    )
+    assert alias_repository.get_aliases(get_character("Furina").id) == ["Focalors"]
 
 
 def test_add_alias_for_unknown_character(client):
@@ -94,7 +91,7 @@ def test_remove_alias_rejects_the_character_name(client):
 def test_set_primary_name_swaps_the_alias_and_the_name(client):
     add_character("Furina")
     character_id = get_character("Furina").id
-    alias_repository.add_alias(get_character("Furina").id, "Focalors")
+    alias_repository.add_alias(character_id, "Focalors")
 
     assert (
         reply(set_primary_name, client, make_message("~setprimaryname focalors"))

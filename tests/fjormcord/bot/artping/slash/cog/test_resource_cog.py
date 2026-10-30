@@ -53,24 +53,13 @@ def test_resource_name_with_space_is_refused(cog):
 
 
 def test_set_list_and_remove_resource(cog):
-    refused, added, listed, removed = (
-        FakeInteraction(administrator=False),
-        FakeInteraction(administrator=True),
-        FakeInteraction(),
-        FakeInteraction(administrator=True),
-    )
+    added, listed, removed = FakeInteraction(administrator=True), FakeInteraction(), FakeInteraction(administrator=True)
 
-    invoke(cog.set_resource, refused, cog, name="hof", link="https://example.com")
     invoke(cog.set_resource, added, cog, name="hof", link="https://example.com")
     invoke(cog.resources, listed, cog)
     invoke(cog.remove_resource, removed, cog, name="HOF")
 
-    assert refused.sent[0].content == "This command is for admins only"
-    assert refused.sent[0].ephemeral is True
     assert added.response.deferred == [{}]
     assert added.sent[0].content == "Resource hof has been set"
     assert listed.sent[0].content == "### Resources\nhof\nPost one with /resource"
     assert removed.sent[0].content == "Resource hof has been removed"
-    for command in (cog.set_resource, cog.remove_resource):
-        assert command.default_permissions.administrator
-        assert command.guild_only

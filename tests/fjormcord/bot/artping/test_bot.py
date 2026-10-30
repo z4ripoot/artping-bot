@@ -1,5 +1,4 @@
 import asyncio
-from dataclasses import replace
 from types import SimpleNamespace
 
 import discord
@@ -14,13 +13,15 @@ from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.legacy import commands
 from fjormcord.bot.artping.legacy.commands import Command
 from fjormcord.bot.artping.model.layout import Layout
+from fjormcord.bot.artping.model.resource import Resource
+from fjormcord.bot.artping.repository import resource_repository
 from fjormcord.bot.artping.view.layout import layout_text
 from fjormcord.bot.artping.view.page_view import PageButton
 from fjormcord.bot.artping.view.scoreboard_view import CurrencySelect
 from fjormcord.bot.artping.view.subscribe_view import SubscribeButton
 from fjormcord.bot.artping.view.vote_view import VoteButton
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
-from tests.fakes import FakeClock, button_labels, make_message
+from tests.fakes import FakeClock, button_labels, make_message, text_length, use_settings
 
 # ~artping Lucina, with U1 subscribed
 LUCINA_PING = "### Lucina\n<@1>\nWant to be pinged for Lucina? Use ~addping Lucina"
@@ -77,14 +78,15 @@ def test_unknown_resource_gets_no_reply(bot):
     assert dispatch(bot, make_message("~faq")) == []
 
 
-def test_command_wins_over_a_resource_of_the_same_name(bot, database):
-    database.execute("INSERT INTO RESOURCE (NAME, CONTENT, SOURCE) VALUES ('checkping', 'Resource', 'x')")
+def test_command_wins_over_a_resource_of_the_same_name(bot):
+    # Stored directly, as set_resource refuses command names
+    resource_repository.set_resource(Resource("checkping", "Resource", "x"))
 
     assert dispatch(bot, make_message("~checkping")) == ["You are not subscribed to any characters"]
 
 
-def test_long_resource_is_split_into_messages_within_discord_limit(bot, database):
-    database.execute("INSERT INTO RESOURCE (NAME, CONTENT, SOURCE) VALUES ('hof', ?, 'x')", ("line\n" * 1000,))
+def test_long_resource_is_split_into_messages_within_discord_limit(bot):
+    resource_repository.set_resource(Resource("hof", "line\n" * 1000, "x"))
 
     sent = dispatch(bot, make_message("~hof"))
 
@@ -102,7 +104,7 @@ def test_add_character_by_non_admin_posts_a_vote(bot):
     assert vote.startswith("Vote to add Lucina. Votes needed: ")
 
 
-def test_setup_adds_the_vote_cog_and_the_buttons(bot, monkeypatch):
+def test_setup_adds_the_cogs_and_the_buttons_then_syncs(bot, monkeypatch):
     synced = []
 
     async def sync_commands(tree, guild_id):
@@ -135,19 +137,18 @@ def test_admin_command_ignored_in_dms(bot):
     assert dispatch(bot, message) == []
 
 
+def replace_checkping(monkeypatch, handler):
+    command = commands.COMMANDS_BY_NAME["~checkping"]
+    monkeypatch.setitem(commands.COMMANDS_BY_NAME, "~checkping", Command(command.name, handler, command.description))
+
+
 def test_failing_command_still_replies(bot, monkeypatch):
     def broken(client, message):
         raise RuntimeError("database is gone")
 
-    command = commands.COMMANDS_BY_NAME["~checkping"]
-    monkeypatch.setitem(commands.COMMANDS_BY_NAME, "~checkping", Command(command.name, broken, command.description))
+    replace_checkping(monkeypatch, broken)
 
     assert dispatch(bot, make_message("~checkping")) == ["Something went wrong while running ~checkping"]
-
-
-def replace_checkping(monkeypatch, handler):
-    command = commands.COMMANDS_BY_NAME["~checkping"]
-    monkeypatch.setitem(commands.COMMANDS_BY_NAME, "~checkping", Command(command.name, handler, command.description))
 
 
 def test_layout_reply_is_sent_as_a_view(bot, monkeypatch):
@@ -169,10 +170,7 @@ def test_command_error_with_a_layout_is_sent_as_the_layout(bot, monkeypatch):
     assert layout_text(message.channel.last_message().view) == "No\nHint"
 
 
-# The alias commands only reply that aliases aren't supported yet
-COMMANDS_WITH_ARGUMENTS = [
-    command for command in commands.COMMANDS if command.usage and command.name not in ("~addalias", "~removealias")
-]
+COMMANDS_WITH_ARGUMENTS = [command for command in commands.COMMANDS if command.usage]
 
 
 @pytest.mark.parametrize("command", COMMANDS_WITH_ARGUMENTS, ids=lambda command: command.name)
@@ -210,10 +208,7 @@ def test_long_reply_is_split_into_messages_within_discord_limit(bot):
     sent = dispatch(bot, message)
 
     assert len(sent) > 1
-    # Discord allows 4000 characters across the text displays of a layout message
-    views = [sent_message.view for sent_message in message.channel.messages.values()]
-    lengths = [sum(len(item.content) for item in view.walk_children() if hasattr(item, "content")) for view in views]
-    assert all(length <= 4000 for length in lengths)
+    assert all(text_length(sent_message.view) <= 4000 for sent_message in message.channel.messages.values())
     assert all(f"<@{user_id}>" in " ".join(sent) for user_id in user_ids)
 
 
@@ -292,8 +287,7 @@ def test_admins_are_not_held_back_by_cooldown(bot, clock, lucina):
 
 
 def test_cooldown_follows_the_configured_length(monkeypatch):
-    settings = replace(config.read_settings(), cooldown_seconds=30)
-    monkeypatch.setattr(config, "read_settings", lambda: settings)
+    use_settings(monkeypatch, cooldown_seconds=30)
     bot = ArtPingClient(intents=discord.Intents.default())
     dispatch(bot, make_message("~checkping", user_id=2))
 

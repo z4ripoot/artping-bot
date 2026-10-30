@@ -2,16 +2,10 @@ import asyncio
 
 from fjormcord.bot.artping.model.voting_gauntlet import Entrant
 from fjormcord.bot.artping.service import voting_gauntlet_service
-from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton, track_buttons
-from tests.fakes import FakeInteraction
+from fjormcord.bot.artping.view.voting_gauntlet_view import track_buttons
+from tests.fakes import FakeInteraction, after_restart
 
 MATCHUP = (Entrant("Edelgard", 2, behind=False), Entrant("Dimitri", 1, behind=True))
-
-
-def button_after_restart(button):
-    # Rebuilt from its custom_id, as discord.py does for a click on a message sent before a restart
-    match = TrackButton.__discord_ui_compiled_template__.fullmatch(button.custom_id)
-    return asyncio.run(TrackButton.from_custom_id(FakeInteraction(), button.item, match))
 
 
 def click(button, user_id=1):
@@ -25,7 +19,7 @@ def test_a_button_per_character_in_the_site_order():
 
 
 def test_button_is_rebuilt_from_its_custom_id():
-    button = button_after_restart(track_buttons(112, MATCHUP)[1])
+    button = after_restart(track_buttons(112, MATCHUP)[1])
 
     assert (button.tournament_id, button.name, button.opponent) == (112, "Dimitri", "Edelgard")
     assert button.item.label == "Track Dimitri"
@@ -34,7 +28,7 @@ def test_button_is_rebuilt_from_its_custom_id():
 def test_click_tracks_the_character_and_answers_privately():
     voting_gauntlet_service.start_gauntlet(112)
 
-    sent = click(button_after_restart(track_buttons(112, MATCHUP)[1]), user_id=7)
+    sent = click(after_restart(track_buttons(112, MATCHUP)[1]), user_id=7)
 
     assert sent == [("You now track Dimitri. You'll be pinged every hour Dimitri is Weaker", True, None)]
     assert voting_gauntlet_service.get_trackers(112, "Dimitri") == ["7"]

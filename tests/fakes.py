@@ -5,10 +5,12 @@ from dataclasses import replace
 from datetime import datetime
 from types import SimpleNamespace
 from typing import NamedTuple
+from unittest.mock import AsyncMock, patch
 
 import discord
 
 from fjormcord.bot.artping import config
+from fjormcord.bot.artping.bot import ArtPingClient
 from fjormcord.bot.artping.cooldowns import Cooldowns
 from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.service import character_vote_service
@@ -50,6 +52,31 @@ def select_options(view):
     selects = [getattr(item, "item", item) for item in view.walk_children()]
     [select] = [item for item in selects if isinstance(item, discord.ui.Select)]
     return [option.label for option in select.options]
+
+
+def items_of_type(view, item_type):
+    # The view's controls of this type, in order; DynamicItems are matched by their own class
+    return [item for item in view.walk_children() if isinstance(item, item_type)]
+
+
+def text_length(view):
+    # The characters across a layout's text displays, of which Discord allows 4000 per message
+    return sum(len(item.content) for item in view.walk_children() if isinstance(item, discord.ui.TextDisplay))
+
+
+def after_restart(item):
+    # A DynamicItem rebuilt from its custom_id, as discord.py does for a click on a message sent before a restart
+    item_type = type(item)
+    match = item_type.__discord_ui_compiled_template__.fullmatch(item.custom_id)
+    return asyncio.run(item_type.from_custom_id(FakeInteraction(), item.item, match))
+
+
+def registered_slash_commands():
+    # Every slash command, as setup_hook registers them (without syncing), so no test keeps its own list of cogs
+    bot = ArtPingClient(intents=discord.Intents.none())
+    with patch("fjormcord.bot.artping.bot.sync_commands", AsyncMock()):
+        asyncio.run(bot.setup_hook())
+    return bot.tree.get_commands()
 
 
 def use_settings(monkeypatch, **changes):

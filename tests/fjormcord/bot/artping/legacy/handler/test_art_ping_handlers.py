@@ -2,6 +2,7 @@ import asyncio
 
 from fjormcord.bot.artping.legacy.dispatch import handle_message
 from fjormcord.bot.artping.legacy.handler.art_ping_handlers import add_ping, check_ping, do_art_ping, remove_ping
+from fjormcord.bot.artping.repository import alias_repository
 from fjormcord.bot.artping.repository.art_ping_repository import add_ping as insert_ping
 from fjormcord.bot.artping.repository.character_repository import add_character, get_character
 from fjormcord.bot.artping.util.message_util import MESSAGE_ONE_NAME_ONLY
@@ -39,7 +40,7 @@ def test_art_ping_reports_missing_characters_in_same_reply(client):
     add_character("Lucina")
     subscribe("Lucina", 1)
 
-    out = do_art_ping(client, make_message("~artping Lucina Marth"))
+    out = reply(do_art_ping, client, make_message("~artping Lucina Marth"))
 
     assert out.texts == (
         "### Lucina\nNo character entry for Marth\n<@1>",
@@ -50,7 +51,7 @@ def test_art_ping_reports_missing_characters_in_same_reply(client):
 def test_art_ping_hint_for_an_admin_adds_directly(client):
     add_character("Lucina")
 
-    out = do_art_ping(client, make_message("~artping Lucina Marth", administrator=True))
+    out = reply(do_art_ping, client, make_message("~artping Lucina Marth", administrator=True))
 
     assert out.texts[1] == "Want to be pinged for Lucina? Use ~addping Lucina\nUse ~addcharacter Marth to add it"
 
@@ -59,7 +60,7 @@ def test_art_ping_hint_adds_directly_when_voting_is_off(client, monkeypatch):
     use_settings(monkeypatch, character_votes_needed=1)
     add_character("Lucina")
 
-    out = do_art_ping(client, make_message("~artping Lucina Marth"))
+    out = reply(do_art_ping, client, make_message("~artping Lucina Marth"))
 
     assert out.texts[1] == "Want to be pinged for Lucina? Use ~addping Lucina\nUse ~addcharacter Marth to add it"
 
@@ -161,9 +162,9 @@ def test_add_and_remove_ping_hint_at_underscores_for_several_words(client):
     assert reply(remove_ping, client, make_message("~removeping Black Knight")) == MESSAGE_ONE_NAME_ONLY
 
 
-def test_art_ping_by_alias_uses_the_character_name(client, database):
+def test_art_ping_by_alias_uses_the_character_name(client):
     add_character("Furina")
-    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+    alias_repository.add_alias(get_character("Furina").id, "Focalors")
     subscribe("Furina", 1)
 
     assert reply(do_art_ping, client, make_message("~artping focalors")).texts == (
@@ -172,17 +173,17 @@ def test_art_ping_by_alias_uses_the_character_name(client, database):
     )
 
 
-def test_art_ping_by_name_and_alias_pings_once(client, database):
+def test_art_ping_by_name_and_alias_pings_once(client):
     add_character("Furina")
-    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+    alias_repository.add_alias(get_character("Furina").id, "Focalors")
     subscribe("Furina", 1)
 
     assert reply(do_art_ping, client, make_message("~artping Furina Focalors")).texts[0] == "### Furina\n<@1>"
 
 
-def test_add_ping_by_alias(client, database):
+def test_add_ping_by_alias(client):
     add_character("Furina")
-    database.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (?, 'Focalors')", (get_character("Furina").id,))
+    alias_repository.add_alias(get_character("Furina").id, "Focalors")
 
     assert reply(add_ping, client, make_message("~addping Focalors")) == "Ping for Furina has been added"
     assert reply(remove_ping, client, make_message("~removeping Furina")) == "Ping for Furina has been removed"

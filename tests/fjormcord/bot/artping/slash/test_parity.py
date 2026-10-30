@@ -1,31 +1,22 @@
 from fjormcord.bot.artping.legacy.commands import COMMANDS
-from fjormcord.bot.artping.slash.cog.art_ping_cog import ArtPingCog, build_art_ping_command
-from fjormcord.bot.artping.slash.cog.character_cog import CharacterCog
-from fjormcord.bot.artping.slash.cog.currency_cog import CurrencyCog
-from fjormcord.bot.artping.slash.cog.easter_egg_cog import EasterEggCog
-from fjormcord.bot.artping.slash.cog.help_cog import HelpCog
-from fjormcord.bot.artping.slash.cog.resource_cog import ResourceCog
-from fjormcord.bot.artping.slash.cog.voting_gauntlet_cog import VotingGauntletCog
-from fjormcord.bot.artping.slash.cog.weekly_reminder_cog import WeeklyReminderCog
+from fjormcord.bot.artping.slash.runner import is_admin_command
+from tests.fakes import registered_slash_commands
 
 # Slash-only: /resource posts a resource where ~(resource name) did, and the easter eggs are words in legacy
 SLASH_ONLY = {"resource", "lorenz", "chromk"}
 
 
 def test_every_legacy_command_has_a_slash_command():
-    cogs = [
-        ArtPingCog(None),
-        CharacterCog(),
-        CurrencyCog(),
-        ResourceCog(),
-        EasterEggCog(),
-        HelpCog(),
-        WeeklyReminderCog(),
-        VotingGauntletCog(),
-    ]
-    slash_names = {command.name for cog in cogs for command in cog.get_app_commands()}
-    slash_names.add(build_art_ping_command(1).name)
-
+    slash_names = {command.name for command in registered_slash_commands()}
     legacy_names = {command.name.removeprefix("~") for command in COMMANDS}
 
     assert legacy_names == slash_names - SLASH_ONLY
+
+
+def test_admin_commands_are_the_same_in_both_syntaxes():
+    admin_commands = [command for command in registered_slash_commands() if is_admin_command(command)]
+    legacy_admin_names = {command.name.removeprefix("~") for command in COMMANDS if command.admin_only}
+
+    assert {command.name for command in admin_commands} == legacy_admin_names
+    # Hidden in DMs, where nobody is a server admin
+    assert all(command.guild_only for command in admin_commands)

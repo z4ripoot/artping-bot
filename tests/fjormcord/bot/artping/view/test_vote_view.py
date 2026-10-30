@@ -1,12 +1,10 @@
 import asyncio
-from dataclasses import replace
 
-from fjormcord.bot.artping import config
 from fjormcord.bot.artping.model.character_vote import CharacterVote
 from fjormcord.bot.artping.repository import character_vote_repository
 from fjormcord.bot.artping.service import character_vote_service
 from fjormcord.bot.artping.view.vote_view import VoteButton
-from tests.fakes import FakeChannel, FakeClient, FakeInteraction
+from tests.fakes import FakeChannel, FakeClient, FakeInteraction, use_settings
 
 
 def test_every_vote_button_has_the_same_custom_id():
@@ -15,12 +13,14 @@ def test_every_vote_button_has_the_same_custom_id():
     assert VoteButton.__discord_ui_compiled_template__.fullmatch("character_vote")
 
 
-def test_vote_button_shows_the_count():
-    assert VoteButton(1).item.label == "Vote (1/5)"
+def test_vote_button_shows_the_count(monkeypatch):
+    use_settings(monkeypatch, character_votes_needed=3)
+
+    assert VoteButton(1).item.label == "Vote (1/3)"
 
 
 def test_click_is_deferred_and_answered_privately(monkeypatch):
-    monkeypatch.setattr(config, "_settings", replace(config.read_settings(), character_votes_needed=2))
+    use_settings(monkeypatch, character_votes_needed=2)
     channel = FakeChannel()
     vote_message = channel.post("Vote to add Lucina. Votes needed: 2")
     character_vote_repository.add_vote(CharacterVote(str(vote_message.id), str(channel.id), "Lucina", "7"))
