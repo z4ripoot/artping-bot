@@ -8,7 +8,7 @@ from fjormcord.bot.artping.service import weekly_reminder_service
 from tests.fakes import FakeChannel, FakeClient, fake_datetime, http_error, use_settings
 
 COLISEUM_CLOSING = int(datetime(2026, 11, 2, 23, 0, tzinfo=timezone.utc).timestamp())
-DIVINE_GAMES_CLOSING = int(datetime(2026, 10, 31, 22, 59, tzinfo=timezone.utc).timestamp())
+DIVINE_GAMES_CLOSING = int(datetime(2026, 10, 31, 23, 0, tzinfo=timezone.utc).timestamp())
 
 
 def at(monkeypatch, utc_now):
@@ -16,24 +16,24 @@ def at(monkeypatch, utc_now):
 
 
 def test_closing_times_lists_the_soonest_first(monkeypatch):
-    # Saturday noon: Divine Games ends tonight, Coliseum on Monday
+    # Saturday noon: Divine Games closes tonight, Coliseum on Monday
     at(monkeypatch, datetime(2026, 10, 31, 12, 0, tzinfo=timezone.utc))
 
     assert weekly_reminder_service.get_closing_times().texts == (
         "### Closing times",
-        f"Divine Games ends <t:{DIVINE_GAMES_CLOSING}:R> at <t:{DIVINE_GAMES_CLOSING}:f>\n"
+        f"Divine Games closes <t:{DIVINE_GAMES_CLOSING}:R> at <t:{DIVINE_GAMES_CLOSING}:f>\n"
         f"Coliseum/Aether Raids closes <t:{COLISEUM_CLOSING}:R> at <t:{COLISEUM_CLOSING}:f>",
     )
 
 
 def test_closing_times_after_closing_give_next_week(monkeypatch):
-    # Saturday 23:30 UTC, after Divine Games ended
+    # Saturday 23:30 UTC, after Divine Games closed
     at(monkeypatch, datetime(2026, 10, 31, 23, 30, tzinfo=timezone.utc))
 
-    next_week = int(datetime(2026, 11, 7, 22, 59, tzinfo=timezone.utc).timestamp())
+    next_week = int(datetime(2026, 11, 7, 23, 0, tzinfo=timezone.utc).timestamp())
     assert weekly_reminder_service.get_closing_times().texts[1].splitlines() == [
         f"Coliseum/Aether Raids closes <t:{COLISEUM_CLOSING}:R> at <t:{COLISEUM_CLOSING}:f>",
-        f"Divine Games ends <t:{next_week}:R> at <t:{next_week}:f>",
+        f"Divine Games closes <t:{next_week}:R> at <t:{next_week}:f>",
     ]
 
 
@@ -57,7 +57,7 @@ def test_send_reminders_posts_every_reminder_now(channels):
         "Coliseum notification: sent to <#20>\nDivine Games notification: sent to <#30>"
     )
     assert coliseum.sent == [f"Coliseum/Aether Raids closes <t:{COLISEUM_CLOSING}:R> at <t:{COLISEUM_CLOSING}:f>"]
-    assert divine_games.sent == [f"Divine Games ends <t:{DIVINE_GAMES_CLOSING}:R> at <t:{DIVINE_GAMES_CLOSING}:f>"]
+    assert divine_games.sent == [f"Divine Games closes <t:{DIVINE_GAMES_CLOSING}:R> at <t:{DIVINE_GAMES_CLOSING}:f>"]
 
 
 def test_send_reminders_reports_a_missing_or_unknown_channel(monkeypatch, channels):

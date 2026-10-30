@@ -264,11 +264,11 @@ FROM generate_series(1, 11);   -- older sqlite3: use 11 separate INSERTs
 To test the reminder without waiting for Monday, temporarily change `weekday` and `closing_time` of `COLISEUM` in
 `weekly_reminder.py`. Don't commit that change.
 
-## 10a. Divine Games reminder (runs Saturdays at 17:59 and 21:59 UTC)
+## 10a. Divine Games reminder (runs Saturdays at 18:00 and 22:00 UTC)
 
 | # | Setup | Expected |
 |---|---|---|
-| 10a.1 | Channel ID set, bot running on a Saturday through 17:59 or 21:59 UTC | A box with a blurple bar in the channel: `Divine Games ends <t:…:R> at <t:…:f>`. The timestamp shows 22:59 UTC (23:59 GMT+1) in your local time |
+| 10a.1 | Channel ID set, bot running on a Saturday through 18:00 or 22:00 UTC | A box with a blurple bar in the channel: `Divine Games closes <t:…:R> at <t:…:f>`. The timestamp shows Saturday 23:00 UTC (00:00 GMT+1) in your local time |
 | 10a.2 | Same, on a non-Saturday at those times | Nothing |
 | 10a.3 | Channel ID set to a channel the bot can't see (or a wrong ID) | At the trigger time, log error `Channel … not found. Task will be skipped` |
 | 10a.4 | Channel empty | See 1.4. No reminders |
@@ -280,7 +280,7 @@ in `weekly_reminder.py`. Don't commit that change.
 
 | # | Who | Command | Expected |
 |---|---|---|---|
-| 10b.1 | U1 | `~closingtimes` (also `/closingtimes`, public) | A box: the heading `Closing times`, a separator, then `Coliseum/Aether Raids closes <t:…:R> at <t:…:f>` and `Divine Games ends <t:…:R> at <t:…:f>`, the soonest first. The times are next Monday 23:00 UTC and next Saturday 22:59 UTC, any day of the week; right after closing, the next week's |
+| 10b.1 | U1 | `~closingtimes` (also `/closingtimes`, public) | A box: the heading `Closing times`, a separator, then `Coliseum/Aether Raids closes <t:…:R> at <t:…:f>` and `Divine Games closes <t:…:R> at <t:…:f>`, the soonest first. The times are next Monday 23:00 UTC and next Saturday 23:00 UTC, any day of the week; right after closing, the next week's |
 | 10b.2 | U1 | `~sendreminders` / `/sendreminders` | Silence for `~` (admin only); `/sendreminders` isn't listed for U1 |
 | 10b.3 | A | `~sendreminders` with both channel IDs set, on any day | Each reminder's box is posted in its channel, with its next closing time. Reply `Coliseum notification: sent to #…` and `Divine Games notification: sent to #…`; `/sendreminders` gives the same reply, ephemeral |
 | 10b.4 | A | `~sendreminders` with `divine_games_notification_channel_id` empty, or a channel the bot can't see or post in | That line says `no channel is configured`, `channel … not found` or `sending to #… failed`; the other reminder is still sent |

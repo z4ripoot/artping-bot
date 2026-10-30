@@ -7,7 +7,7 @@ Bot uses a sqlite database
 A Discord bot that provides various features to your community:
  * Art pinging. See commands below for more details.
  * Notification when Coliseum in Fire Emblem Heroes is closing. Notification will occur 5 hours and 1 hour before closing.
- * Notification when Divine Games in Fire Emblem Heroes is ending (Saturdays at 23:59 GMT+1). Notification will occur 5 hours and 1 hour before it ends.
+ * Notification when Divine Games in Fire Emblem Heroes is closing (at 00:00 GMT+1 between Saturday and Sunday). Notification will occur 5 hours and 1 hour before closing.
  * Hourly Voting Gauntlet scores of Fire Emblem Heroes while a round runs: one message per matchup, each character labelled Stronger, Weaker or Same as in the game. Under every matchup are two buttons, "Track <name>": click one to track that character and be pinged every hour it is Weaker. You track one side of a matchup (clicking the other button switches), clicking again stops tracking, and tracking lasts across rounds until the gauntlet ends.
 
 # Commands

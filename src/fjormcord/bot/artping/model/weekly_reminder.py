@@ -16,7 +16,7 @@ class WeeklyReminder:
     weekday: int
     # When it closes, in UTC
     closing_time: time
-    # The start of the message, followed by when it closes, e.g. 'Divine Games ends'
+    # The start of the message, followed by when it closes, e.g. 'Divine Games closes'
     text: str
     # The channel to post to, read from the settings when the reminder runs; None disables the reminder
     channel_id: "Callable[[Settings], int | None]"

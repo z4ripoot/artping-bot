@@ -21,12 +21,12 @@ COLISEUM = WeeklyReminder(
     text="Coliseum/Aether Raids closes",
     channel_id=lambda settings: settings.coliseum_channel_id,
 )
-# Divine Games ends on Saturday at 23:59 GMT+1, which is 22:59 UTC
+# Divine Games closes at midnight between Saturday and Sunday GMT+1, which is Saturday 23:00 UTC
 DIVINE_GAMES = WeeklyReminder(
     name="Divine Games notification",
     weekday=5,
-    closing_time=time(hour=22, minute=59, tzinfo=timezone.utc),
-    text="Divine Games ends",
+    closing_time=time(hour=23, minute=0, tzinfo=timezone.utc),
+    text="Divine Games closes",
     channel_id=lambda settings: settings.divine_games_channel_id,
 )
 REMINDERS = (COLISEUM, DIVINE_GAMES)

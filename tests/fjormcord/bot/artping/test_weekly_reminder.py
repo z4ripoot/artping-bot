@@ -29,10 +29,10 @@ CASES = pytest.mark.parametrize(
         pytest.param(
             DIVINE_GAMES,
             "divine_games_channel_id",
-            datetime(2026, 10, 31, 21, 59, tzinfo=timezone.utc),
-            # 23:59 GMT+1
-            datetime(2026, 10, 31, 22, 59, tzinfo=timezone.utc),
-            "Divine Games ends",
+            datetime(2026, 10, 31, 22, 0, tzinfo=timezone.utc),
+            # 00:00 GMT+1
+            datetime(2026, 10, 31, 23, 0, tzinfo=timezone.utc),
+            "Divine Games closes",
             id="divine_games",
         ),
     ],
@@ -95,8 +95,8 @@ def test_reminder_not_started_without_channel_id(monkeypatch, caplog, reminder, 
 
 def test_reminders_are_sent_five_and_one_hour_before_closing():
     assert weekly_reminder.reminder_times(DIVINE_GAMES) == [
-        time(17, 59, tzinfo=timezone.utc),
-        time(21, 59, tzinfo=timezone.utc),
+        time(18, 0, tzinfo=timezone.utc),
+        time(22, 0, tzinfo=timezone.utc),
     ]
 
 
