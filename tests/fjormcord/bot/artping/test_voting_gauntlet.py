@@ -10,6 +10,7 @@ import pytest
 
 from fjormcord.bot.artping import voting_gauntlet
 from fjormcord.bot.artping.model.voting_gauntlet import Entrant
+from fjormcord.bot.artping.repository import voting_gauntlet_repository
 from fjormcord.bot.artping.service import voting_gauntlet_service
 from fjormcord.bot.artping.view.layout import to_view
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
@@ -19,6 +20,8 @@ from tests.fakes import FakeChannel, button_labels, buttons, http_error, use_set
 # archived copy taken during round 3, whose Pacific times were rewritten to the UTC the bot requests
 ENDED_PAGE = (Path(__file__).parent / "voting_gauntlet_112.html").read_text(encoding="utf-8")
 ROUND_3_PAGE = (Path(__file__).parent / "voting_gauntlet_112_round_3.html").read_text(encoding="utf-8")
+# Tournament 113 the day before it started: every round listed, earliest first, round 1's matchups without scores
+UPCOMING_PAGE = (Path(__file__).parent / "voting_gauntlet_113_upcoming.html").read_text(encoding="utf-8")
 
 TOURNAMENT_ID = 112
 CHANNEL_ID = 123
@@ -53,6 +56,20 @@ def test_running_round_is_read_from_the_page():
     assert final.matchups == [
         (Entrant("Edelgard", 4_397_904_760, behind=False), Entrant("Dimitri", 3_872_872_478, behind=True))
     ]
+
+
+def test_upcoming_gauntlet_is_read_from_the_page():
+    rounds = voting_gauntlet.parse_rounds(UPCOMING_PAGE, utc(10, 30, 9, 37))
+
+    # Latest round first, although the page lists them earliest first
+    assert [(r.start, r.end) for r in rounds] == [
+        (utc(11, 4, 7), utc(11, 6, 4)),
+        (utc(11, 2, 7), utc(11, 4, 4)),
+        (utc(10, 31, 7), utc(11, 2, 4)),
+    ]
+    assert [len(r.matchups) for r in rounds] == [0, 0, 4]
+    # Not counted yet
+    assert rounds[2].matchups[0] == (Entrant("Reginn", None, behind=False), Entrant("Dagr", None, behind=False))
 
 
 def test_page_without_rounds_fails():
@@ -296,6 +313,34 @@ def test_send_scores_posts_nothing_outside_a_round(monkeypatch):
 
     assert reply == "No round of Voting Gauntlet 112 is running, so nothing was posted"
     assert channel.sent == []
+
+
+def test_nothing_is_posted_or_logged_before_the_gauntlet_starts(monkeypatch, caplog):
+    sent = run_task(monkeypatch, utc(10, 30, 10, 5), page=UPCOMING_PAGE, tournament_id=113).sent
+
+    assert sent == []
+    assert "could not be read" not in caplog.text
+    reply, _ = send_scores(monkeypatch, utc(10, 30, 10, 5), page=UPCOMING_PAGE, tournament_id=113)
+    assert reply == "No round of Voting Gauntlet 113 is running, so nothing was posted"
+
+
+def test_nothing_is_posted_while_the_running_round_has_no_scores(monkeypatch, caplog):
+    # Round 1 has started, but the page still shows no scores
+    sent = run_task(monkeypatch, utc(10, 31, 7, 5), page=UPCOMING_PAGE, tournament_id=113).sent
+
+    assert sent == []
+    assert "could not be read" not in caplog.text
+    reply, _ = send_scores(monkeypatch, utc(10, 31, 7, 5), page=UPCOMING_PAGE, tournament_id=113)
+    assert reply == "The running round of Voting Gauntlet 113 has no scores yet, so nothing was posted"
+
+
+def test_upcoming_gauntlet_does_not_end_the_running_one(monkeypatch):
+    # The last round listed has no matchups yet, so it isn't taken for a final round that is over
+    voting_gauntlet_service.start_gauntlet(112)
+
+    run_task(monkeypatch, utc(11, 7, 12), page=UPCOMING_PAGE, tournament_id=113)
+
+    assert voting_gauntlet_repository.get_running_tournament() == 112
 
 
 def test_send_scores_reports_a_page_it_cannot_read(monkeypatch):

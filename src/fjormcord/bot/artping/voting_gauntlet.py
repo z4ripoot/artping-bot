@@ -29,10 +29,11 @@ POSTING_TIMES = [time(hour=hour, minute=5, tzinfo=timezone.utc) for hour in rang
 
 ROUND_PATTERN = re.compile(r'<article class="body-section-tournament">(.*?)</article>', re.DOTALL)
 WINDOW_PATTERN = re.compile(r'<div class="tournaments-date">([^<]*)</div>')
-# A character's picture, then its name and score. The picture's class ends in its status: normal or behind
+# A character's picture, then its name and score, which is empty before the first count. The picture's class ends in
+# its status: normal or behind
 ENTRANT_PATTERN = re.compile(
     r'<div class="tournaments-art-(?:left|right) art-\d+-\d+-(\w+)">'
-    r'.*?<p class="name">([^<]*)</p><p>([\d,]+)</p>',
+    r'.*?<p class="name">([^<]*)</p><p>([\d,]*)</p>',
     re.DOTALL,
 )
 STATUSES = {"normal": False, "behind": True}
@@ -68,11 +69,14 @@ async def post_scores(client: discord.Client) -> str:
 
     running = next((round_ for round_ in rounds if round_.start <= current_time < round_.end), None)
     if running is None:
-        # Rounds are listed once they start, latest first; the final one has a single matchup
+        # The gauntlet has ended once the latest round is over and it is the final one, with a single matchup
         latest = rounds[0]
         if len(latest.matchups) == 1 and current_time >= latest.end:
             voting_gauntlet_service.end_gauntlet()
         return f"No round of Voting Gauntlet {tournament_id} is running, so nothing was posted"
+    if any(entrant.score is None for matchup in running.matchups for entrant in matchup):
+        # The round has started, but its votes haven't been counted yet
+        return f"The running round of Voting Gauntlet {tournament_id} has no scores yet, so nothing was posted"
 
     voting_gauntlet_service.start_gauntlet(tournament_id)
     channel_id = config.read_settings().voting_gauntlet_channel_id
@@ -120,7 +124,9 @@ async def fetch_page() -> tuple[int, str]:
 
 
 def parse_rounds(page: str, current_time: datetime) -> list[Round]:
-    # The rounds that have started, latest first; raises ValueError when the page doesn't look as expected
+    # The rounds on the page, latest first; raises ValueError when the page doesn't look as expected. The page's order
+    # varies: before a gauntlet starts it lists every round earliest first, with the first round's matchups but no
+    # scores; during round 3 and after the end it listed them latest first
     rounds = []
     for section in ROUND_PATTERN.findall(page):
         window = WINDOW_PATTERN.search(section)
@@ -131,7 +137,7 @@ def parse_rounds(page: str, current_time: datetime) -> list[Round]:
         rounds.append(Round(start, end, matchups))
     if not rounds:
         raise ValueError("No rounds on the page")
-    return rounds
+    return sorted(rounds, key=lambda round_: round_.start, reverse=True)
 
 
 def _parse_matchup(battle: str) -> tuple[Entrant, Entrant]:
@@ -139,7 +145,7 @@ def _parse_matchup(battle: str) -> tuple[Entrant, Entrant]:
     for status, name, score in ENTRANT_PATTERN.findall(battle):
         if status not in STATUSES:
             raise ValueError(f"Unknown status {status} of {name}")
-        entrants.append(Entrant(html.unescape(name), int(score.replace(",", "")), STATUSES[status]))
+        entrants.append(Entrant(html.unescape(name), int(score.replace(",", "")) if score else None, STATUSES[status]))
     if len(entrants) != 2:
         raise ValueError(f"Matchup with {len(entrants)} entrants")
     if entrants[0].behind and entrants[1].behind:
