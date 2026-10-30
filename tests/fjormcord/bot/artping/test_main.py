@@ -32,6 +32,7 @@ def use_token(monkeypatch, token):
         cooldown_seconds=1,
         autocomplete_max_choices=20,
         coliseum_channel_id=None,
+        divine_games_channel_id=None,
         voting_gauntlet_channel_id=None,
         guild_id=None,
         art_ping_slash_max_characters=10,

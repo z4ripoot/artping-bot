@@ -5,20 +5,7 @@ from types import SimpleNamespace
 import discord
 
 from fjormcord.bot.artping import coliseum
-from tests.fakes import FakeChannel, http_error, use_settings
-
-
-def fake_datetime(utc_now, host_offset):
-    # Simulates a host whose local timezone is UTC + host_offset
-    class FakeDatetime(datetime):
-        @classmethod
-        def now(cls, tz=None):
-            if tz is None:
-                return (utc_now + host_offset).replace(tzinfo=None)
-            return utc_now.astimezone(tz)
-
-    return FakeDatetime
-
+from tests.fakes import FakeChannel, fake_datetime, http_error, use_settings
 
 CHANNEL_ID = 123
 

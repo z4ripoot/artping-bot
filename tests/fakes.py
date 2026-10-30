@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import itertools
 from dataclasses import replace
+from datetime import datetime
 from types import SimpleNamespace
 from typing import NamedTuple
 
@@ -54,6 +55,18 @@ def select_options(view):
 def use_settings(monkeypatch, **changes):
     # Runs the test with these settings changed from the example's
     monkeypatch.setattr(config, "_settings", replace(config.read_settings(), **changes))
+
+
+def fake_datetime(utc_now, host_offset):
+    # Simulates a host whose local timezone is UTC + host_offset
+    class FakeDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            if tz is None:
+                return (utc_now + host_offset).replace(tzinfo=None)
+            return utc_now.astimezone(tz)
+
+    return FakeDatetime
 
 
 def make_member(user_id, administrator=False):

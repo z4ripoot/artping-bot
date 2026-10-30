@@ -19,11 +19,12 @@ slash command, section 7 covers the vote button, and section 12 the Voting Gaunt
   votes_needed=2           ; the smallest value that still has votes
   [tasks]
   coliseum_notification_channel_id=<test channel id>
+  divine_games_notification_channel_id=<test channel id>
   voting_gauntlet_channel_id=<test channel id>
   ```
 - **Database:** start with a fresh one (delete `test.db`).
 
-Some steps need the bot's log to check the result: 1.4, 1.8, 2.16, 7.12, 7.14, 7.15, 10.3, 11.45, 12.10, 12.11
+Some steps need the bot's log to check the result: 1.4, 1.8, 2.16, 7.12, 7.14, 7.15, 10.3, 10a.3, 11.45, 12.10, 12.11
 and 12.12.
 
 ## 1. Startup and config
@@ -34,7 +35,7 @@ and 12.12.
 | 1.2 | Delete `test.db`, then start from another directory (e.g. `cd ~`) | `test.db` is created in the repo root, migrations run, `Bot is running` |
 | 1.3 | Remove a key (e.g. `votes_needed`) from config.ini, then start | Exits with `Invalid configuration: No option 'votes_needed' in section: 'character_vote'` (config.example.ini is not read, so it doesn't fill in the key). Put the key back afterwards |
 | 1.3a | Rename config.ini, then start | Exits with `Invalid configuration: … config.ini not found. Copy config.example.ini to config.ini and fill in your bot's token`. Rename it back |
-| 1.4 | Start with `coliseum_notification_channel_id` and `voting_gauntlet_channel_id` empty | Log warnings `No channel ID is configured for the Coliseum notification task, so it will not be initiated` and the same for the `Voting Gauntlet scores` task |
+| 1.4 | Start with `coliseum_notification_channel_id`, `divine_games_notification_channel_id` and `voting_gauntlet_channel_id` empty | Log warnings `No channel ID is configured for the Coliseum notification task, so it will not be initiated` and the same for the `Divine Games notification` and `Voting Gauntlet scores` tasks |
 | 1.5 | Start with `guild_id` set, then type `/` in the test server | All commands are listed (section 11) and each shows once |
 | 1.6 | Empty `guild_id`, restart | The commands are registered globally (they can take a while to show up). Guild commands left over from 1.5 show twice until cleared (README, local setup) |
 | 1.7 | Set `slash_max_characters=26`, then `0`, then start | Exits with `Invalid configuration: art_ping.slash_max_characters must be between 1 and 25`. Put it back afterwards |
@@ -262,6 +263,18 @@ FROM generate_series(1, 11);   -- older sqlite3: use 11 separate INSERTs
 
 To test the reminder without waiting for Monday, temporarily change the time constants and the `weekday() == 0` check
 in `coliseum.py`. Don't commit that change.
+
+## 10a. Divine Games reminder (runs Saturdays at 17:59 and 21:59 UTC)
+
+| # | Setup | Expected |
+|---|---|---|
+| 10a.1 | Channel ID set, bot running on a Saturday through 17:59 or 21:59 UTC | A box with a blurple bar in the channel: `Divine Games ends <t:…:R> at <t:…:f>`. The timestamp shows 22:59 UTC (23:59 GMT+1) in your local time |
+| 10a.2 | Same, on a non-Saturday at those times | Nothing |
+| 10a.3 | Channel ID set to a channel the bot can't see (or a wrong ID) | At the trigger time, log error `Channel … not found. Task will be skipped` |
+| 10a.4 | Channel empty | See 1.4. No reminders |
+
+To test the reminder without waiting for Saturday, temporarily change the time constants and `SATURDAY` in
+`divine_games.py`. Don't commit that change.
 
 ## 11. Slash commands
 
