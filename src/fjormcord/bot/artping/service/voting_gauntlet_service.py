@@ -1,7 +1,20 @@
+import discord
+
+from fjormcord.bot.artping import config
 from fjormcord.bot.artping.repository import voting_gauntlet_repository
 from fjormcord.bot.artping.util.message_util import log_info
 
 MESSAGE_ENDED = "This Voting Gauntlet has ended"
+
+
+async def send_scores(client: discord.Client) -> str:
+    # A debug command: posts the scores now, as the hourly task does, so only while a round runs
+    # Imported here: voting_gauntlet imports this module for the tracking
+    from fjormcord.bot.artping import voting_gauntlet
+
+    if config.read_settings().voting_gauntlet_channel_id is None:
+        return "No channel is configured for the Voting Gauntlet scores"
+    return log_info(await voting_gauntlet.post_scores(client))
 
 
 def start_gauntlet(tournament_id: int):

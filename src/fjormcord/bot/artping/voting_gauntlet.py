@@ -51,19 +51,20 @@ async def task_voting_gauntlet_scores(client: discord.Client):
     # The loop only survives network errors: any other exception, e.g. a database error, would stop it for good. The
     # next hour tries again
     try:
-        await _post_scores(client)
+        await post_scores(client)
     except Exception:
         logging.exception("Posting the Voting Gauntlet scores failed. Task will be skipped")
 
 
-async def _post_scores(client: discord.Client):
+async def post_scores(client: discord.Client) -> str:
+    # Posts the scores of the running round; returns what it did, which ~sendvotinggauntlet replies with
     try:
         current_time = now()
         tournament_id, page = await fetch_page()
         rounds = parse_rounds(page, current_time)
     except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
         logging.exception("Voting Gauntlet scores could not be read. Task will be skipped")
-        return
+        return "The Voting Gauntlet scores could not be read; the log has the error"
 
     running = next((round_ for round_ in rounds if round_.start <= current_time < round_.end), None)
     if running is None:
@@ -71,12 +72,14 @@ async def _post_scores(client: discord.Client):
         latest = rounds[0]
         if len(latest.matchups) == 1 and current_time >= latest.end:
             voting_gauntlet_service.end_gauntlet()
-        return
+        return f"No round of Voting Gauntlet {tournament_id} is running, so nothing was posted"
 
     voting_gauntlet_service.start_gauntlet(tournament_id)
-    channel = get_task_channel(client, config.read_settings().voting_gauntlet_channel_id)
+    channel_id = config.read_settings().voting_gauntlet_channel_id
+    channel = get_task_channel(client, channel_id)
     if channel is None:
-        return
+        return f"Channel {channel_id} not found"
+    failed = 0
     for matchup in running.matchups:
         trackers = [
             user_id
@@ -91,6 +94,11 @@ async def _post_scores(client: discord.Client):
         except discord.DiscordException:
             # The other matchups are still posted
             logging.exception("Posting the Voting Gauntlet matchup of %s failed", matchup[0].name)
+            failed += 1
+
+    total = len(running.matchups)
+    report = f"Posted {total - failed} of the {total} matchups of Voting Gauntlet {tournament_id} to <#{channel_id}>"
+    return f"{report}; the log has the errors" if failed else report
 
 
 def now() -> datetime:

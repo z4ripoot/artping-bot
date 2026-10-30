@@ -15,6 +15,7 @@ from fjormcord.bot.artping.legacy.handler.currency_handlers import (
     set_currency,
 )
 from fjormcord.bot.artping.legacy.handler.resource_handlers import list_resources, remove_resource, set_resource
+from fjormcord.bot.artping.legacy.handler.voting_gauntlet_handlers import send_voting_gauntlet
 from fjormcord.bot.artping.legacy.handler.weekly_reminder_handlers import get_closing_times, send_reminders
 from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT
@@ -178,6 +179,12 @@ COMMANDS = [
         "~sendreminders",
         send_reminders,
         "Debug: send the weekly reminders to their channels now, whatever the day",
+        admin_only=True,
+    ),
+    Command(
+        "~sendvotinggauntlet",
+        send_voting_gauntlet,
+        "Debug: post the Voting Gauntlet scores now, as the hourly task does; only while a round runs",
         admin_only=True,
     ),
 ]

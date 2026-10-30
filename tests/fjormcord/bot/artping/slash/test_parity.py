@@ -5,6 +5,7 @@ from fjormcord.bot.artping.slash.cog.currency_cog import CurrencyCog
 from fjormcord.bot.artping.slash.cog.easter_egg_cog import EasterEggCog
 from fjormcord.bot.artping.slash.cog.help_cog import HelpCog
 from fjormcord.bot.artping.slash.cog.resource_cog import ResourceCog
+from fjormcord.bot.artping.slash.cog.voting_gauntlet_cog import VotingGauntletCog
 from fjormcord.bot.artping.slash.cog.weekly_reminder_cog import WeeklyReminderCog
 
 # Slash-only: /resource posts a resource where ~(resource name) did, and the easter eggs are words in legacy
@@ -20,6 +21,7 @@ def test_every_legacy_command_has_a_slash_command():
         EasterEggCog(),
         HelpCog(),
         WeeklyReminderCog(),
+        VotingGauntletCog(),
     ]
     slash_names = {command.name for cog in cogs for command in cog.get_app_commands()}
     slash_names.add(build_art_ping_command(1).name)

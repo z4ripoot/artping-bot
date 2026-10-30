@@ -293,7 +293,7 @@ database. Run each command as the account named in the section it comes from.
 
 | # | Who | Command | Expected |
 |---|---|---|---|
-| 11.1 | U1 | Type `/` | The admin commands (`removecharacter`, `addalias`, `removealias`, `setprimaryname`, `addcurrency`, `removecurrency`, `setresource`, `removeresource` and `sendreminders`) aren't listed for U1; A sees them all. `/help` is listed for both |
+| 11.1 | U1 | Type `/` | The admin commands (`removecharacter`, `addalias`, `removealias`, `setprimaryname`, `addcurrency`, `removecurrency`, `setresource`, `removeresource`, `sendreminders` and `sendvotinggauntlet`) aren't listed for U1; A sees them all. `/help` is listed for both |
 | 11.2 | A | Type `/` | All commands of the README table, plus `/resource`, `/lorenz` and `/chromk`, each with a description |
 | 11.3 | U1 | `/addping character:Lucina` | Public `Ping for Lucina has been added`. Autocomplete suggested `Lucina` while typing `lu` (names and aliases) |
 | 11.3a | U1 | Set `autocomplete_max_choices=2`, restart, type `/addping character:` with more than 2 characters, then type `l` | At most 2 suggestions, the first names alphabetically; `l` (and `L`) narrows them to names starting with L. Put it back to 20 |
@@ -359,7 +359,8 @@ only runs a few days a month, so test with the saved pages instead: temporarily 
   `datetime(2026, 10, 6, 12, …)` in the final round (1 matchup, Edelgard against Dimitri) and
   `datetime(2026, 10, 7, 5, …)` after the end
 
-and restart after each change. Don't commit that change. 12.1 needs a real gauntlet.
+and restart after each change. Don't commit that change. 12.1 needs a real gauntlet. Instead of waiting for the next
+posting time, A can run `~sendvotinggauntlet` (12.14), which posts the scores at once; then `POSTING_TIMES` can stay.
 
 | # | Setup | Expected |
 |---|---|---|
@@ -377,6 +378,10 @@ and restart after each change. Don't commit that change. 12.1 needs a real gaunt
 | 12.11 | `fetch_page` raises `aiohttp.ClientError()`, or returns a page with the `tournaments-art` classes changed (`normal` → `ahead`) | Log `Voting Gauntlet scores could not be read. Task will be skipped` with a traceback, no messages; the next minute tries again (the loop keeps running) |
 | 12.12 | `voting_gauntlet_channel_id` set to a channel the bot can't see | Log error `Channel … not found. Task will be skipped` |
 | 12.13 | U1 runs `~artping …` straight after clicking a Track button | Works: clicks are not commands and start no cooldown |
+| 12.14 | A runs `~sendvotinggauntlet` with `now` in round 1 | The 4 matchup boxes of 12.2 in the channel at once, trackers pinged as in the hourly post. Reply `Posted 4 of the 4 matchups of Voting Gauntlet 112 to #…`; `/sendvotinggauntlet` gives the same reply, ephemeral |
+| 12.15 | A runs `~sendvotinggauntlet` with `now` between rounds or after the end, unchanged code outside a gauntlet | Reply `No round of Voting Gauntlet … is running, so nothing was posted`; nothing in the channel |
+| 12.16 | A runs `~sendvotinggauntlet` with `voting_gauntlet_channel_id` empty, or a channel the bot can't see | Reply `No channel is configured for the Voting Gauntlet scores` / `Channel … not found` |
+| 12.17 | U1 runs `~sendvotinggauntlet` | Silence (admin only); `/sendvotinggauntlet` isn't listed for U1 |
 
 ## Not testable by hand
 

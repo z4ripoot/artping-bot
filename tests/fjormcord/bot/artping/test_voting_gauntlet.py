@@ -13,7 +13,7 @@ from fjormcord.bot.artping.model.voting_gauntlet import Entrant
 from fjormcord.bot.artping.service import voting_gauntlet_service
 from fjormcord.bot.artping.view.layout import to_view
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
-from tests.fakes import FakeChannel, button_labels, buttons, use_settings
+from tests.fakes import FakeChannel, button_labels, buttons, http_error, use_settings
 
 # English, UTC pages of tournament 112 (scripts removed): as the site served it after the gauntlet ended, and an
 # archived copy taken during round 3, whose Pacific times were rewritten to the UTC the bot requests
@@ -111,7 +111,8 @@ def test_matchup_message_mentions_the_trackers():
     assert message.texts == ("Cai (Weaker)\n1\nClaude (Stronger)\n2", "<@11> <@22>")
 
 
-def run_task(monkeypatch, now, page=ENDED_PAGE, tournament_id=TOURNAMENT_ID, channel_id=CHANNEL_ID):
+def set_up_site(monkeypatch, now, page=ENDED_PAGE, tournament_id=TOURNAMENT_ID, channel_id=CHANNEL_ID):
+    # The site shows page at now; returns a client that sees the channel CHANNEL_ID, and that channel
     channel = FakeChannel()
     client = SimpleNamespace(get_channel=lambda channel_id: channel if channel_id == CHANNEL_ID else None)
 
@@ -123,9 +124,19 @@ def run_task(monkeypatch, now, page=ENDED_PAGE, tournament_id=TOURNAMENT_ID, cha
     use_settings(monkeypatch, voting_gauntlet_channel_id=channel_id)
     monkeypatch.setattr(voting_gauntlet, "fetch_page", fetch_page)
     monkeypatch.setattr(voting_gauntlet, "now", lambda: now)
+    return client, channel
 
+
+def run_task(monkeypatch, now, **site):
+    client, channel = set_up_site(monkeypatch, now, **site)
     asyncio.run(voting_gauntlet.task_voting_gauntlet_scores.coro(client))
     return channel
+
+
+def send_scores(monkeypatch, now, **site):
+    # The debug command ~sendvotinggauntlet: its reply, and the channel
+    client, channel = set_up_site(monkeypatch, now, **site)
+    return asyncio.run(voting_gauntlet_service.send_scores(client)), channel
 
 
 def track(name, opponent, user_id, tournament_id=TOURNAMENT_ID):
@@ -270,3 +281,50 @@ def test_not_started_without_channel_id(monkeypatch, caplog):
 
     assert "No channel ID is configured for the Voting Gauntlet scores task" in caplog.text
     assert not voting_gauntlet.task_voting_gauntlet_scores.is_running()
+
+
+def test_send_scores_posts_the_running_round_now(monkeypatch):
+    reply, channel = send_scores(monkeypatch, utc(10, 2, 15, 30))
+
+    assert reply == "Posted 4 of the 4 matchups of Voting Gauntlet 112 to <#123>"
+    assert len(channel.sent) == 4
+
+
+def test_send_scores_posts_nothing_outside_a_round(monkeypatch):
+    # Between two rounds
+    reply, channel = send_scores(monkeypatch, utc(10, 5, 5, 5))
+
+    assert reply == "No round of Voting Gauntlet 112 is running, so nothing was posted"
+    assert channel.sent == []
+
+
+def test_send_scores_reports_a_page_it_cannot_read(monkeypatch):
+    reply, _ = send_scores(monkeypatch, utc(10, 2, 15, 5), page=aiohttp.ClientError("down"))
+
+    assert reply == "The Voting Gauntlet scores could not be read; the log has the error"
+
+
+def test_send_scores_reports_a_missing_or_unknown_channel(monkeypatch):
+    assert send_scores(monkeypatch, utc(10, 2, 15, 5), channel_id=None)[0] == (
+        "No channel is configured for the Voting Gauntlet scores"
+    )
+    assert send_scores(monkeypatch, utc(10, 2, 15, 5), channel_id=456)[0] == "Channel 456 not found"
+
+
+def test_send_scores_reports_matchups_that_failed(monkeypatch):
+    client, channel = set_up_site(monkeypatch, utc(10, 2, 15, 5))
+    send = channel.send
+    calls = []
+
+    async def send_all_but_the_first(**options):
+        calls.append(options)
+        if len(calls) == 1:
+            raise http_error(discord.Forbidden, 403)
+        return await send(**options)
+
+    channel.send = send_all_but_the_first
+
+    reply = asyncio.run(voting_gauntlet_service.send_scores(client))
+
+    assert reply == "Posted 3 of the 4 matchups of Voting Gauntlet 112 to <#123>; the log has the errors"
+    assert len(channel.sent) == 3

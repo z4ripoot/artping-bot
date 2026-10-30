@@ -4,6 +4,7 @@ from fjormcord.bot.artping.slash.cog.currency_cog import CurrencyCog
 from fjormcord.bot.artping.slash.cog.easter_egg_cog import EasterEggCog
 from fjormcord.bot.artping.slash.cog.help_cog import HelpCog
 from fjormcord.bot.artping.slash.cog.resource_cog import ResourceCog
+from fjormcord.bot.artping.slash.cog.voting_gauntlet_cog import VotingGauntletCog
 from fjormcord.bot.artping.slash.cog.weekly_reminder_cog import WeeklyReminderCog
 
 MAX_DESCRIPTION = 100
@@ -19,11 +20,12 @@ def test_descriptions_fit_discord():
         EasterEggCog(),
         HelpCog(),
         WeeklyReminderCog(),
+        VotingGauntletCog(),
     )
     commands = [command for cog in cogs for command in cog.get_app_commands()]
     commands.append(build_art_ping_command(3))
 
-    assert len(commands) == 25
+    assert len(commands) == 26
     for command in commands:
         assert 0 < len(command.description) <= MAX_DESCRIPTION, command.name
         for parameter in command.parameters:
