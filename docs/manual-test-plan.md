@@ -276,6 +276,15 @@ To test the reminder without waiting for Monday, temporarily change `weekday` an
 To test the reminder without waiting for Saturday, temporarily change `weekday` and `closing_time` of `DIVINE_GAMES`
 in `weekly_reminder.py`. Don't commit that change.
 
+## 10b. Closing times and sending the reminders
+
+| # | Who | Command | Expected |
+|---|---|---|---|
+| 10b.1 | U1 | `~closingtimes` (also `/closingtimes`, public) | A box: the heading `Closing times`, a separator, then `Coliseum/Aether Raids closes <t:…:R> at <t:…:f>` and `Divine Games ends <t:…:R> at <t:…:f>`, the soonest first. The times are next Monday 23:00 UTC and next Saturday 22:59 UTC, any day of the week; right after closing, the next week's |
+| 10b.2 | U1 | `~sendreminders` / `/sendreminders` | Silence for `~` (admin only); `/sendreminders` isn't listed for U1 |
+| 10b.3 | A | `~sendreminders` with both channel IDs set, on any day | Each reminder's box is posted in its channel, with its next closing time. Reply `Coliseum notification: sent to #…` and `Divine Games notification: sent to #…`; `/sendreminders` gives the same reply, ephemeral |
+| 10b.4 | A | `~sendreminders` with `divine_games_notification_channel_id` empty, or a channel the bot can't see or post in | That line says `no channel is configured`, `channel … not found` or `sending to #… failed`; the other reminder is still sent |
+
 ## 11. Slash commands
 
 Every case of sections 4 to 9 also holds for the slash command; what differs is listed here. Errors are ephemeral
@@ -284,7 +293,7 @@ database. Run each command as the account named in the section it comes from.
 
 | # | Who | Command | Expected |
 |---|---|---|---|
-| 11.1 | U1 | Type `/` | The admin commands (`removecharacter`, `addalias`, `removealias`, `setprimaryname`, `addcurrency`, `removecurrency`, `setresource` and `removeresource`) aren't listed for U1; A sees them all. `/help` is listed for both |
+| 11.1 | U1 | Type `/` | The admin commands (`removecharacter`, `addalias`, `removealias`, `setprimaryname`, `addcurrency`, `removecurrency`, `setresource`, `removeresource` and `sendreminders`) aren't listed for U1; A sees them all. `/help` is listed for both |
 | 11.2 | A | Type `/` | All commands of the README table, plus `/resource`, `/lorenz` and `/chromk`, each with a description |
 | 11.3 | U1 | `/addping character:Lucina` | Public `Ping for Lucina has been added`. Autocomplete suggested `Lucina` while typing `lu` (names and aliases) |
 | 11.3a | U1 | Set `autocomplete_max_choices=2`, restart, type `/addping character:` with more than 2 characters, then type `l` | At most 2 suggestions, the first names alphabetically; `l` (and `L`) narrows them to names starting with L. Put it back to 20 |

@@ -6,12 +6,21 @@ from fjormcord.bot.artping.slash.cog.currency_cog import CurrencyCog
 from fjormcord.bot.artping.slash.cog.easter_egg_cog import EasterEggCog
 from fjormcord.bot.artping.slash.cog.help_cog import HelpCog, show_slash_help
 from fjormcord.bot.artping.slash.cog.resource_cog import ResourceCog
+from fjormcord.bot.artping.slash.cog.weekly_reminder_cog import WeeklyReminderCog
 from tests.fakes import FakeInteraction, invoke
 
 
 def all_commands(max_characters=10):
     # Every slash command, as the bot registers them
-    cogs = [ArtPingCog(None), CharacterCog(), CurrencyCog(), ResourceCog(), EasterEggCog(), HelpCog()]
+    cogs = [
+        ArtPingCog(None),
+        CharacterCog(),
+        CurrencyCog(),
+        ResourceCog(),
+        EasterEggCog(),
+        HelpCog(),
+        WeeklyReminderCog(),
+    ]
     return [build_art_ping_command(max_characters), *(command for cog in cogs for command in cog.get_app_commands())]
 
 
@@ -58,14 +67,15 @@ def test_help_lists_the_optional_characters_of_a_short_artping_one_by_one():
 def test_help_hides_admin_commands_from_non_admins():
     out = show_slash_help(all_commands(), administrator=False)
 
-    assert len(out.texts) == 3
+    assert len(out.texts) == 4
+    assert out.texts[3].startswith("### Reminder Commands\n**/closingtimes**\n")
     assert "/removecharacter" not in "\n".join(out.texts)
 
 
 def test_help_lists_every_command_but_the_easter_eggs_for_admins():
     out = show_slash_help(all_commands(), administrator=True)
 
-    assert out.texts[3].startswith("### Admin Commands\n")
+    assert out.texts[4].startswith("### Admin Commands\n")
     for command in all_commands():
         if command.name not in ("lorenz", "chromk"):
             assert f"**/{command.name}" in "\n".join(out.texts)

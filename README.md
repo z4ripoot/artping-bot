@@ -39,6 +39,8 @@ Character names and aliases are stored with every part capitalized, whatever cas
 | ~setresource <resource> <link>    | This will save a resource. A Discord message link saves the text of that message, a website link saves the link                                                   |
 | ~removeresource <resource>        | This will remove the provided resource                                                                                                                            |
 | ~help                             | This will display an overview of all the available commands                                                                                                       |
+| ~closingtimes                     | This will display when Coliseum/Aether Raids and Divine Games close next, the soonest first                                                                       |
+| ~sendreminders                    | Admin only, for debugging: this will send the Coliseum and Divine Games reminders to their channels now, whatever the day, and reply which were sent              |
 
 # Slash commands
 Every command above is also available as a slash command with the same name, e.g. `/addping`; type `/` to see them. Discord shows the arguments and their descriptions, autocompletes character, currency and resource names, and hides the admin commands from users who aren't admins. The `~` commands keep working exactly as before, and both share the same cooldown.

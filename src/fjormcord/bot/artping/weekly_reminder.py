@@ -59,16 +59,35 @@ TASKS = {reminder: _make_task(reminder) for reminder in REMINDERS}
 
 
 async def send_notification(client: discord.Client, reminder: WeeklyReminder):
+    # Only within a day of closing, so a reminder may fall on the day before closing but not on other days
     now = datetime.now(timezone.utc)
-    # The next closing time: tomorrow's when the reminder falls on the day before closing
-    closing = datetime.combine(now.date(), reminder.closing_time)
-    if closing <= now:
-        closing += timedelta(days=1)
-    if closing.weekday() == reminder.weekday:
-        channel = get_task_channel(client, reminder.channel_id(config.read_settings()))
-        if channel is not None:
-            closing_time = int(closing.timestamp())
-            message = f"{reminder.text} <t:{closing_time}:R> at <t:{closing_time}:f>"
+    closing = next_closing(reminder, now)
+    if closing - now < timedelta(days=1):
+        await send_reminder(client, reminder, closing)
 
-            logging.info(message)
-            await channel.send(view=to_view(Layout((message,))))
+
+def next_closing(reminder: WeeklyReminder, now: datetime) -> datetime:
+    # The first closing after now, this week or the next
+    days_ahead = (reminder.weekday - now.weekday()) % 7
+    closing = datetime.combine(now.date() + timedelta(days=days_ahead), reminder.closing_time)
+    if closing <= now:
+        closing += timedelta(weeks=1)
+    return closing
+
+
+def reminder_text(reminder: WeeklyReminder, closing: datetime) -> str:
+    # Discord shows the timestamps in each reader's own timezone
+    closing_time = int(closing.timestamp())
+    return f"{reminder.text} <t:{closing_time}:R> at <t:{closing_time}:f>"
+
+
+async def send_reminder(client: discord.Client, reminder: WeeklyReminder, closing: datetime) -> bool:
+    # Posts the reminder to its channel; False, and logged, when the bot can't see the channel
+    channel = get_task_channel(client, reminder.channel_id(config.read_settings()))
+    if channel is None:
+        return False
+
+    message = reminder_text(reminder, closing)
+    logging.info(message)
+    await channel.send(view=to_view(Layout((message,))))
+    return True

@@ -24,20 +24,21 @@ def test_help_gives_each_section_a_heading_and_each_command_two_lines():
         "Ping users for art of this character",
     ]
     assert out.texts[2].startswith("### Gacha Currency Commands\n**~setcurrency (currency name) (amount)**\n")
+    assert out.texts[3].startswith("### Reminder Commands\n**~closingtimes**\n")
 
 
 def test_help_hides_admin_commands_from_non_admins():
     out = show_help(None, make_message("~help"))
 
-    assert len(out.texts) == 3
+    assert len(out.texts) == 4
     assert "~removecharacter" not in "\n".join(out.texts)
 
 
 def test_help_lists_every_command_for_admins():
     out = show_help(None, make_message("~help", administrator=True))
 
-    assert len(out.texts) == 4
-    assert out.texts[3].startswith("### Admin Commands\n")
+    assert len(out.texts) == 5
+    assert out.texts[4].startswith("### Admin Commands\n")
     for command in COMMANDS:
         assert f"**{command.name}" in "\n".join(out.texts)
 

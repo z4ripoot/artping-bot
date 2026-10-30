@@ -15,6 +15,7 @@ from fjormcord.bot.artping.legacy.handler.currency_handlers import (
     set_currency,
 )
 from fjormcord.bot.artping.legacy.handler.resource_handlers import list_resources, remove_resource, set_resource
+from fjormcord.bot.artping.legacy.handler.weekly_reminder_handlers import get_closing_times, send_reminders
 from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.util.message_util import MULTI_WORD_HINT
 from fjormcord.bot.artping.util.user_util import is_administrator
@@ -23,6 +24,7 @@ COMMAND_PREFIX = "~"
 
 SECTION_ART_PING = "Art Ping Commands"
 SECTION_CURRENCY = "Gacha Currency Commands"
+SECTION_REMINDER = "Reminder Commands"
 SECTION_ADMIN = "Admin Commands"
 
 # Called as handler(client, message); returns the reply, either directly or as a coroutine
@@ -127,6 +129,12 @@ COMMANDS = [
         section=SECTION_CURRENCY,
     ),
     Command(
+        "~closingtimes",
+        get_closing_times,
+        "See when Coliseum/Aether Raids and Divine Games close next",
+        section=SECTION_REMINDER,
+    ),
+    Command(
         "~removecharacter",
         remove_character,
         "Remove a character and unsubscribe all its users",
@@ -164,6 +172,12 @@ COMMANDS = [
         remove_currency,
         "Remove a currency and clear it from all wallets",
         usage=("currency name",),
+        admin_only=True,
+    ),
+    Command(
+        "~sendreminders",
+        send_reminders,
+        "Debug: send the weekly reminders to their channels now, whatever the day",
         admin_only=True,
     ),
 ]
