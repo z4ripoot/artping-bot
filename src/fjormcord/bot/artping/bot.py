@@ -4,9 +4,7 @@ import discord
 from discord.ext import commands
 
 from fjormcord.bot.artping import config
-from fjormcord.bot.artping.coliseum import start_coliseum_notification
 from fjormcord.bot.artping.cooldowns import Cooldowns
-from fjormcord.bot.artping.divine_games import start_divine_games_notification
 from fjormcord.bot.artping.legacy.dispatch import handle_message
 from fjormcord.bot.artping.slash.cog.art_ping_cog import ArtPingCog
 from fjormcord.bot.artping.slash.cog.character_cog import CharacterCog
@@ -23,6 +21,7 @@ from fjormcord.bot.artping.view.subscribe_view import SubscribeButton
 from fjormcord.bot.artping.view.vote_view import VoteButton
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
 from fjormcord.bot.artping.voting_gauntlet import start_voting_gauntlet_notification
+from fjormcord.bot.artping.weekly_reminder import start_weekly_reminders
 
 
 class ArtPingClient(commands.Bot):
@@ -49,8 +48,7 @@ class ArtPingClient(commands.Bot):
 
     async def on_ready(self):
         logging.info("Initiating tasks")
-        start_coliseum_notification(self)
-        start_divine_games_notification(self)
+        start_weekly_reminders(self)
         start_voting_gauntlet_notification(self)
         logging.info("Tasks are initiated")
 

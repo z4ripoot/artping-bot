@@ -261,8 +261,8 @@ FROM generate_series(1, 11);   -- older sqlite3: use 11 separate INSERTs
 | 10.4 | Disconnect the network briefly so `on_ready` fires again | No `RuntimeError` about the task already running, and no duplicate reminders (nor duplicate Voting Gauntlet scores, section 13) |
 | 10.5 | Channel empty | See 1.4. No reminders |
 
-To test the reminder without waiting for Monday, temporarily change the time constants and the `weekday() == 0` check
-in `coliseum.py`. Don't commit that change.
+To test the reminder without waiting for Monday, temporarily change `weekday` and `closing_time` of `COLISEUM` in
+`weekly_reminder.py`. Don't commit that change.
 
 ## 10a. Divine Games reminder (runs Saturdays at 17:59 and 21:59 UTC)
 
@@ -273,8 +273,8 @@ in `coliseum.py`. Don't commit that change.
 | 10a.3 | Channel ID set to a channel the bot can't see (or a wrong ID) | At the trigger time, log error `Channel … not found. Task will be skipped` |
 | 10a.4 | Channel empty | See 1.4. No reminders |
 
-To test the reminder without waiting for Saturday, temporarily change the time constants and `SATURDAY` in
-`divine_games.py`. Don't commit that change.
+To test the reminder without waiting for Saturday, temporarily change `weekday` and `closing_time` of `DIVINE_GAMES`
+in `weekly_reminder.py`. Don't commit that change.
 
 ## 11. Slash commands
 
