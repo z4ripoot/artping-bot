@@ -37,6 +37,8 @@ ENTRANT_PATTERN = re.compile(
     re.DOTALL,
 )
 STATUSES = {"normal": False, "behind": True}
+# The most users Discord lets a message's allowed mentions name, so the most trackers a matchup message mentions
+MAX_MENTIONS = 100
 # One end of a round's window, e.g. "10/5 at 7:00 a.m."
 TIME_PATTERN = re.compile(r"(\d{1,2})/(\d{1,2}) at (\d{1,2}):(\d{2}) ([ap])\.m\.")
 
@@ -74,9 +76,6 @@ async def post_scores(client: discord.Client) -> str:
         if len(latest.matchups) == 1 and current_time >= latest.end:
             voting_gauntlet_service.end_gauntlet()
         return f"No round of Voting Gauntlet {tournament_id} is running, so nothing was posted"
-    if any(entrant.score is None for matchup in running.matchups for entrant in matchup):
-        # The round has started, but its votes haven't been counted yet
-        return f"The running round of Voting Gauntlet {tournament_id} has no scores yet, so nothing was posted"
 
     voting_gauntlet_service.start_gauntlet(tournament_id)
     channel_id = config.read_settings().voting_gauntlet_channel_id
@@ -85,16 +84,14 @@ async def post_scores(client: discord.Client) -> str:
         return f"Channel {channel_id} not found"
     failed = 0
     for matchup in running.matchups:
-        trackers = [
-            user_id
-            for entrant in matchup
-            if entrant.behind
-            for user_id in voting_gauntlet_service.get_trackers(tournament_id, entrant.name)
-        ]
+        trackers = tuple(voting_gauntlet_service.get_trackers(tournament_id, entrant.name) for entrant in matchup)
+        # Every tracker is shown, but only those of the Weaker character are pinged
+        pinged = [user_id for entrant, users in zip(matchup, trackers) if entrant.behind for user_id in users]
         try:
-            # A long list of trackers is split over several messages, the buttons on the last
-            for options in message_options(format_matchup(matchup, trackers, tournament_id)):
-                await channel.send(**options)
+            # Many trackers are split over several messages, the buttons on the last
+            for part in format_matchup(matchup, trackers, tournament_id):
+                [options] = message_options(part)
+                await channel.send(**options, allowed_mentions=_pings(part, pinged))
         except discord.DiscordException:
             # The other matchups are still posted
             logging.exception("Posting the Voting Gauntlet matchup of %s failed", matchup[0].name)
@@ -179,17 +176,42 @@ def _to_datetime(month: str, day: str, hour: str, minute: str, half: str, curren
     return min(candidates, key=lambda candidate: abs(candidate - current_time))
 
 
-def format_matchup(matchup: tuple[Entrant, Entrant], trackers: list[str], tournament_id: int) -> Layout:
-    # In the site's order, labelled as in the game; the trackers of the Weaker character are mentioned after a
-    # separator, then the Track buttons
+def format_matchup(
+    matchup: tuple[Entrant, Entrant], trackers: tuple[list[str], list[str]], tournament_id: int
+) -> list[Layout]:
+    # The messages of a matchup. In the site's order, labelled as in the game; after a separator the trackers of each
+    # character (trackers holds them in the matchup's order) as mentions, which show their names, then the Track
+    # buttons. A message can only ping MAX_MENTIONS users, so more trackers than that go in messages of their own
+    # after the scores: per character, MAX_MENTIONS at a time
     lines = []
     for entrant, opponent in (matchup, matchup[::-1]):
-        lines += [f"{entrant.name} ({_status(entrant, opponent)})", f"{entrant.score:,}"]
-    texts = ("\n".join(lines), mentions(trackers)) if trackers else ("\n".join(lines),)
-    return Layout(texts, (track_buttons(tournament_id, matchup),))
+        # In the first hour of a gauntlet the votes haven't been counted yet; the matchup is still posted, so its
+        # characters can be tracked
+        score = "No score yet" if entrant.score is None else f"{entrant.score:,}"
+        lines += [f"**{entrant.name}** | {_status(entrant, opponent)}", score]
+    scores = "\n".join(lines)
+    buttons = (track_buttons(tournament_id, matchup),)
+    tracked = [(entrant.name, users) for entrant, users in zip(matchup, trackers) if users]
+    if sum(len(users) for _, users in tracked) <= MAX_MENTIONS:
+        tracking = "\n".join(f"**{name}**: {mentions(users)}" for name, users in tracked)
+        return [Layout((scores, tracking) if tracking else (scores,), buttons)]
+
+    texts = [scores] + [
+        f"**{name}**: {mentions(users[start : start + MAX_MENTIONS])}"
+        for name, users in tracked
+        for start in range(0, len(users), MAX_MENTIONS)
+    ]
+    return [Layout((text,)) for text in texts[:-1]] + [Layout((texts[-1],), buttons)]
+
+
+def _pings(part: Layout, pinged: list[str]) -> discord.AllowedMentions:
+    # Only the users in pinged that this message mentions are pinged; format_matchup keeps them to MAX_MENTIONS
+    text = "\n".join(part.texts)
+    users = [discord.Object(int(user_id)) for user_id in pinged if f"<@{user_id}>" in text]
+    return discord.AllowedMentions(everyone=False, roles=False, users=users, replied_user=False)
 
 
 def _status(entrant: Entrant, opponent: Entrant) -> str:
     if entrant.behind:
-        return "Weaker"
-    return "Stronger" if opponent.behind else "Same"
+        return "🔴 Weaker 🔴"
+    return "🔵 Stronger 🔵" if opponent.behind else "Same"

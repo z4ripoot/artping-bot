@@ -364,13 +364,13 @@ posting time, A can run `~sendvotinggauntlet` (12.14), which posts the scores at
 
 | # | Setup | Expected |
 |---|---|---|
-| 12.1 | Unchanged code, during a real gauntlet round, at 5 past the hour | One message per matchup in the site's order, e.g. `Edelgard (Stronger)` / `123,456` / `Dimitri (Weaker)` / `98,765`, each with the buttons `Track Edelgard` and `Track Dimitri`. Outside a round: nothing |
-| 12.2 | `now` in round 1 | 4 matchup boxes, labelled Stronger and Weaker (or Same for both when neither is behind), a separator, and a `Track <name>` button per character |
-| 12.2a | Seed 200 trackers of a Weaker character, `now` in that round | The matchup is split over several boxes, every tracker mentioned once (and pinged), the buttons only on the last |
-| 12.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour Theodora is Weaker`. The next minute's message for that matchup has `<@U1>` after a separator, and U1 is **pinged** |
-| 12.4 | U1 clicks `Track Edelgard` under Theodora's matchup | Ephemeral `You now track Edelgard instead of Theodora`. The next messages no longer mention U1 there (Edelgard is Stronger) |
+| 12.1 | Unchanged code, during a real gauntlet round, at 5 past the hour | One message per matchup in the site's order, e.g. **Edelgard** \| 🔵 Stronger 🔵 / `123,456` / **Dimitri** \| 🔴 Weaker 🔴 / `98,765`, the names in bold, each with the buttons `Track Edelgard` and `Track Dimitri`. Outside a round: nothing |
+| 12.2 | `now` in round 1 | 4 matchup boxes, labelled 🔵 Stronger 🔵 and 🔴 Weaker 🔴 (or Same, without emoji, for both when neither is behind), a separator, and a `Track <name>` button per character |
+| 12.2a | Seed 200 trackers of a Weaker character, `now` in that round | The scores in a box of their own, then the 200 trackers in two boxes of 100, each headed with the character's name, every tracker mentioned once and pinged, the buttons only on the last |
+| 12.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour Theodora is Weaker`. The next minute's message for that matchup has **Theodora**: @U1 after a separator, and U1 is **pinged** |
+| 12.4 | U1 clicks `Track Edelgard` under Theodora's matchup | Ephemeral `You now track Edelgard instead of Theodora`. The next messages show **Edelgard**: @U1 there, but U1 is **not pinged** (Edelgard is Stronger) |
 | 12.5 | U1 clicks `Track Edelgard` again | Ephemeral `You no longer track Edelgard` |
-| 12.6 | U1 and U2 track the same Weaker character | The message mentions both, once each |
+| 12.6 | U1 and U2 track the same Weaker character, U3 its opponent | The message lists U1 and U2 under the Weaker character and U3 under the other, each once; only U1 and U2 are pinged |
 | 12.7 | U1 tracks a Weaker character, stop the bot, U1 clicks a button (`This interaction failed`), start it, clicks again | The click works after the restart (the buttons are rebuilt from their `custom_id`), and the tracking survived it |
 | 12.8 | U1 tracks Dimitri, then `now` in the final round | The final round's single message mentions U1 under Dimitri (tracking lasts across rounds) |
 | 12.9 | Then `now` after the end | No messages. `sqlite3 test.db "select * from voting_gauntlet_tracker"` is empty, and clicks on the old buttons answer `This Voting Gauntlet has ended` |

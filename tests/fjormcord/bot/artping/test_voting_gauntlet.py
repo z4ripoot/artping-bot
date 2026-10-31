@@ -103,29 +103,65 @@ def test_round_window_reads_afternoon_times():
 
 
 def test_matchup_message_keeps_the_site_order():
-    message = voting_gauntlet.format_matchup(
-        (Entrant("Cai", 1_958_844_520, behind=True), Entrant("Claude", 2_072_857_153, behind=False)), [], 112
+    [message] = voting_gauntlet.format_matchup(
+        (Entrant("Cai", 1_958_844_520, behind=True), Entrant("Claude", 2_072_857_153, behind=False)), ([], []), 112
     )
 
-    assert message.texts == ("Cai (Weaker)\n1,958,844,520\nClaude (Stronger)\n2,072,857,153",)
+    assert message.texts == ("**Cai** | 🔴 Weaker 🔴\n1,958,844,520\n**Claude** | 🔵 Stronger 🔵\n2,072,857,153",)
     assert button_labels(to_view(message)) == ["Track Cai", "Track Claude"]
 
 
 def test_matchup_without_a_side_behind_is_same():
-    message = voting_gauntlet.format_matchup(
-        (Entrant("Cai", 2_072_857_153, behind=False), Entrant("Claude", 2_072_857_150, behind=False)), [], 112
+    [message] = voting_gauntlet.format_matchup(
+        (Entrant("Cai", 2_072_857_153, behind=False), Entrant("Claude", 2_072_857_150, behind=False)), ([], []), 112
     )
 
-    assert message.texts == ("Cai (Same)\n2,072,857,153\nClaude (Same)\n2,072,857,150",)
+    assert message.texts == ("**Cai** | Same\n2,072,857,153\n**Claude** | Same\n2,072,857,150",)
 
 
-def test_matchup_message_mentions_the_trackers():
-    message = voting_gauntlet.format_matchup(
-        (Entrant("Cai", 1, behind=True), Entrant("Claude", 2, behind=False)), ["11", "22"], 112
+def test_matchup_message_mentions_the_trackers_of_both_characters():
+    [message] = voting_gauntlet.format_matchup(
+        (Entrant("Cai", 1, behind=True), Entrant("Claude", 2, behind=False)), (["11", "22"], ["33"]), 112
     )
 
     # The mentions after a separator
-    assert message.texts == ("Cai (Weaker)\n1\nClaude (Stronger)\n2", "<@11> <@22>")
+    assert message.texts == (
+        "**Cai** | 🔴 Weaker 🔴\n1\n**Claude** | 🔵 Stronger 🔵\n2",
+        "**Cai**: <@11> <@22>\n**Claude**: <@33>",
+    )
+
+
+def test_matchup_message_leaves_out_a_character_without_trackers():
+    [message] = voting_gauntlet.format_matchup(
+        (Entrant("Cai", 1, behind=True), Entrant("Claude", 2, behind=False)), ([], ["33"]), 112
+    )
+
+    assert message.texts[1] == "**Claude**: <@33>"
+
+
+def test_up_to_100_trackers_share_one_message():
+    trackers = ([str(user_id) for user_id in range(60)], [str(user_id) for user_id in range(60, 100)])
+
+    [message] = voting_gauntlet.format_matchup((Entrant("Cai", 1, True), Entrant("Claude", 2, False)), trackers, 112)
+
+    assert message.texts[1].count("<@") == 100
+
+
+def test_more_than_100_trackers_get_a_message_per_character_100_at_a_time():
+    trackers = ([str(user_id) for user_id in range(150)], [str(user_id) for user_id in range(150, 160)])
+
+    messages = voting_gauntlet.format_matchup((Entrant("Cai", 1, True), Entrant("Claude", 2, False)), trackers, 112)
+
+    # The scores alone, then Cai's 150 trackers in two messages, then Claude's 10
+    assert [message.texts[0].split(":")[0] for message in messages] == [
+        "**Cai** | 🔴 Weaker 🔴\n1\n**Claude** | 🔵 Stronger 🔵\n2",
+        "**Cai**",
+        "**Cai**",
+        "**Claude**",
+    ]
+    assert [message.texts[0].count("<@") for message in messages] == [0, 100, 50, 10]
+    # The buttons on the last
+    assert [bool(message.rows) for message in messages] == [False, False, False, True]
 
 
 def set_up_site(monkeypatch, now, page=ENDED_PAGE, tournament_id=TOURNAMENT_ID, channel_id=CHANNEL_ID):
@@ -160,6 +196,14 @@ def track(name, opponent, user_id, tournament_id=TOURNAMENT_ID):
     return voting_gauntlet_service.toggle_tracking(tournament_id, str(user_id), name, opponent)
 
 
+def pinged_users(channel):
+    # Per message sent, the IDs of the users it may ping, or True when it may ping every user it mentions
+    return [
+        mentions.users if mentions.users is True else [user.id for user in mentions.users]
+        for mentions in channel.sent_allowed_mentions
+    ]
+
+
 def custom_ids(message):
     return [button.custom_id for button in buttons(message.view)]
 
@@ -168,7 +212,7 @@ def test_every_matchup_of_the_running_round_is_posted(monkeypatch):
     sent = run_task(monkeypatch, utc(10, 2, 15, 5)).sent
 
     assert len(sent) == 4
-    assert sent[0] == "Theodora (Weaker)\n4,629,570,726\nEdelgard (Stronger)\n4,712,198,958"
+    assert sent[0] == "**Theodora** | 🔴 Weaker 🔴\n4,629,570,726\n**Edelgard** | 🔵 Stronger 🔵\n4,712,198,958"
 
 
 def test_matchup_message_has_a_track_button_per_character(monkeypatch):
@@ -188,31 +232,36 @@ def test_trackers_of_the_weaker_character_are_pinged(monkeypatch):
     track("Dimitri", "Edelgard", 22)
     track("Edelgard", "Dimitri", 33)
 
-    [message] = run_task(monkeypatch, utc(10, 6, 2, 5), page=ROUND_3_PAGE).sent
+    channel = run_task(monkeypatch, utc(10, 6, 2, 5), page=ROUND_3_PAGE)
 
-    assert message.endswith("Dimitri (Weaker)\n3,872,872,478\n<@11> <@22>")
+    [message] = channel.sent
+    assert message.endswith("**Dimitri** | 🔴 Weaker 🔴\n3,872,872,478\n**Edelgard**: <@33>\n**Dimitri**: <@11> <@22>")
+    # Edelgard is Stronger: her tracker is shown, but not pinged
+    assert pinged_users(channel) == [[11, 22]]
 
 
 def test_nobody_is_pinged_when_neither_side_is_behind(monkeypatch):
     run_task(monkeypatch, utc(10, 6, 1, 5), page=ROUND_3_PAGE)
     track("Dimitri", "Edelgard", 11)
 
-    [message] = run_task(
-        monkeypatch, utc(10, 6, 2, 5), page=ROUND_3_PAGE.replace("art-112-8-behind", "art-112-8-normal")
-    ).sent
+    channel = run_task(monkeypatch, utc(10, 6, 2, 5), page=ROUND_3_PAGE.replace("art-112-8-behind", "art-112-8-normal"))
 
-    assert "<@" not in message
+    assert channel.sent[0].endswith("**Dimitri**: <@11>")
+    assert pinged_users(channel) == [[]]
 
 
 def test_many_trackers_are_split_over_messages_with_the_buttons_on_the_last(monkeypatch):
     run_task(monkeypatch, utc(10, 6, 1, 5), page=ROUND_3_PAGE)
-    for user_id in range(10**17, 10**17 + 200):
+    for user_id in range(10**19, 10**19 + 200):
         track("Dimitri", "Edelgard", user_id)
+    for user_id in range(10**19 + 200, 10**19 + 250):
+        track("Edelgard", "Dimitri", user_id)
 
     channel = run_task(monkeypatch, utc(10, 6, 2, 5), page=ROUND_3_PAGE)
 
-    assert len(channel.sent) > 1
-    assert " ".join(channel.sent).count("<@") == 200
+    # The scores, Edelgard's 50 trackers, then Dimitri's 200 in two messages, each pinging only Dimitri's trackers
+    assert [message.count("<@") for message in channel.sent] == [0, 50, 100, 100]
+    assert [len(users) for users in pinged_users(channel)] == [0, 0, 100, 100]
     messages = list(channel.messages.values())
     assert all(text_length(message.view) <= 4000 for message in messages)
     assert [bool(button_labels(message.view)) for message in messages] == [False] * (len(messages) - 1) + [True]
@@ -314,14 +363,24 @@ def test_nothing_is_posted_or_logged_before_the_gauntlet_starts(monkeypatch, cap
     assert reply == "No round of Voting Gauntlet 113 is running, so nothing was posted"
 
 
-def test_nothing_is_posted_while_the_running_round_has_no_scores(monkeypatch, caplog):
+def test_matchups_without_scores_are_posted_to_be_tracked(monkeypatch, caplog):
     # Round 1 has started, but the page still shows no scores
-    sent = run_task(monkeypatch, utc(10, 31, 7, 5), page=UPCOMING_PAGE, tournament_id=113).sent
+    channel = run_task(monkeypatch, utc(10, 31, 7, 5), page=UPCOMING_PAGE, tournament_id=113)
 
-    assert sent == []
+    assert len(channel.sent) == 4
+    assert all(message.count("No score yet") == 2 for message in channel.sent)
+    assert button_labels(channel.last_message().view)[0].startswith("Track ")
     assert "could not be read" not in caplog.text
-    reply, _ = send_scores(monkeypatch, utc(10, 31, 7, 5), page=UPCOMING_PAGE, tournament_id=113)
-    assert reply == "The running round of Voting Gauntlet 113 has no scores yet, so nothing was posted"
+    # The gauntlet is running, so the Track buttons work
+    assert voting_gauntlet_repository.get_running_tournament() == 113
+
+
+def test_matchup_without_scores():
+    [message] = voting_gauntlet.format_matchup(
+        (Entrant("Cai", None, False), Entrant("Claude", None, False)), ([], []), 113
+    )
+
+    assert message.texts == ("**Cai** | Same\nNo score yet\n**Claude** | Same\nNo score yet",)
 
 
 def test_upcoming_gauntlet_does_not_end_the_running_one(monkeypatch):
