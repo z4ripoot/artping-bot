@@ -18,7 +18,7 @@ class TrackButton(
         super().__init__(
             discord.ui.Button(
                 label=f"Track {name}",
-                style=discord.ButtonStyle.secondary,
+                style=discord.ButtonStyle.primary,
                 custom_id=f"voting_gauntlet:{tournament_id}:{name}:{opponent}",
             )
         )
