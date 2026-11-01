@@ -1,11 +1,15 @@
 Discord community bot tailored to the Fjormcord community
 
-Build with Discord.py and Python 3.x
+Built with discord.py and Python 3.10 or newer
 Bot uses a sqlite database
 
 # Description
 A Discord bot that provides various features to your community:
- * Art pinging. See commands below for more details.
+ * Art pinging: users subscribe to characters and are pinged when art of them is posted. See commands below for more details.
+ * Character votes: when a non-admin adds a character, the community votes on it with a button; once it passes, the voters are subscribed.
+ * A gacha currency wallet: users keep track of their currencies, and a scoreboard ranks them per currency.
+ * Resources: admins save a Discord message's text or a website link under a name, which anyone can post again with `~<name>`.
+ * Easter eggs: "thanks lorenz" and "chromk" are answered with custom emoji.
  * Notification when Coliseum in Fire Emblem Heroes is closing. Notification will occur 5 hours and 1 hour before closing.
  * Notification when Divine Games in Fire Emblem Heroes is closing (at 00:00 GMT+1 between Saturday and Sunday). Notification will occur 5 hours and 1 hour before closing.
  * Hourly Voting Gauntlet scores of Fire Emblem Heroes while a round runs: one message per matchup, each character labelled Stronger, Weaker or Same as in the game. Under every matchup are two buttons, "Track <name>": click one to track that character and be pinged every hour it is Weaker. Every matchup shows who tracks each character; only the trackers of the Weaker one are pinged. You track one side of a matchup (clicking the other button switches), clicking again stops tracking, and tracking lasts across rounds until the gauntlet ends.
@@ -13,6 +17,7 @@ A Discord bot that provides various features to your community:
 # Commands
 You can type these commands in the channel chat to perform them. Every one of them is also a slash command (see below).
 Arguments are separated by spaces, so character and currency names cannot contain spaces. Use underscores for multi-word names, e.g. `Black_Knight`.
+Commands marked "Admin only" can only be used by server admins; for anyone else the `~` command does nothing.
 A character can also have aliases, other names that work in every command that takes a character, e.g. `Focalors` for `Furina`. Replies always show the character's name.
 Character names and aliases are stored with every part capitalized, whatever casing was typed: `black_knight` becomes `Black_Knight`, `m!robin` becomes `M!Robin` and `l'arachel` becomes `L'Arachel`.
 
@@ -23,21 +28,21 @@ Character names and aliases are stored with every part capitalized, whatever cas
 | ~removeping <character>           | This will unsubscribe the user from the provided character. The user won't be pinged anymore when the artping command is performed with the provided character    |
 | ~checkping                        | This will display all the characters that the user is subscribed to, 10 per page. `/checkping` shows them only to the user                                         |
 | ~addcharacter <character>         | This will add the provided character to the pings. For a non-admin it starts a vote instead (see Configuration); once it passes, the voters are subscribed        |
-| ~removecharacter <character>      | This will remove the provided character from the pings. All subscribed users will be unsubscribed from the provided character                                     |
+| ~removecharacter <character>      | Admin only: this will remove the provided character from the pings. All subscribed users will be unsubscribed from the provided character                         |
 | ~checkcharacter <character>       | This will display the aliases and all the subscribed users of the provided character, 10 per page                                                                 |
-| ~addalias <character> <alias>     | This will add another name for the provided character. The alias can be used everywhere the character's name can                                                  |
-| ~removealias <character> <alias>  | This will remove the provided alias from the provided character                                                                                                   |
-| ~setprimaryname <alias>           | This will make the provided alias the character's name. The old name becomes an alias, and all subscriptions and other aliases are kept                           |
-| ~addcurrency <currency>           | This will add the provided currency. Other users can set this currency if they have it.                                                                           |
-| ~removecurrency <currency>        | This will remove the provided currency. All users' wallets will be clear when the currency is removed                                                             |
+| ~addalias <character> <alias>     | Admin only: this will add another name for the provided character. The alias can be used everywhere the character's name can                                      |
+| ~removealias <character> <alias>  | Admin only: this will remove the provided alias from the provided character                                                                                       |
+| ~setprimaryname <alias>           | Admin only: this will make the provided alias the character's name. The old name becomes an alias, and all subscriptions and other aliases are kept               |
+| ~addcurrency <currency>           | Admin only: this will add the provided currency. Other users can set this currency if they have it.                                                               |
+| ~removecurrency <currency>        | Admin only: this will remove the provided currency. All users' wallets will be clear when the currency is removed                                                 |
 | ~setcurrency <currency> <amount>  | This will set user's provided currency to provided amount                                                                                                         |
 | ~clearcurrency <currency>         | This will clear user's provided currency from their wallet                                                                                                        |
 | ~checkwallet                      | This will display all the user's currencies and their amount in their wallet                                                                                      |
 | ~scoreboard <currency> [page]     | This will display a leaderboard of the provided currency, 10 users per page. Without a page number the first page is shown                                        |
 | ~resources                        | This will display the names of all resources                                                                                                                      |
 | ~<resource>                       | This will post the provided resource, e.g. ~hof                                                                                                                   |
-| ~setresource <resource> <link>    | This will save a resource. A Discord message link saves the text of that message, a website link saves the link                                                   |
-| ~removeresource <resource>        | This will remove the provided resource                                                                                                                            |
+| ~setresource <resource> <link>    | Admin only: this will save a resource. A Discord message link saves the text of that message, a website link saves the link                                       |
+| ~removeresource <resource>        | Admin only: this will remove the provided resource                                                                                                                |
 | ~help                             | This will display an overview of all the available commands                                                                                                       |
 | ~closingtimes                     | This will display when Coliseum/Aether Raids and Divine Games close next, the soonest first                                                                       |
 | ~sendreminders                    | Admin only, for debugging: this will send the Coliseum and Divine Games reminders to their channels now, whatever the day, and reply which were sent              |
@@ -69,7 +74,7 @@ Run the tests with `.venv/Scripts/python -m pytest`. They need neither a token n
 # Configuration
 The bot reads only `config.ini`, which is not committed. It must hold every property: the bot doesn't start when the file or a property is missing, and says which. `config.example.ini`, which is committed, is a complete example to copy; the values below in brackets are the example's.
  * You have to provide your token of Discord bot to the property "discord.token". Only put it in config.ini
- * The database is stored at the path in the property "database.path". A database that doesn't exist yet is created on startup
+ * The database is stored at the path in the property "database.path" (example: test.db), relative to the repository root. A database that doesn't exist yet is created on startup
  * The property "discord.guild_id" (example: empty) is for development, see Local setup. Leave it empty in production, which registers the slash commands globally
  * The property "commands.cooldown_seconds" (example: 1) is how many seconds a user has to wait after using a command, `~` or slash, before they can use another one. Only a command that worked starts it, admins don't have to wait, and 0 turns the cooldown off
  * The property "commands.autocomplete_max_choices" (example: 20, between 1 and 25) is how many names the autocomplete of a slash command argument offers at most
@@ -79,3 +84,4 @@ The bot reads only `config.ini`, which is not committed. It must hold every prop
  * Optionally, you can provide the ID of a channel to property "tasks.coliseum_notification_channel_id" (example: empty). The FEH coliseum notifications are sent to this channel, otherwise no notifications will be sent. To copy a channel's ID, enable Developer Mode in Discord (User Settings > Advanced), then right-click the channel and choose "Copy Channel ID"
  * Optionally, you can provide the ID of a channel to property "tasks.divine_games_notification_channel_id" (example: empty). The FEH Divine Games notifications are sent to this channel, otherwise no notifications will be sent
  * Optionally, you can provide the ID of a channel to property "tasks.voting_gauntlet_channel_id" (example: empty). While a Voting Gauntlet round runs, the scores of every matchup are posted there every hour, at 5 minutes past, read from the official site (https://support.fire-emblem-heroes.com/voting_gauntlet/current). Between rounds and outside the event nothing is sent. In the first hour the site shows no scores yet; the matchups are posted anyway, with "No score yet", so they can be tracked from the start. Empty sends no scores. The site has no API, so a change to its page can break this; the bot then logs an error and skips the hour. The status comes from the site, which shows a character as behind or not: behind is Weaker, and the other side is Stronger, or both are Same when neither is behind. Trackers are stored in the database and removed once the final round has ended
+ * The section "[emoji]" holds the custom emoji of the easter eggs: "lorenz_smile" for "thanks lorenz" and /lorenz, and "chromk_1" to "chromk_12" for "chromk" and /chromk, each written as `<:name:id>`. The example holds the Fjormcord server's emoji; a bot of your own can only show them if it is in that server, so put emoji of your test server there to see them

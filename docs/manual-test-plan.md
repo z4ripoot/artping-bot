@@ -258,7 +258,7 @@ FROM generate_series(1, 11);   -- older sqlite3: use 11 separate INSERTs
 | 10.1 | Channel ID set, bot running on a Monday through 18:00 or 22:00 UTC | A box with a blurple bar in the channel: `Coliseum/Aether Raids closes <t:…:R> at <t:…:f>`. The timestamp shows 23:00 UTC in your local time |
 | 10.2 | Same, on a non-Monday at those times | Nothing |
 | 10.3 | Channel ID set to a channel the bot can't see (or a wrong ID) | At the trigger time, log error `Channel … not found. Task will be skipped` |
-| 10.4 | Disconnect the network briefly so `on_ready` fires again | No `RuntimeError` about the task already running, and no duplicate reminders (nor duplicate Voting Gauntlet scores, section 13) |
+| 10.4 | Disconnect the network briefly so `on_ready` fires again | No `RuntimeError` about the task already running, and no duplicate reminders (nor duplicate Voting Gauntlet scores, section 12) |
 | 10.5 | Channel empty | See 1.4. No reminders |
 
 To test the reminder without waiting for Monday, temporarily change `weekday` and `closing_time` of `COLISEUM` in
@@ -365,9 +365,9 @@ posting time, A can run `~sendvotinggauntlet` (12.14), which posts the scores at
 | # | Setup | Expected |
 |---|---|---|
 | 12.1 | Unchanged code, during a real gauntlet round, at 5 past the hour | One message per matchup in the site's order, e.g. **Edelgard** \| 🔵 Stronger 🔵 / `123,456` / **Dimitri** \| 🔴 Weaker 🔴 / `98,765`, the names in bold, each with the buttons `Track Edelgard` and `Track Dimitri`. Outside a round: nothing |
-| 12.2 | `now` in round 1 | 4 matchup boxes, labelled 🔵 Stronger 🔵 and 🔴 Weaker 🔴 (or Same, without emoji, for both when neither is behind), a separator, and a `Track <name>` button per character |
+| 12.2 | `now` in round 1 | 4 matchup boxes, labelled 🔵 Stronger 🔵 and 🔴 Weaker 🔴 (or Same, without emoji, for both when neither is behind), a separator, and a blurple `Track <name>` button per character |
 | 12.2a | Seed 200 trackers of a Weaker character, `now` in that round | The scores in a box of their own, then the 200 trackers in two boxes of 100, each headed with the character's name, every tracker mentioned once and pinged, the buttons only on the last |
-| 12.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour Theodora is Weaker`. The next minute's message for that matchup has **Theodora**: @U1 after a separator, and U1 is **pinged** |
+| 12.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour when Theodora is Weaker`. The next minute's message for that matchup has **Theodora**: @U1 after a separator, and U1 is **pinged** |
 | 12.4 | U1 clicks `Track Edelgard` under Theodora's matchup | Ephemeral `You now track Edelgard instead of Theodora`. The next messages show **Edelgard**: @U1 there, but U1 is **not pinged** (Edelgard is Stronger) |
 | 12.5 | U1 clicks `Track Edelgard` again | Ephemeral `You no longer track Edelgard` |
 | 12.6 | U1 and U2 track the same Weaker character, U3 its opponent | The message lists U1 and U2 under the Weaker character and U3 under the other, each once; only U1 and U2 are pinged |
@@ -382,6 +382,7 @@ posting time, A can run `~sendvotinggauntlet` (12.14), which posts the scores at
 | 12.15 | A runs `~sendvotinggauntlet` with `now` between rounds or after the end, unchanged code outside a gauntlet | Reply `No round of Voting Gauntlet … is running, so nothing was posted`; nothing in the channel |
 | 12.16 | A runs `~sendvotinggauntlet` with `voting_gauntlet_channel_id` empty, or a channel the bot can't see | Reply `No channel is configured for the Voting Gauntlet scores` / `Channel … not found` |
 | 12.17 | U1 runs `~sendvotinggauntlet` | Silence (admin only); `/sendvotinggauntlet` isn't listed for U1 |
+| 12.18 | `fetch_page` returns `113, Path("tests/fjormcord/bot/artping/voting_gauntlet_113_upcoming.html").read_text("utf-8")`, `now` `datetime(2026, 10, 31, 7, 5, tzinfo=timezone.utc)` (the first hour of round 1, before the site shows scores) | 4 matchup boxes, both characters labelled Same with `No score yet` under each name, and the `Track <name>` buttons; clicking one tracks in 113 (no `This Voting Gauntlet has ended`). No `could not be read` in the log |
 
 ## Not testable by hand
 
