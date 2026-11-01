@@ -41,4 +41,4 @@ def toggle_tracking(tournament_id: int, user_id: str, name: str, opponent: str) 
     switched = voting_gauntlet_repository.has_tracker(tournament_id, user_id, opponent)
     voting_gauntlet_repository.add_tracker(tournament_id, user_id, name, opponent)
     instead = f" instead of {opponent}" if switched else ""
-    return log_info(f"You now track {name}{instead}. You'll be pinged every hour {name} is Weaker")
+    return log_info(f"You now track {name}{instead}. You'll be pinged every hour when {name} is Weaker")

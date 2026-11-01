@@ -30,7 +30,7 @@ def test_click_tracks_the_character_and_answers_privately():
 
     sent = click(after_restart(track_buttons(112, MATCHUP)[1]), user_id=7)
 
-    assert sent == [("You now track Dimitri. You'll be pinged every hour Dimitri is Weaker", True, None)]
+    assert sent == [("You now track Dimitri. You'll be pinged every hour when Dimitri is Weaker", True, None)]
     assert voting_gauntlet_service.get_trackers(112, "Dimitri") == ["7"]
 
 

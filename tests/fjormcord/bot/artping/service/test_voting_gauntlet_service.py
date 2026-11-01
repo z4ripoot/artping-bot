@@ -17,7 +17,7 @@ def running():
 def test_track_a_character():
     assert (
         toggle_tracking(112, "1", "Dimitri", "Edelgard")
-        == "You now track Dimitri. You'll be pinged every hour Dimitri is Weaker"
+        == "You now track Dimitri. You'll be pinged every hour when Dimitri is Weaker"
     )
     assert get_trackers(112, "Dimitri") == ["1"]
 
@@ -34,7 +34,7 @@ def test_tracking_the_opponent_switches_sides():
 
     assert (
         toggle_tracking(112, "1", "Edelgard", "Dimitri")
-        == "You now track Edelgard instead of Dimitri. You'll be pinged every hour Edelgard is Weaker"
+        == "You now track Edelgard instead of Dimitri. You'll be pinged every hour when Edelgard is Weaker"
     )
     assert get_trackers(112, "Dimitri") == []
     assert get_trackers(112, "Edelgard") == ["1"]
