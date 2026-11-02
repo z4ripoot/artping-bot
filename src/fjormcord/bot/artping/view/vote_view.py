@@ -10,8 +10,6 @@ VOTE_BUTTON_ID = "character_vote"
 
 
 class VoteButton(discord.ui.DynamicItem[discord.ui.Button], template=VOTE_BUTTON_ID):
-    # The Vote button under a vote message. Every vote message has the same custom_id; the vote is found by the clicked
-    # message's ID. Registered with Client.add_dynamic_items, so a click is handled after a restart too
     def __init__(self, count: int = 0):
         settings = config.read_settings()
         super().__init__(
@@ -25,11 +23,9 @@ class VoteButton(discord.ui.DynamicItem[discord.ui.Button], template=VOTE_BUTTON
 
     @classmethod
     async def from_custom_id(cls, interaction: discord.Interaction, item: discord.ui.Button, match: re.Match[str], /):
-        # The count isn't needed to handle a click
         return cls()
 
     async def callback(self, interaction: discord.Interaction):
-        # Deferred: passing a vote edits every vote message for the name, which may take a while
         await answer_click(
             self,
             interaction,

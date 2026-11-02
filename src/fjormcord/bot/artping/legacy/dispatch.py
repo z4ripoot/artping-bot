@@ -14,7 +14,6 @@ from fjormcord.bot.artping.view.layout import message_options
 
 
 async def handle_message(client: discord.Client, message: discord.Message):
-    # Bots, this one included, get no reply at all, so no bot can make this one spam
     if message.author.bot:
         return
 
@@ -32,19 +31,15 @@ async def handle_message(client: discord.Client, message: discord.Message):
     word = content.split()[0]
     command = COMMANDS_BY_NAME.get(word.lower())
     if command is None:
-        # Commands are looked up first, so a resource never hides one
         await send_resource(client, message, word.removeprefix(COMMAND_PREFIX))
         return
 
     logging.info("Received message from %s: %s", message.author.display_name, content)
 
-    # Non-admins get no reply to admin commands to prevent bot spam
     if command.admin_only and not is_administrator(message.author):
         return
 
     out = await get_message(client, command, message)
-
-    # Replies longer than Discord allows are sent as several messages; an empty reply sends nothing
     for options in message_options(out):
         await message.channel.send(**options)
 
@@ -54,11 +49,9 @@ async def send_resource(client: discord.Client, message: discord.Message, name: 
     if content is None:
         return
 
-    # Posting a resource is a command too, so it has the cooldown
     try:
         with client.cooldowns.command(message.author):
             logging.info("Posting resource %s for %s", name, message.author.display_name)
-            # The copied text may mention users or roles; posting it again must not ping them
             for chunk in split_message(content):
                 await message.channel.send(chunk, allowed_mentions=discord.AllowedMentions.none())
     except CommandError as e:

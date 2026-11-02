@@ -11,9 +11,6 @@ class SubscribeButton(
     discord.ui.DynamicItem[discord.ui.Button],
     template=r"subscribe:(?P<character_id>\d+)",
 ):
-    # "Subscribe to <name>" under the message that announces a new character. The character's ID is in the
-    # custom_id, so the button keeps working after a restart (registered with Client.add_dynamic_items) and after the
-    # character is renamed. It only subscribes; a click is not a command, so it has no cooldown
     def __init__(self, character_id: int, label: str):
         super().__init__(
             discord.ui.Button(label=label, style=discord.ButtonStyle.primary, custom_id=f"subscribe:{character_id}")
@@ -34,5 +31,4 @@ class SubscribeButton(
 
     @classmethod
     def for_character(cls, character: Character) -> "SubscribeButton":
-        # Discord allows labels of 80 characters at most
         return cls(character.id, f"Subscribe to {character.name}"[:80])

@@ -14,7 +14,6 @@ def get_currency(currency_name: str) -> Currency | None:
 
 
 def get_currencies(limit: int) -> list[Currency]:
-    # The first currencies alphabetically, ignoring case
     return fetch_all(Currency, _SELECT_CURRENCY + "ORDER BY C.NAME COLLATE NOCASE LIMIT ?", (limit,))
 
 

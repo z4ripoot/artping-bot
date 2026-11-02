@@ -12,12 +12,10 @@ from fjormcord.bot.artping.repository import (
     resource_repository,
 )
 
-# The description of an option that takes a character
 CHARACTER_DESCRIPTION = "The character's name or an alias; spaces are fine"
 
 
 def _underscore_spaces(value: str) -> str:
-    # Slash options can contain spaces, names can't: "black knight" is the name Black_Knight
     return "_".join(value.split())
 
 
@@ -29,7 +27,6 @@ def to_name(value: str) -> str:
 
 
 def _choices(get_names: Callable[[str, int], list[str]], current: str) -> list[app_commands.Choice[str]]:
-    # get_names(prefix, limit) is a repository query; current is what the user typed so far
     names = get_names(_underscore_spaces(current), config.read_settings().autocomplete_max_choices)
     return [app_commands.Choice(name=name, value=name) for name in names]
 
@@ -41,7 +38,6 @@ async def character_choices(interaction: discord.Interaction, current: str) -> l
 async def subscribed_character_choices(
     interaction: discord.Interaction, current: str
 ) -> list[app_commands.Choice[str]]:
-    # Only the characters the user is subscribed to, the ones they can remove a ping for
     user_id = str(interaction.user.id)
     return _choices(lambda prefix, limit: art_ping_repository.get_subscribed_names(user_id, prefix, limit), current)
 

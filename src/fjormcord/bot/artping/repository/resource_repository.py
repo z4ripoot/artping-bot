@@ -17,7 +17,6 @@ def get_resource_names(prefix: str = "", limit: int = -1) -> list[str]:
 
 
 def set_resource(resource: Resource):
-    # Replaces a resource of the same name, including the casing of its name
     sql = """
         INSERT INTO RESOURCE (NAME, CONTENT, SOURCE)
         VALUES (?, ?, ?)

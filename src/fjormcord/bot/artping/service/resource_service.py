@@ -7,9 +7,8 @@ from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.model.resource import Resource
 from fjormcord.bot.artping.repository import resource_repository
-from fjormcord.bot.artping.util.message_util import log_info
+from fjormcord.bot.artping.util.message_util import log_and_reply
 
-# Plain ASCII, so names are easy to type and can't hold mention syntax
 _RESOURCE_NAME = re.compile(r"[A-Za-z0-9_-]+")
 # https://discord.com/channels/<server>/<channel>/<message>, also from the test clients and the old domain
 _DISCORD_MESSAGE_LINK = re.compile(
@@ -34,7 +33,6 @@ def _parse_name(entry: str) -> str:
 
 
 def _require_not_a_command(name: str):
-    # Imported here: commands imports this module for its handlers
     from fjormcord.bot.artping.legacy.commands import COMMAND_PREFIX, COMMANDS_BY_NAME
 
     command_name = COMMAND_PREFIX + name.lower()
@@ -43,16 +41,16 @@ def _require_not_a_command(name: str):
 
 
 async def _get_content(client: discord.Client, link: str) -> str:
-    # The text of a linked Discord message as it is now, or a website link itself
     match = _DISCORD_MESSAGE_LINK.fullmatch(link)
     if match:
         channel_id, message_id = int(match[1]), int(match[2])
+
         try:
             linked = await client.get_partial_messageable(channel_id).fetch_message(message_id)
         except discord.HTTPException as e:
             logging.warning("Failed to fetch message %s. %s", link, e)
             raise CommandError("Couldn't read that message. Check the link, and that the bot can read that channel")
-        # Messages with only images or files, and forwarded messages, have no text of their own
+
         if not linked.content:
             raise CommandError("That message has no text")
         return linked.content
@@ -66,20 +64,15 @@ async def _get_content(client: discord.Client, link: str) -> str:
 async def set_resource(client: discord.Client, name: str, link: str) -> str:
     name = _parse_name(name)
     _require_not_a_command(name)
-    # <link> keeps Discord from showing a preview of the link in the admin's own message
     link = link.removeprefix("<").removesuffix(">")
-
     resource_repository.set_resource(Resource(name, await _get_content(client, link), link))
-
-    return log_info(f"Resource {name} has been set")
+    return log_and_reply(f"Resource {name} has been set")
 
 
 def remove_resource(name: str) -> str:
     resource = require_resource(_parse_name(name))
-
     resource_repository.remove_resource(resource.name)
-
-    return log_info(f"Resource {resource.name} has been removed")
+    return log_and_reply(f"Resource {resource.name} has been removed")
 
 
 def list_resources(slash: bool = False) -> str | Layout:
@@ -88,9 +81,9 @@ def list_resources(slash: bool = False) -> str | Layout:
     if not names:
         return "No resources have been set yet"
 
-    # A ~ user posts one with ~<name>, a slash user with /resource
     if slash:
         return Layout(("### Resources", "\n".join(names), "Post one with /resource"))
+
     return Layout(("### Resources", "\n".join(f"~{name}" for name in names)))
 
 
@@ -99,6 +92,5 @@ def post_resource(name: str) -> str:
 
 
 def get_resource_content(name: str) -> str | None:
-    # What ~<name> posts; None when there is no such resource
     resource = resource_repository.get_resource(name)
     return resource.content if resource else None

@@ -15,8 +15,6 @@ async def answer_click(
     *,
     defer: bool = False,
 ):
-    # A click that only gets a private answer: call's reply, a CommandError's message, or failure when anything else
-    # goes wrong. defer for a call that may take longer than the 3 seconds Discord waits for an answer
     if defer:
         await interaction.response.defer(ephemeral=True, thinking=True)
     try:
@@ -25,14 +23,12 @@ async def answer_click(
         logging.warning(str(e))
         reply = str(e)
     except Exception:
-        # Answered here, since after a defer the view's on_error would only log and leave the clicker waiting
         logging.exception("The click on %s failed", item.custom_id)
         reply = failure
     await answer_privately(interaction, reply)
 
 
 async def answer_privately(interaction: discord.Interaction, text: str):
-    # Logged when Discord no longer takes an answer, e.g. when the defer itself failed for an expired click
     try:
         if interaction.response.is_done():
             await interaction.followup.send(text, ephemeral=True)
@@ -43,7 +39,6 @@ async def answer_privately(interaction: discord.Interaction, text: str):
 
 
 def walk_components(components: Iterable) -> Iterator:
-    # A message's components at any depth of its layout, in the order they are shown
     for component in components:
         yield component
         yield from walk_components(getattr(component, "children", []))

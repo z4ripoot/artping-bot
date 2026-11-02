@@ -8,7 +8,6 @@ _SELECT_CHARACTER = """
 
 
 def get_character(name: str) -> Character | None:
-    # Finds the character by its name or one of its aliases; a name and an alias never collide
     where = """
         WHERE C.NAME = ?
            OR C.CHARACTER_ID IN (SELECT A.CHARACTER_ID FROM ALIAS A WHERE A.ALIAS = ?)
@@ -22,12 +21,10 @@ def get_character_by_id(character_id: int) -> Character | None:
 
 
 def get_all_names(prefix: str = "", limit: int = -1) -> list[str]:
-    # The names of all characters and all aliases, for autocompletion
     return fetch_names("SELECT C.NAME FROM CHARACTERS C UNION SELECT A.ALIAS FROM ALIAS A", prefix, limit)
 
 
 def add_character(character_name: str) -> int:
-    # Returns the new character's ID
     sql = """
         INSERT INTO CHARACTERS (NAME)
         VALUES (?)

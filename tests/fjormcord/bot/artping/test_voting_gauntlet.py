@@ -1,6 +1,6 @@
 import asyncio
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -14,7 +14,16 @@ from fjormcord.bot.artping.repository import voting_gauntlet_repository
 from fjormcord.bot.artping.service import voting_gauntlet_service
 from fjormcord.bot.artping.view.layout import to_view
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
-from tests.fakes import FakeChannel, button_labels, buttons, http_error, items_of_type, text_length, use_settings
+from tests.fakes import (
+    FakeChannel,
+    button_labels,
+    buttons,
+    fake_datetime,
+    http_error,
+    items_of_type,
+    text_length,
+    use_settings,
+)
 
 # English, UTC pages of tournament 112 (scripts removed): as the site served it after the gauntlet ended, and an
 # archived copy taken during round 3, whose Pacific times were rewritten to the UTC the bot requests
@@ -176,7 +185,7 @@ def set_up_site(monkeypatch, now, page=ENDED_PAGE, tournament_id=TOURNAMENT_ID, 
 
     use_settings(monkeypatch, voting_gauntlet_channel_id=channel_id)
     monkeypatch.setattr(voting_gauntlet, "fetch_page", fetch_page)
-    monkeypatch.setattr(voting_gauntlet, "now", lambda: now)
+    monkeypatch.setattr(voting_gauntlet, "datetime", fake_datetime(now, timedelta()))
     return client, channel
 
 

@@ -4,7 +4,7 @@ from fjormcord.bot.artping.exception.command_error import CommandError
 from fjormcord.bot.artping.model.currency import Currency
 from fjormcord.bot.artping.model.layout import Layout
 from fjormcord.bot.artping.repository import currency_repository
-from fjormcord.bot.artping.util.message_util import command_name, log_info
+from fjormcord.bot.artping.util.message_util import command_name, log_and_reply
 from fjormcord.bot.artping.util.page_util import PAGE_SIZE, get_page, paged_header
 from fjormcord.bot.artping.util.user_util import get_username
 from fjormcord.bot.artping.view import page_view, scoreboard_view  # Modules: they import this one too
@@ -30,15 +30,13 @@ def add_currency(name: str) -> str:
 
     currency_repository.add_currency(name)
 
-    return log_info(f"Currency {name} has been added")
+    return log_and_reply(f"Currency {name} has been added")
 
 
 def remove_currency(name: str) -> str:
     currency = require_currency(name)
-
     currency_repository.remove_currency(currency.id)
-
-    return log_info(f"Currency {currency.name} has been removed")
+    return log_and_reply(f"Currency {currency.name} has been removed")
 
 
 def set_currency(user_id: str, name: str, amount: int) -> str:
@@ -51,7 +49,7 @@ def set_currency(user_id: str, name: str, amount: int) -> str:
 
     currency_repository.set_currency(user_id, currency.id, amount)
 
-    return log_info(f"Your {currency.name} has been set to {amount}")
+    return log_and_reply(f"Your {currency.name} has been set to {amount}")
 
 
 def clear_currency(user_id: str, name: str) -> str:
@@ -62,7 +60,7 @@ def clear_currency(user_id: str, name: str) -> str:
 
     currency_repository.clear_currency(user_id, currency.id)
 
-    return log_info(f"Your {currency.name} has been cleared")
+    return log_and_reply(f"Your {currency.name} has been cleared")
 
 
 def check_wallet(user_id: str, display_name: str, slash: bool = False) -> str | Layout:
@@ -80,7 +78,6 @@ async def get_scoreboard(client: discord.Client, name: str, page: int = 1) -> La
 
 
 async def get_scoreboard_page(client: discord.Client, currency_id: int, page: int) -> Layout:
-    # A click on Previous or Next, or a pick in the dropdown; the currency may have been removed since
     currency = currency_repository.get_currency_by_id(currency_id)
     if currency is None:
         raise CommandError("This currency doesn't exist anymore")
@@ -88,8 +85,6 @@ async def get_scoreboard_page(client: discord.Client, currency_id: int, page: in
 
 
 async def _render_scoreboard(client: discord.Client, currency: Currency, page: int) -> Layout:
-    # The header, the ranking, then the dropdown to switch currencies (when there is another) and the page buttons
-    # (when there are several pages)
     header = f"### Scoreboard for {currency.name}"
     rows = []
     currencies = currency_repository.get_currencies(MAX_CURRENCY_OPTIONS)
@@ -98,13 +93,11 @@ async def _render_scoreboard(client: discord.Client, currency: Currency, page: i
 
     scoreboard = currency_repository.get_scoreboard(currency.id)
     if not scoreboard:
-        # Laid out too, so the dropdown can switch away from it
         return Layout((header, f"Nobody has set their {currency.name} yet"), tuple(rows))
 
     entries, page_count = get_page(scoreboard, page, f"The scoreboard for {currency.name}")
     header = paged_header(header, page, page_count)
 
-    # Only the users on this page are looked up
     first_rank = (page - 1) * PAGE_SIZE + 1
     lines = [
         f"{rank}. {await get_username(client, entry.user_id)} ({entry.amount})"

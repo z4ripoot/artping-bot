@@ -20,7 +20,6 @@ _ADD_VOTER = """
 
 
 def add_vote(vote: CharacterVote, voter_ids: Iterable[str] = ()):
-    # Stores the vote with its first voters, all or nothing
     sql = """
         INSERT INTO CHARACTER_VOTE (MESSAGE_ID, CHANNEL_ID, CHARACTER_NAME, PROPOSER)
         VALUES (?, ?, ?, ?)
@@ -93,8 +92,6 @@ def count_voters(message_id: str) -> int:
 
 
 def pass_vote(message_id: str, character_name: str) -> int:
-    # Adds the character, subscribes the voters and closes every vote for the name, all or nothing; returns the new
-    # character's ID
     add_character = """
         INSERT INTO CHARACTERS (NAME)
         VALUES (?)

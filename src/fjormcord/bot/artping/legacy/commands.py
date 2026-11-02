@@ -28,7 +28,6 @@ SECTION_CURRENCY = "Gacha Currency Commands"
 SECTION_REMINDER = "Reminder Commands"
 SECTION_ADMIN = "Admin Commands"
 
-# Called as handler(client, message); returns the reply, either directly or as a coroutine
 Handler = Callable[[discord.Client, discord.Message], str | Layout | Awaitable[str | Layout]]
 
 
@@ -37,20 +36,16 @@ class Command:
     name: str
     handler: Handler
     description: str
-    # The arguments, in order, e.g. ("currency name", "amount")
     usage: tuple[str, ...] = ()
     section: str = SECTION_ART_PING
     admin_only: bool = False
 
 
 def format_usage(command: Command) -> str:
-    # ~setcurrency (currency name) (amount)
     return " ".join([command.name] + [f"({argument})" for argument in command.usage])
 
 
 def help_layout(tips: list[str], entries: Iterable[tuple[str, str, str]]) -> Layout:
-    # The title with the tips, then one part per section, in the order the entries name them, each command's usage in
-    # bold over its description. entries are (section, usage, description); ~help and /help both lay out this way
     sections: dict[str, list[str]] = {}
     for section, usage, description in entries:
         sections.setdefault(section, []).append(f"**{usage}**\n{description}")
@@ -60,7 +55,6 @@ def help_layout(tips: list[str], entries: Iterable[tuple[str, str, str]]) -> Lay
 
 
 def show_help(client: discord.Client, message: discord.Message) -> Layout:
-    # Generated from COMMANDS, which keeps each section together; the admin section is only shown to admins
     show_admin = is_administrator(message.author)
     tips = [
         "Content in brackets is what to add when using a command",
@@ -75,9 +69,6 @@ def show_help(client: discord.Client, message: discord.Message) -> Layout:
     return help_layout(tips, entries)
 
 
-# The ~ commands; slash commands are in fjormcord.bot.artping.slash
-# (docs/superpowers/specs/2026-10-26-slash-commands-design.md)
-# Commands are listed in ~help order; keep each section together and admin-only commands last.
 COMMANDS = [
     Command("~artping", do_art_ping, "Ping users for art of this character", usage=("character name",)),
     Command(

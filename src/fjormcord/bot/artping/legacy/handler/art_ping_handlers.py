@@ -25,5 +25,4 @@ def remove_ping(client: discord.Client, message: discord.Message) -> str:
 
 
 async def check_ping(client: discord.Client, message: discord.Message) -> str | Layout:
-    # Public, as every ~ reply; /checkping is private
     return await art_ping_service.check_ping(client, str(message.author.id))

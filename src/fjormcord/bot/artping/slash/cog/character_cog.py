@@ -16,7 +16,6 @@ class CharacterCog(commands.Cog):
     )
     @app_commands.describe(character="The new character's name; spaces are fine")
     async def add_character(self, interaction: discord.Interaction, character: str):
-        # A vote message is a follow-up to the deferred interaction; wait=True returns it, as its ID identifies the vote
         vote_channel = VoteChannel(
             str(interaction.channel_id),
             interaction.guild is not None,

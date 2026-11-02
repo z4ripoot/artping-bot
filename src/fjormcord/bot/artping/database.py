@@ -15,74 +15,10 @@ MIGRATIONS_PATH = config.PROJECT_ROOT / "db" / "migrations"
 _connection: sqlite3.Connection | None = None
 
 
-def get_database_connection() -> sqlite3.Connection:
-    if _connection is None:
-        set_database_connection(connect(config.read_settings().database_path))
-    return _connection
-
-
-def execute(sql: str, parameters: Sequence = ()):
-    # A single write, committed on its own
-    with get_database_connection() as conn:
-        conn.execute(sql, parameters)
-
-
-def exists(sql: str, parameters: Sequence = ()) -> bool:
-    # Whether the query finds a row
-    return get_database_connection().execute(sql, parameters).fetchone() is not None
-
-
-def fetch_one(model: Callable[..., Model], sql: str, parameters: Sequence = ()) -> Model | None:
-    # The row found as a model, its columns aliased to the model's fields; None when there is none
-    row = get_database_connection().execute(sql, parameters).fetchone()
-    return model(**row) if row else None
-
-
-def fetch_all(model: Callable[..., Model], sql: str, parameters: Sequence = ()) -> list[Model]:
-    # Every row found as a model, its columns aliased to the model's fields
-    return [model(**row) for row in get_database_connection().execute(sql, parameters)]
-
-
-def fetch_column(sql: str, parameters: Sequence = ()) -> list[Any]:
-    # The values of a query that selects one column
-    return [value for (value,) in get_database_connection().execute(sql, parameters)]
-
-
-def fetch_value(sql: str, parameters: Sequence = ()) -> Any:
-    # The first column of the first row found; None when there is none
-    row = get_database_connection().execute(sql, parameters).fetchone()
-    return row[0] if row else None
-
-
-def fetch_names(names_sql: str, prefix: str = "", limit: int = -1, parameters: Sequence = ()) -> list[str]:
-    # The names selected by names_sql, a query of one column with parameters, that start with prefix, ignoring case,
-    # in alphabetical order; a limit of -1 means no limit
-    sql = f"""
-        SELECT N.NAME
-        FROM ({names_sql}) N
-        WHERE SUBSTR(N.NAME, 1, LENGTH(?)) = ? COLLATE NOCASE
-        ORDER BY N.NAME COLLATE NOCASE
-        LIMIT ?
-        """
-
-    return fetch_column(sql, (*parameters, prefix, prefix, limit))
-
-
-def connect(path: str | Path) -> sqlite3.Connection:
-    connection = sqlite3.connect(path)
-    # Lets migrations normalize names the same way the commands do
-    connection.create_function("NORMALIZE_NAME", 1, normalize_name, deterministic=True)
-    # Runs before foreign keys are enabled: rebuilding a table would otherwise cascade-delete the rows referencing it
-    migrate(connection)
-    return connection
-
-
 def migrate(connection: sqlite3.Connection):
-    # A new database and one created before versioning are both at 0; 001 only creates tables that don't exist yet
     version = connection.execute("PRAGMA user_version").fetchone()[0]
     migrations = {int(path.name.split("_")[0]): path for path in MIGRATIONS_PATH.glob("*.sql")}
 
-    # E.g. a development database that ran migrations which were later merged into fewer: it would skip new ones
     if version > max(migrations):
         raise sqlite3.DatabaseError(
             f"The database is at version {version}, but the latest migration is {max(migrations)}. "
@@ -95,7 +31,6 @@ def migrate(connection: sqlite3.Connection):
 
         logging.info("Applying database migration %s", path.name)
         try:
-            # Each migration and its version bump are applied together or not at all
             connection.executescript(f"BEGIN;\n{path.read_text(encoding='utf-8')}\nPRAGMA user_version = {number};")
             violations = connection.execute("PRAGMA foreign_key_check").fetchall()
             if violations:
@@ -107,9 +42,64 @@ def migrate(connection: sqlite3.Connection):
             raise
 
 
+def connect(path: str | Path) -> sqlite3.Connection:
+    connection = sqlite3.connect(path)
+    connection.create_function("NORMALIZE_NAME", 1, normalize_name, deterministic=True)
+    migrate(connection)
+    return connection
+
+
 def set_database_connection(connection: sqlite3.Connection):
     global _connection
     connection.row_factory = sqlite3.Row
-    # SQLite only enforces foreign keys (and their ON DELETE CASCADE) when enabled per connection
     connection.execute("PRAGMA foreign_keys = ON")
     _connection = connection
+
+
+def get_database_connection() -> sqlite3.Connection:
+    if _connection is None:
+        set_database_connection(connect(config.read_settings().database_path))
+    return _connection
+
+
+def execute(sql: str, parameters: Sequence = ()):
+    with get_database_connection() as conn:
+        conn.execute(sql, parameters)
+
+
+def _fetch_one(sql: str, parameters: Sequence) -> Any:
+    return get_database_connection().execute(sql, parameters).fetchone()
+
+
+def exists(sql: str, parameters: Sequence = ()) -> bool:
+    return _fetch_one(sql, parameters) is not None
+
+
+def fetch_one(model: Callable[..., Model], sql: str, parameters: Sequence = ()) -> Model | None:
+    row = _fetch_one(sql, parameters)
+    return model(**row) if row else None
+
+
+def fetch_all(model: Callable[..., Model], sql: str, parameters: Sequence = ()) -> list[Model]:
+    return [model(**row) for row in get_database_connection().execute(sql, parameters)]
+
+
+def fetch_column(sql: str, parameters: Sequence = ()) -> list[Any]:
+    return [value for (value,) in get_database_connection().execute(sql, parameters)]
+
+
+def fetch_value(sql: str, parameters: Sequence = ()) -> Any:
+    row = _fetch_one(sql, parameters)
+    return row[0] if row else None
+
+
+def fetch_names(names_sql: str, prefix: str = "", limit: int = -1, parameters: Sequence = ()) -> list[str]:
+    sql = f"""
+        SELECT N.NAME
+        FROM ({names_sql}) N
+        WHERE SUBSTR(N.NAME, 1, LENGTH(?)) = ? COLLATE NOCASE
+        ORDER BY N.NAME COLLATE NOCASE
+        LIMIT ?
+        """
+
+    return fetch_column(sql, (*parameters, prefix, prefix, limit))

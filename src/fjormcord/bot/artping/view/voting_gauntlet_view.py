@@ -11,9 +11,6 @@ class TrackButton(
     discord.ui.DynamicItem[discord.ui.Button],
     template=r"voting_gauntlet:(?P<tournament_id>\d+):(?P<name>[^:]+):(?P<opponent>[^:]+)",
 ):
-    # "Track <name>" under a matchup message. The gauntlet and both names are in the custom_id, so a click is
-    # handled after a restart too: the class is registered with Client.add_dynamic_items, and discord.py rebuilds
-    # the button from the custom_id of whatever message was clicked.
     def __init__(self, tournament_id: int, name: str, opponent: str):
         super().__init__(
             discord.ui.Button(
@@ -42,6 +39,5 @@ class TrackButton(
 
 
 def track_buttons(tournament_id: int, matchup: tuple[Entrant, Entrant]) -> tuple[TrackButton, TrackButton]:
-    # The two Track buttons of a matchup, in the site's order
     first, second = matchup
     return TrackButton(tournament_id, first.name, second.name), TrackButton(tournament_id, second.name, first.name)

@@ -14,7 +14,6 @@ class ResourceCog(commands.Cog):
     @app_commands.describe(name=RESOURCE_DESCRIPTION)
     @app_commands.autocomplete(name=resource_choices)
     async def resource(self, interaction: discord.Interaction, name: str):
-        # The copied text may mention users
         await run(
             interaction, lambda: resource_service.post_resource(name), allowed_mentions=discord.AllowedMentions.none()
         )

@@ -13,7 +13,6 @@ def get_running_tournament() -> int | None:
 
 
 def set_running_tournament(tournament_id: int):
-    # Replaces another gauntlet, whose trackers go with it; the running one keeps its trackers
     with get_database_connection() as conn:
         conn.execute("DELETE FROM VOTING_GAUNTLET WHERE TOURNAMENT_ID != ?", (tournament_id,))
         conn.execute("INSERT OR IGNORE INTO VOTING_GAUNTLET (TOURNAMENT_ID) VALUES (?)", (tournament_id,))
@@ -35,7 +34,6 @@ def has_tracker(tournament_id: int, user_id: str, character_name: str) -> bool:
 
 
 def add_tracker(tournament_id: int, user_id: str, character_name: str, opponent_name: str):
-    # A user tracks one side of a matchup, so tracking a character stops tracking its opponent
     with get_database_connection() as conn:
         conn.execute(_REMOVE_TRACKER, (tournament_id, user_id, opponent_name))
         conn.execute(

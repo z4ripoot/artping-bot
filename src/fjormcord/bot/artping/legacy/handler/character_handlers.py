@@ -13,6 +13,7 @@ async def add_character(client: discord.Client, message: discord.Message) -> str
         message.guild is not None,
         lambda view: message.channel.send(view=view),
     )
+
     return await character_service.add_character(client, message.author, name, vote_channel)
 
 

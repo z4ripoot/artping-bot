@@ -45,7 +45,6 @@ async def get_scoreboard(client: discord.Client, message: discord.Message) -> La
     try:
         page = int(entries[1]) if len(entries) == 2 else 1
     except ValueError:
-        # The optional second argument is the page; anything else is most likely a name with spaces
         raise CommandError(MESSAGE_ONE_NAME_ONLY)
 
     return await currency_service.get_scoreboard(client, entries[0], page)

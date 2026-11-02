@@ -10,10 +10,8 @@ from fjormcord.bot.artping.model.weekly_reminder import WeeklyReminder
 from fjormcord.bot.artping.util.task_util import get_task_channel, start_channel_task
 from fjormcord.bot.artping.view.layout import to_view
 
-# Every reminder is sent this many hours before closing
 HOURS_BEFORE_CLOSING = (5, 1)
 
-# All scheduling is done in UTC, independent of the host's timezone
 COLISEUM = WeeklyReminder(
     name="Coliseum notification",
     weekday=0,
@@ -21,7 +19,7 @@ COLISEUM = WeeklyReminder(
     text="Coliseum/Aether Raids closes",
     channel_id=lambda settings: settings.coliseum_channel_id,
 )
-# Divine Games closes at midnight between Saturday and Sunday GMT+1, which is Saturday 23:00 UTC
+
 DIVINE_GAMES = WeeklyReminder(
     name="Divine Games notification",
     weekday=5,
@@ -38,15 +36,14 @@ def start_weekly_reminders(client: discord.Client):
 
 
 def reminder_times(reminder: WeeklyReminder) -> list[time]:
-    # Any date will do, only the time of day is kept; a reminder may fall on the day before closing
     closing = datetime.combine(date(2000, 1, 1), reminder.closing_time)
     return [(closing - timedelta(hours=hours)).timetz() for hours in HOURS_BEFORE_CLOSING]
 
 
 def _make_task(reminder: WeeklyReminder) -> tasks.Loop:
+
     @tasks.loop(time=reminder_times(reminder))
     async def task(client: discord.Client):
-        # The loop only survives network errors: any other exception, e.g. a missing permission, would stop it for good
         try:
             await send_notification(client, reminder)
         except Exception:
@@ -59,7 +56,6 @@ TASKS = {reminder: _make_task(reminder) for reminder in REMINDERS}
 
 
 async def send_notification(client: discord.Client, reminder: WeeklyReminder):
-    # Only within a day of closing, so a reminder may fall on the day before closing but not on other days
     now = datetime.now(timezone.utc)
     closing = next_closing(reminder, now)
     if closing - now < timedelta(days=1):
@@ -67,7 +63,6 @@ async def send_notification(client: discord.Client, reminder: WeeklyReminder):
 
 
 def next_closing(reminder: WeeklyReminder, now: datetime) -> datetime:
-    # The first closing after now, this week or the next
     days_ahead = (reminder.weekday - now.weekday()) % 7
     closing = datetime.combine(now.date() + timedelta(days=days_ahead), reminder.closing_time)
     if closing <= now:
@@ -76,18 +71,18 @@ def next_closing(reminder: WeeklyReminder, now: datetime) -> datetime:
 
 
 def reminder_text(reminder: WeeklyReminder, closing: datetime) -> str:
-    # Discord shows the timestamps in each reader's own timezone
     closing_time = int(closing.timestamp())
     return f"{reminder.text} <t:{closing_time}:R> at <t:{closing_time}:f>"
 
 
 async def send_reminder(client: discord.Client, reminder: WeeklyReminder, closing: datetime) -> bool:
-    # Posts the reminder to its channel; False, and logged, when the bot can't see the channel
     channel = get_task_channel(client, reminder.channel_id(config.read_settings()))
+
     if channel is None:
         return False
 
     message = reminder_text(reminder, closing)
     logging.info(message)
     await channel.send(view=to_view(Layout((message,))))
+
     return True

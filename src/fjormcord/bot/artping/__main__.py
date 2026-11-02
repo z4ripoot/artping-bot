@@ -15,15 +15,9 @@ def main():
         handlers=[logging.StreamHandler()],
     )
 
-    # A missing config.ini or setting stops the bot with what is wrong, see config.example.ini
-    try:
-        token = config.read_settings().discord_token
-    except (OSError, configparser.Error, ValueError) as e:
-        sys.exit(f"Invalid configuration: {e}")
-    if not token:
-        sys.exit("No Discord token configured. Create config.ini with your bot's token, see README.md")
+    token = get_token()
 
-    # Opening the database applies pending migrations; a failing one stops the bot here instead of failing every command
+    # Opening the database applies pending migrations; it will fail fast when database migration fails
     database.get_database_connection()
 
     intents = discord.Intents.default()
@@ -32,6 +26,17 @@ def main():
     client = ArtPingClient(intents=intents)
     logging.info("Bot is running")
     client.run(token)
+
+
+def get_token() -> str:
+    # A missing config.ini or setting stops the bot with what is wrong, see config.example.ini
+    try:
+        token = config.read_settings().discord_token
+    except (OSError, configparser.Error, ValueError) as e:
+        sys.exit(f"Invalid configuration: {e}")
+    if not token:
+        sys.exit("No Discord token configured. Create config.ini with your bot's token, see README.md")
+    return token
 
 
 if __name__ == "__main__":

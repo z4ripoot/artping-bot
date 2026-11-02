@@ -17,7 +17,6 @@ def has_ping(character_id: int, user_id: str) -> bool:
 
 
 def get_art_ping_users(character_ids: Sequence[int]) -> list[str]:
-    # Each user once, in the order they subscribed, so the pages of a character's subscribers stay put
     sql = """
         SELECT P.USER
         FROM PINGS P
@@ -63,7 +62,6 @@ def get_pings_from_user(user_id: str) -> list[Character]:
 
 
 def get_subscribed_names(user_id: str, prefix: str = "", limit: int = -1) -> list[str]:
-    # The names of the characters the user is subscribed to, for autocompletion
     sql = """
         SELECT C.NAME
         FROM PINGS P

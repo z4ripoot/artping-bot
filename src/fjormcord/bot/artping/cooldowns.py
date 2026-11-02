@@ -17,16 +17,13 @@ class Cooldowns:
         # 0 means no cooldown
         self._seconds = seconds
         self._clock = clock
-        # user ID -> clock() time at which the cooldown ends
         self._ends: dict[int, float] = {}
 
     def remaining(self, user_id: int) -> float:
-        # Seconds until the user can use a command again; 0 when they can use one now
         now = self._clock()
         return max(0.0, self._ends.get(user_id, now) - now)
 
     def check(self, user_id: int):
-        # Turns the user down while their cooldown runs
         remaining = self.remaining(user_id)
         if remaining > 0:
             seconds = math.ceil(remaining)
@@ -40,9 +37,6 @@ class Cooldowns:
 
     @contextmanager
     def command(self, user: discord.abc.User) -> Iterator[None]:
-        # Runs the block as a command of user: turned down while their cooldown runs, and only a block that succeeds
-        # starts it, so a mistake can be corrected right away. Admins never get a cooldown, so checking it doesn't
-        # have to exempt them
         self.check(user.id)
         yield
         if not is_administrator(user):

@@ -11,7 +11,6 @@ from fjormcord.bot.artping.slash.runner import is_admin_command, run
 from fjormcord.bot.artping.slash.sync import registered_commands
 from fjormcord.bot.artping.util.user_util import is_administrator
 
-# The slash-only commands /help lists, each after the command it goes with; the easter eggs aren't listed
 SLASH_ONLY_AFTER = {"resource": "resources"}
 
 TIPS = [
@@ -21,7 +20,6 @@ TIPS = [
 
 
 def format_slash_usage(command: app_commands.Command) -> str:
-    # /scoreboard currency [page]; a run of optional options, as /artping's character2 ... character10, is shortened
     required = [parameter.name for parameter in command.parameters if parameter.required]
     optional = [parameter.name for parameter in command.parameters if not parameter.required]
     if len(optional) > 2:
@@ -30,8 +28,6 @@ def format_slash_usage(command: app_commands.Command) -> str:
 
 
 def show_slash_help(slash_commands: Iterable[app_commands.Command], administrator: bool) -> Layout:
-    # As ~help: the sections and order of COMMANDS, the admin section only for admins, but in slash syntax with the
-    # slash descriptions
     by_name = {command.name: command for command in slash_commands}
     entries = []
     for legacy in COMMANDS:
@@ -49,7 +45,6 @@ def show_slash_help(slash_commands: Iterable[app_commands.Command], administrato
 class HelpCog(commands.Cog):
     @app_commands.command(name="help", description="Shows an overview of all the available commands")
     async def help(self, interaction: discord.Interaction):
-        # Private: the overview is only for the user who asked
         slash_commands = registered_commands(interaction.client.tree, config.read_settings().guild_id)
         administrator = is_administrator(interaction.user)
         await run(interaction, lambda: show_slash_help(slash_commands, administrator), ephemeral=True)

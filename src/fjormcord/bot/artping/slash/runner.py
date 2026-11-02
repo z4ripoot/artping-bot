@@ -12,8 +12,6 @@ from fjormcord.bot.artping.view.layout import message_options
 
 
 def admin_command(name: str, description: str):
-    # An admin command: Discord hides it from non-admins and outside servers, and run checks it again, since server
-    # admins can change who sees a command
     def decorator(callback: Callable) -> app_commands.Command:
         command = app_commands.command(name=name, description=description)(callback)
         return app_commands.guild_only()(app_commands.default_permissions(administrator=True)(command))
@@ -22,7 +20,6 @@ def admin_command(name: str, description: str):
 
 
 def is_admin_command(command: app_commands.Command | None) -> bool:
-    # Declared with admin_command; None, e.g. for a click, is no command
     permissions = getattr(command, "default_permissions", None)
     return permissions is not None and permissions.administrator
 
@@ -35,13 +32,10 @@ async def run(
     ephemeral: bool = False,
     allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS,
 ) -> None:
-    # Runs a slash command the way legacy.dispatch runs a ~ command: checks, the call, and the reply. call does the
-    # command's work and returns the reply, directly or as a coroutine; it raises CommandError to turn the user down.
-    # ephemeral makes the reply private, and the defer's placeholder with it.
     try:
         if is_admin_command(interaction.command) and not is_administrator(interaction.user):
             raise CommandError("This command is for admins only")
-        # One cooldown per user, shared with the ~ commands
+
         with interaction.client.cooldowns.command(interaction.user):
             if defer:
                 await interaction.response.defer(**({"ephemeral": True} if ephemeral else {}))
@@ -56,14 +50,11 @@ async def run(
         await _send_error(interaction, f"Something went wrong while running /{command_name}")
         return
 
-    # Replies longer than Discord allows are sent as several messages; an empty reply sends nothing
     for options in message_options(out):
         await _send(interaction, options, ephemeral=ephemeral, allowed_mentions=allowed_mentions)
 
 
 async def _send_error(interaction: discord.Interaction, error: str | Layout):
-    # The first follow-up after a public defer replaces its "is thinking" placeholder and would show the error to
-    # everyone, so the placeholder is deleted first. A follow-up that already replaced it (a vote message) stays.
     if interaction.response.is_done():
         try:
             if (await interaction.original_response()).flags.loading:
@@ -80,8 +71,6 @@ async def _send(
     ephemeral: bool = False,
     allowed_mentions: discord.AllowedMentions = ALLOWED_MENTIONS,
 ):
-    # One message, its content or view as message_options gives them. The first message answers the interaction, or
-    # follows up on the defer; the rest are follow-ups
     options = {**options, "ephemeral": ephemeral, "allowed_mentions": allowed_mentions}
     if interaction.response.is_done():
         await interaction.followup.send(**options)

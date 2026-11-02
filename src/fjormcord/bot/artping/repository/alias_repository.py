@@ -43,7 +43,6 @@ def remove_alias(character_id: int, alias: str):
 
 
 def set_primary_name(character_id: int, alias: str):
-    # Swaps the name and the alias: the name becomes an alias, and the alias (as stored) the name
     add_name_as_alias = """
         INSERT INTO ALIAS (CHARACTER_ID, ALIAS)
         SELECT C.CHARACTER_ID, C.NAME

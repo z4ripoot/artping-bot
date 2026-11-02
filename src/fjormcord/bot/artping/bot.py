@@ -28,7 +28,6 @@ from fjormcord.bot.artping.weekly_reminder import start_weekly_reminders
 
 class ArtPingClient(commands.Bot):
     def __init__(self, **options):
-        # The ~ commands are handled by legacy.dispatch, so the prefix is never used
         options.setdefault("command_prefix", commands.when_mentioned)
         options.setdefault("help_command", None)
         options.setdefault("allowed_mentions", ALLOWED_MENTIONS)
@@ -36,17 +35,16 @@ class ArtPingClient(commands.Bot):
         self.cooldowns = Cooldowns(config.read_settings().cooldown_seconds)
 
     async def setup_hook(self):
-        await self.add_cog(CharacterVoteCog(self))
         await self.add_cog(ArtPingCog(self))
         await self.add_cog(CharacterCog())
+        await self.add_cog(CharacterVoteCog(self))
         await self.add_cog(CurrencyCog())
         await self.add_cog(ResourceCog())
         await self.add_cog(EasterEggCog())
         await self.add_cog(HelpCog())
         await self.add_cog(WeeklyReminderCog())
         await self.add_cog(VotingGauntletCog())
-        # Clicks on every control, also on messages sent before a restart: the Track buttons of the Voting Gauntlet
-        # messages, the page buttons, the scoreboard's dropdown, Subscribe on new characters and Vote on the votes
+
         self.add_dynamic_items(TrackButton, PageButton, CurrencySelect, SubscribeButton, VoteButton)
         await sync_commands(self.tree, config.read_settings().guild_id)
 
@@ -57,5 +55,4 @@ class ArtPingClient(commands.Bot):
         logging.info("Tasks are initiated")
 
     async def on_message(self, message: discord.Message):
-        # The ~ commands are dispatched by hand; process_commands is never called, as there are no prefix commands
         await handle_message(self, message)

@@ -10,10 +10,8 @@ CURRENCY_DESCRIPTION = "The currency's name"
 
 
 class CurrencyCog(commands.Cog):
-    @app_commands.command(
-        name="setcurrency", description="Set the number of orbs, primos or any other currency you have"
-    )
-    @app_commands.describe(currency=CURRENCY_DESCRIPTION, amount="How many you have")
+    @app_commands.command(name="setcurrency", description="Set the number of the given gacha currency")
+    @app_commands.describe(currency=CURRENCY_DESCRIPTION, amount="The amount of the given gacha currency")
     @app_commands.autocomplete(currency=currency_choices)
     async def set_currency(
         self, interaction: discord.Interaction, currency: str, amount: app_commands.Range[int, 0, None]
@@ -22,7 +20,7 @@ class CurrencyCog(commands.Cog):
             interaction, lambda: currency_service.set_currency(str(interaction.user.id), to_name(currency), amount)
         )
 
-    @app_commands.command(name="clearcurrency", description="Clear the number you have saved for this currency")
+    @app_commands.command(name="clearcurrency", description="Clear this currency from your wallet")
     @app_commands.describe(currency=CURRENCY_DESCRIPTION)
     @app_commands.autocomplete(currency=currency_choices)
     async def clear_currency(self, interaction: discord.Interaction, currency: str):
@@ -36,7 +34,7 @@ class CurrencyCog(commands.Cog):
         )
 
     @app_commands.command(name="scoreboard", description="Shows a leaderboard of this currency, 10 users per page")
-    @app_commands.describe(currency=CURRENCY_DESCRIPTION, page="The page to show; the first by default")
+    @app_commands.describe(currency=CURRENCY_DESCRIPTION, page="The page to show; the first page by default")
     @app_commands.autocomplete(currency=currency_choices)
     async def scoreboard(
         self, interaction: discord.Interaction, currency: str, page: app_commands.Range[int, 1, None] = 1
