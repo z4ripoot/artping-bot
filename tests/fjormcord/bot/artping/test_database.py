@@ -108,14 +108,39 @@ def test_migration_normalizes_existing_names_and_aliases(tmp_path):
     path = tmp_path / "live.db"
     old = unversioned_database(path)
     with old:
-        old.execute("INSERT INTO CHARACTERS (CHARACTER_ID, NAME) VALUES (7, 'black_KNIGHT')")
+        old.execute("INSERT INTO CHARACTERS (CHARACTER_ID, NAME) VALUES (7, 'black_kNIGHT')")
+        old.execute("INSERT INTO CHARACTERS (CHARACTER_ID, NAME) VALUES (8, 'jade_HSR')")
         old.execute("INSERT INTO ALIAS (CHARACTER_ID, ALIAS) VALUES (7, 'zelgius')")
     old.close()
 
     connection = connect(path)
 
-    assert connection.execute("SELECT NAME FROM CHARACTERS").fetchall() == [("Black_Knight",)]
+    assert connection.execute("SELECT NAME FROM CHARACTERS ORDER BY CHARACTER_ID").fetchall() == [
+        ("Black_Knight",),
+        ("Jade_HSR",),
+    ]
     assert connection.execute("SELECT ALIAS FROM ALIAS").fetchall() == [("Zelgius",)]
+    connection.close()
+
+
+def test_migration_deletes_pings_and_wallets_left_by_deletes(tmp_path):
+    # The live database ran without foreign keys, so deleting a character left its pings behind
+    path = tmp_path / "live.db"
+    old = unversioned_database(path)
+    with old:
+        old.execute("INSERT INTO CHARACTERS (CHARACTER_ID, NAME) VALUES (7, 'Lucina')")
+        old.execute("INSERT INTO PINGS (CHARACTER_ID, USER) VALUES (7, '1')")
+        old.execute("INSERT INTO PINGS (CHARACTER_ID, USER) VALUES (8, '1')")
+        old.execute("INSERT INTO GACHA_CURRENCY (GACHA_CURRENCY_ID, NAME) VALUES (3, 'orbs')")
+        old.execute("INSERT INTO GACHA_CURRENCY_WALLET (GACHA_CURRENCY_ID, USER, AMOUNT) VALUES (3, '1', 5)")
+        old.execute("INSERT INTO GACHA_CURRENCY_WALLET (GACHA_CURRENCY_ID, USER, AMOUNT) VALUES (4, '1', 5)")
+    old.close()
+
+    connection = connect(path)
+
+    assert user_version(connection) == latest_version()
+    assert connection.execute("SELECT CHARACTER_ID, USER FROM PINGS").fetchall() == [(7, "1")]
+    assert connection.execute("SELECT GACHA_CURRENCY_ID FROM GACHA_CURRENCY_WALLET").fetchall() == [(3,)]
     connection.close()
 
 

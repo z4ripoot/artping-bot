@@ -115,7 +115,7 @@ Preparation: A creates `Lucina` and `Chrom`, and adds the alias `Luci` to Lucina
 |---|---|---|---|
 | 5.1 | A | `~addcharacter` | `Character name is missing. Usage: ~addcharacter (character name)` |
 | 5.2 | A | `~addcharacter Black Knight` | Only-one-name error |
-| 5.3 | A | `~addcharacter black_KNIGHT` | A box with a blurple bar: `Character Black_Knight has been added`, a separator line, and the button `Subscribe to Black_Knight` |
+| 5.3 | A | `~addcharacter black_kNIGHT` | A box with a blurple bar: `Character Black_Knight has been added`, a separator line, and the button `Subscribe to Black_Knight` |
 | 5.3a | U1 | Click `Subscribe to Black_Knight`, then again | Ephemeral `Ping for Black_Knight has been added`, then `Ping for Black_Knight already exists` (the button never unsubscribes). Clicking right after another command works: the button has no cooldown |
 | 5.3b | U2 | Restart the bot, then click `Subscribe to Black_Knight` | Ephemeral `Ping for Black_Knight has been added` (the button survives restarts) |
 | 5.4 | A | `~addcharacter m!robin`, `~addcharacter l'arachel`, `~addcharacter Lucina` | `M!Robin`, `L'Arachel`, `Lucina` added |

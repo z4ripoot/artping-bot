@@ -33,7 +33,8 @@ Commands marked "Admin only" can only be used by server admins; for anyone else 
 A character can also have aliases, other names that work in every command that takes a character, e.g. `Focalors` for
 `Furina`. Replies always show the character's name.
 Character names and aliases are stored with every part capitalized, whatever casing was typed: `black_knight` becomes
-`Black_Knight`, `m!robin` becomes `M!Robin` and `l'arachel` becomes `L'Arachel`.
+`Black_Knight`, `m!robin` becomes `M!Robin`, `l'arachel` becomes `L'Arachel` and `kos-mos` becomes `Kos-Mos`. A part
+typed in capitals is kept as an acronym: `jade_HSR` becomes `Jade_HSR`.
 
 | Command                          | Description                                                                                                                                                                                     |
 |----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

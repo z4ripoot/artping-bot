@@ -3,7 +3,8 @@
 -- pings, aliases and wallets referencing them stay valid.
 
 -- Character and currency names, and aliases, are unique regardless of case; an alias names exactly one character.
--- Character names and aliases are stored with each part capitalized, e.g. black_knight -> Black_Knight:
+-- Character names and aliases are stored with each part capitalized, e.g. black_knight -> Black_Knight, except
+-- parts in capitals, kept as acronyms (Jade_HSR):
 -- NORMALIZE_NAME is util.name_util.normalize_name, registered by database.connect. Currency names are not normalized.
 -- Fails on existing duplicates, e.g. Lucina and lucina, or élise and Élise.
 CREATE TABLE NEW_CHARACTERS (
