@@ -105,6 +105,13 @@ cooldown.
 
 Run the tests with `.venv/Scripts/python -m pytest`. They need neither a token nor `config.ini`.
 
+# Hosting
+
+On a host that starts a script file rather than a command, such as PebbleHost, set the startup file to `run.py` in the
+repository root. It runs the bot without installing it; the host only has to install the dependencies listed in
+`pyproject.toml` (`discord.py` and `aiohttp`). Pointing the host at `src/fjormcord/bot/artping/__main__.py` instead
+fails with `No module named 'fjormcord'`. Put `config.ini` in the repository root, next to `run.py`.
+
 # Configuration
 
 The bot reads only `config.ini`. It must hold every property: the bot doesn't start when the

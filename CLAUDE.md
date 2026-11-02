@@ -11,6 +11,7 @@ Discord bot for the Fjormcord community, built on discord.py (2.x) with a SQLite
 ```bash
 .venv/Scripts/python -m pip install -e ".[dev]"     # editable install with test dependencies (pyproject.toml)
 .venv/Scripts/python -m fjormcord.bot.artping        # run the bot (exits unless config.ini sets discord.token); also: artping-bot
+.venv/Scripts/python run.py                          # the same without installing: hosts like PebbleHost start this file
 .venv/Scripts/python -m pytest                       # run all tests
 .venv/Scripts/python -m pytest tests/fjormcord/bot/artping/legacy/handler/test_art_ping_handlers.py::test_add_and_remove_ping   # single test
 .venv/Scripts/python -m ruff check --fix src tests && .venv/Scripts/python -m ruff format src tests   # sort imports, then format
