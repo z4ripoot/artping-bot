@@ -45,7 +45,7 @@ def test_add_character_rejects_an_alias(client):
 
 
 def test_add_character_normalizes_the_name(client):
-    assert reply(add_character, client, make_message("~addcharacter m!ROBIN", administrator=True)).texts == (
+    assert reply(add_character, client, make_message("~addcharacter m!rOBIN", administrator=True)).texts == (
         "Character M!Robin has been added",
     )
     assert get_character("m!robin").name == "M!Robin"

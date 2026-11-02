@@ -38,3 +38,8 @@ CREATE TABLE IF NOT EXISTS GACHA_CURRENCY_WALLET (
             ON DELETE CASCADE
             ON UPDATE CASCADE
 );
+
+-- The live database ran without PRAGMA foreign_keys, so deleting a character or currency left its pings or wallets
+-- behind; the migration runner's foreign_key_check, run after this script, would refuse them. A new database has none.
+DELETE FROM PINGS WHERE CHARACTER_ID NOT IN (SELECT CHARACTER_ID FROM CHARACTERS);
+DELETE FROM GACHA_CURRENCY_WALLET WHERE GACHA_CURRENCY_ID NOT IN (SELECT GACHA_CURRENCY_ID FROM GACHA_CURRENCY);

@@ -18,7 +18,7 @@ def test_add_alias_normalizes_the_alias(client):
     add_character("Furina")
 
     assert (
-        reply(add_alias, client, make_message("~addalias Furina FOCALORS")) == "Alias Focalors has been added to Furina"
+        reply(add_alias, client, make_message("~addalias Furina fOCALORS")) == "Alias Focalors has been added to Furina"
     )
     assert alias_repository.get_aliases(get_character("Furina").id) == ["Focalors"]
 
@@ -33,7 +33,7 @@ def test_add_alias_rejects_an_existing_alias_of_any_character(client):
     alias_repository.add_alias(get_character("Furina").id, "Focalors")
 
     assert (
-        reply(add_alias, client, make_message("~addalias Neuvillette FOCALORS"))
+        reply(add_alias, client, make_message("~addalias Neuvillette fOCALORS"))
         == "Focalors is already an alias of Furina"
     )
     assert (
