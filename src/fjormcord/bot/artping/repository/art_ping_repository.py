@@ -1,0 +1,72 @@
+import logging
+from collections.abc import Sequence
+
+from fjormcord.bot.artping.database import execute, exists, fetch_all, fetch_column, fetch_names
+from fjormcord.bot.artping.model.character import Character
+
+
+def has_ping(character_id: int, user_id: str) -> bool:
+    sql = """
+        SELECT 1
+        FROM PINGS P
+        WHERE P.CHARACTER_ID = ?
+          AND P.USER = ?
+        """
+
+    return exists(sql, (character_id, user_id))
+
+
+def get_art_ping_users(character_ids: Sequence[int]) -> list[str]:
+    sql = """
+        SELECT P.USER
+        FROM PINGS P
+        WHERE P.CHARACTER_ID IN ({})
+        GROUP BY P.USER
+        ORDER BY MIN(P.ROWID)
+        """.format(",".join("?" * len(character_ids)))
+
+    return fetch_column(sql, list(character_ids))
+
+
+def add_ping(character_id: int, user_id: str):
+    sql = """
+        INSERT INTO PINGS (CHARACTER_ID, USER)
+        VALUES (?, ?)
+        """
+
+    logging.info("Adding ping for character %s and user %s", character_id, user_id)
+    execute(sql, (character_id, user_id))
+
+
+def remove_ping(character_id: int, user_id: str):
+    sql = """
+        DELETE FROM PINGS
+        WHERE CHARACTER_ID = ?
+          AND USER = ?
+        """
+
+    logging.info("Removing ping for character %s and user %s", character_id, user_id)
+    execute(sql, (character_id, user_id))
+
+
+def get_pings_from_user(user_id: str) -> list[Character]:
+    sql = """
+        SELECT C.CHARACTER_ID AS id, C.NAME AS name
+        FROM PINGS P
+        JOIN CHARACTERS C ON P.CHARACTER_ID = C.CHARACTER_ID
+        WHERE P.USER = ?
+        ORDER BY C.NAME
+        """
+
+    return fetch_all(Character, sql, (user_id,))
+
+
+def get_subscribed_names(user_id: str, prefix: str = "", limit: int = -1) -> list[str]:
+    sql = """
+        SELECT C.NAME
+        FROM PINGS P
+        JOIN CHARACTERS C ON P.CHARACTER_ID = C.CHARACTER_ID
+        WHERE P.USER = ?
+        """
+
+    return fetch_names(sql, prefix, limit, (user_id,))

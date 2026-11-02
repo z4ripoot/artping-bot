@@ -1,0 +1,301 @@
+import asyncio
+from types import SimpleNamespace
+
+import discord
+import pytest
+from discord.ext import commands as discord_commands
+
+from fjormcord.bot.artping import config
+from fjormcord.bot.artping.bot import ArtPingClient
+from fjormcord.bot.artping.cooldowns import Cooldowns
+from fjormcord.bot.artping.easter_eggs import lorenz_smile
+from fjormcord.bot.artping.exception.command_error import CommandError
+from fjormcord.bot.artping.legacy import commands
+from fjormcord.bot.artping.legacy.commands import Command
+from fjormcord.bot.artping.model.layout import Layout
+from fjormcord.bot.artping.model.resource import Resource
+from fjormcord.bot.artping.repository import resource_repository
+from fjormcord.bot.artping.view.layout import layout_text
+from fjormcord.bot.artping.view.page_view import PageButton
+from fjormcord.bot.artping.view.scoreboard_view import CurrencySelect
+from fjormcord.bot.artping.view.subscribe_view import SubscribeButton
+from fjormcord.bot.artping.view.vote_view import VoteButton
+from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
+from tests.fakes import FakeClock, button_labels, make_message, text_length, use_settings
+
+# ~artping Lucina, with U1 subscribed
+LUCINA_PING = "### Lucina\n<@1>\nWant to be pinged for Lucina? Use ~addping Lucina"
+
+
+@pytest.fixture
+def bot():
+    client = ArtPingClient(intents=discord.Intents.default())
+    # No cooldown, so a test can send one user's commands in a row
+    client.cooldowns = Cooldowns(0)
+    return client
+
+
+def dispatch(bot, message):
+    asyncio.run(bot.on_message(message))
+    return message.channel.sent
+
+
+def test_commands_are_case_insensitive(bot):
+    assert dispatch(bot, make_message("~CheckPing")) == ["You are not subscribed to any characters"]
+
+
+def test_reply_is_sent_with_its_buttons(bot):
+    message = make_message("~addcharacter Lucina", administrator=True)
+
+    assert dispatch(bot, message) == ["Character Lucina has been added"]
+    assert button_labels(message.channel.last_message().view) == ["Subscribe to Lucina"]
+
+
+def test_command_must_match_exactly(bot):
+    assert dispatch(bot, make_message("~checkpingx")) == []
+
+
+def test_messages_from_other_bots_are_ignored(bot):
+    assert dispatch(bot, make_message("~checkping", bot=True)) == []
+    assert dispatch(bot, make_message("~addcharacter Lucina", administrator=True, bot=True)) == []
+    assert dispatch(bot, make_message("Thanks Lorenz", bot=True)) == []
+
+
+def set_hof(bot):
+    dispatch(bot, make_message("~setresource hof https://example.com/hof", administrator=True))
+
+
+def test_resource_is_posted_without_mentions(bot):
+    set_hof(bot)
+    message = make_message("~HoF please")
+
+    assert dispatch(bot, message) == ["https://example.com/hof"]
+    [mentions] = message.channel.sent_allowed_mentions
+    assert (mentions.everyone, mentions.users, mentions.roles, mentions.replied_user) == (False, False, False, False)
+
+
+def test_unknown_resource_gets_no_reply(bot):
+    assert dispatch(bot, make_message("~faq")) == []
+
+
+def test_command_wins_over_a_resource_of_the_same_name(bot):
+    # Stored directly, as set_resource refuses command names
+    resource_repository.set_resource(Resource("checkping", "Resource", "x"))
+
+    assert dispatch(bot, make_message("~checkping")) == ["You are not subscribed to any characters"]
+
+
+def test_long_resource_is_split_into_messages_within_discord_limit(bot):
+    resource_repository.set_resource(Resource("hof", "line\n" * 1000, "x"))
+
+    sent = dispatch(bot, make_message("~hof"))
+
+    assert len(sent) > 1
+    assert all(len(chunk) <= 2000 for chunk in sent)
+
+
+def test_admin_command_ignored_for_non_admin(bot):
+    assert dispatch(bot, make_message("~removecharacter Lucina")) == []
+
+
+def test_add_character_by_non_admin_posts_a_vote(bot):
+    [vote] = dispatch(bot, make_message("~addcharacter Lucina"))
+
+    assert vote.startswith("Vote to add Lucina. Votes needed: ")
+
+
+def test_setup_adds_the_cogs_and_the_buttons_then_syncs(bot, monkeypatch):
+    synced = []
+
+    async def sync_commands(tree, guild_id):
+        synced.append((tree, guild_id))
+
+    dynamic_items = []
+    monkeypatch.setattr("fjormcord.bot.artping.bot.sync_commands", sync_commands)
+    monkeypatch.setattr(bot, "add_dynamic_items", lambda *items: dynamic_items.extend(items))
+
+    asyncio.run(bot.setup_hook())
+
+    assert bot.get_cog("CharacterVoteCog") is not None
+    assert bot.persistent_views == []
+    # Routes clicks on every button, also those of messages sent before a restart
+    assert dynamic_items == [TrackButton, PageButton, CurrencySelect, SubscribeButton, VoteButton]
+    # The sync comes last, so it registers the commands of every cog
+    assert synced == [(bot.tree, config.read_settings().guild_id)]
+
+
+def test_admin_command_allowed_for_admin(bot):
+    assert dispatch(bot, make_message("~addcharacter Lucina", administrator=True)) == [
+        "Character Lucina has been added"
+    ]
+
+
+def test_admin_command_ignored_in_dms(bot):
+    message = make_message("~removecharacter Lucina")
+    message.author = SimpleNamespace(id=1, display_name="user1", bot=False)
+
+    assert dispatch(bot, message) == []
+
+
+def replace_checkping(monkeypatch, handler):
+    command = commands.COMMANDS_BY_NAME["~checkping"]
+    monkeypatch.setitem(commands.COMMANDS_BY_NAME, "~checkping", Command(command.name, handler, command.description))
+
+
+def test_failing_command_still_replies(bot, monkeypatch):
+    def broken(client, message):
+        raise RuntimeError("database is gone")
+
+    replace_checkping(monkeypatch, broken)
+
+    assert dispatch(bot, make_message("~checkping")) == ["Something went wrong while running ~checkping"]
+
+
+def test_layout_reply_is_sent_as_a_view(bot, monkeypatch):
+    replace_checkping(monkeypatch, lambda client, message: Layout(("Lucina", "Chrom")))
+    message = make_message("~checkping")
+
+    assert dispatch(bot, message) == ["Lucina\nChrom"]
+    assert layout_text(message.channel.last_message().view) == "Lucina\nChrom"
+
+
+def test_command_error_with_a_layout_is_sent_as_the_layout(bot, monkeypatch):
+    def refused(client, message):
+        raise CommandError("No", layout=Layout(("No", "Hint")))
+
+    replace_checkping(monkeypatch, refused)
+    message = make_message("~checkping")
+
+    assert dispatch(bot, message) == ["No\nHint"]
+    assert layout_text(message.channel.last_message().view) == "No\nHint"
+
+
+COMMANDS_WITH_ARGUMENTS = [command for command in commands.COMMANDS if command.usage]
+
+
+@pytest.mark.parametrize("command", COMMANDS_WITH_ARGUMENTS, ids=lambda command: command.name)
+def test_missing_argument_is_answered_with_usage(bot, command):
+    [reply] = dispatch(bot, make_message(command.name, administrator=True))
+
+    assert reply.endswith(f" is missing. Usage: {command.name} ({') ('.join(command.usage)})")
+
+
+def test_missing_argument_names_what_is_missing(bot):
+    assert dispatch(bot, make_message("~addcharacter", administrator=True)) == [
+        "Character name is missing. Usage: ~addcharacter (character name)"
+    ]
+    assert dispatch(bot, make_message("~setcurrency Orbs")) == [
+        "Amount is missing. Usage: ~setcurrency (currency name) (amount)"
+    ]
+
+
+def test_replies_cannot_mention_everyone_or_roles(bot):
+    assert dispatch(bot, make_message("~artping @everyone")) == [
+        "No character entry for @everyone\nUse ~addcharacter @everyone to start a vote to add it"
+    ]
+    assert bot.allowed_mentions.everyone is False
+    assert bot.allowed_mentions.roles is False
+    assert bot.allowed_mentions.users is True
+
+
+def test_long_reply_is_split_into_messages_within_discord_limit(bot):
+    dispatch(bot, make_message("~addcharacter Lucina", administrator=True))
+    user_ids = range(10**17, 10**17 + 200)
+    for user_id in user_ids:
+        dispatch(bot, make_message("~addping Lucina", user_id=user_id))
+
+    message = make_message("~artping Lucina")
+    sent = dispatch(bot, message)
+
+    assert len(sent) > 1
+    assert all(text_length(sent_message.view) <= 4000 for sent_message in message.channel.messages.values())
+    assert all(f"<@{user_id}>" in " ".join(sent) for user_id in user_ids)
+
+
+def test_easter_egg_is_answered(bot):
+    assert dispatch(bot, make_message("Thanks Lorenz")) == [lorenz_smile()]
+
+
+@pytest.fixture
+def clock(bot):
+    clock = FakeClock()
+    bot.cooldowns = Cooldowns(1, clock)
+    return clock
+
+
+@pytest.fixture
+def lucina(bot, clock):
+    # Lucina with user 1 subscribed; the admin starts no cooldown, and user 1's has run out
+    dispatch(bot, make_message("~addcharacter Lucina", administrator=True))
+    dispatch(bot, make_message("~addping Lucina", user_id=1))
+    clock.advance(1)
+
+
+def test_command_is_turned_down_during_cooldown(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucina", user_id=2))
+
+    clock.advance(0.5)
+
+    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == [
+        "You used a command recently. Try again in 1 second"
+    ]
+
+
+def test_command_is_allowed_after_cooldown(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucina", user_id=2))
+
+    clock.advance(1)
+
+    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == [LUCINA_PING]
+
+
+def test_cooldown_only_holds_back_that_user(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucina", user_id=2))
+
+    assert dispatch(bot, make_message("~artping Lucina", user_id=3)) == [LUCINA_PING]
+
+
+def test_cooldown_holds_back_every_command(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucina", user_id=1))
+
+    assert dispatch(bot, make_message("~checkping", user_id=1)) == [
+        "You used a command recently. Try again in 1 second"
+    ]
+
+
+def test_resource_has_the_cooldown(bot, clock, lucina):
+    set_hof(bot)
+    dispatch(bot, make_message("~hof", user_id=2))
+
+    assert dispatch(bot, make_message("~checkping", user_id=2)) == [
+        "You used a command recently. Try again in 1 second"
+    ]
+    clock.advance(1)
+    assert dispatch(bot, make_message("~hof", user_id=2)) == ["https://example.com/hof"]
+
+
+def test_turned_down_command_does_not_start_cooldown(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucin", user_id=2))
+
+    assert dispatch(bot, make_message("~artping Lucina", user_id=2)) == [LUCINA_PING]
+
+
+def test_admins_are_not_held_back_by_cooldown(bot, clock, lucina):
+    dispatch(bot, make_message("~artping Lucina", administrator=True))
+
+    assert dispatch(bot, make_message("~artping Lucina", administrator=True)) == [LUCINA_PING]
+
+
+def test_cooldown_follows_the_configured_length(monkeypatch):
+    use_settings(monkeypatch, cooldown_seconds=30)
+    bot = ArtPingClient(intents=discord.Intents.default())
+    dispatch(bot, make_message("~checkping", user_id=2))
+
+    assert dispatch(bot, make_message("~checkping", user_id=2)) == [
+        "You used a command recently. Try again in 30 seconds"
+    ]
+
+
+def test_client_is_a_bot_without_prefix_commands(bot):
+    assert isinstance(bot, discord_commands.Bot)
+    assert bot.help_command is None

@@ -1,0 +1,392 @@
+# Manual test plan
+
+Commands to test every branch of the bot by hand in Discord. Expected replies are in `code`; "silence" means the bot
+sends nothing at all. Sections 1 to 10 are mostly about the `~` commands, section 11 repeats every command as a
+slash command, section 7 covers the vote button, and section 12 the Voting Gauntlet scores.
+
+## Setup
+
+- **Invite:** the test bot is invited with the `applications.commands` scope as well as `bot`.
+- **Accounts:** **A** is a server admin, **U1** and **U2** are non-admins. A DM with the bot is used for the DM cases.
+- **Test `config.ini`:** a copy of `config.example.ini` with these changed:
+  ```ini
+  [discord]
+  token=<test bot token>
+  guild_id=<test server id>   ; the slash commands then appear at once, in that server only
+  [commands]
+  cooldown_seconds=10      ; long enough to test the cooldown by hand
+  [character_vote]
+  votes_needed=2           ; the smallest value that still has votes
+  [tasks]
+  coliseum_notification_channel_id=<test channel id>
+  divine_games_notification_channel_id=<test channel id>
+  voting_gauntlet_channel_id=<test channel id>
+  ```
+- **Database:** start with a fresh one (delete `test.db`).
+
+Some steps need the bot's log to check the result: 1.4, 1.8, 2.16, 7.12, 7.14, 7.15, 10.3, 10a.3, 11.45, 12.10, 12.11
+and 12.12.
+
+## 1. Startup and config
+
+| # | Action | Expected |
+|---|---|---|
+| 1.1 | Empty `token` in config.ini, then start | Exits with `No Discord token configured. Create config.ini …` |
+| 1.2 | Delete `test.db`, then start from another directory (e.g. `cd ~`) | `test.db` is created in the repo root, migrations run, `Bot is running` |
+| 1.3 | Remove a key (e.g. `votes_needed`) from config.ini, then start | Exits with `Invalid configuration: No option 'votes_needed' in section: 'character_vote'` (config.example.ini is not read, so it doesn't fill in the key). Put the key back afterwards |
+| 1.3a | Rename config.ini, then start | Exits with `Invalid configuration: … config.ini not found. Copy config.example.ini to config.ini and fill in your bot's token`. Rename it back |
+| 1.4 | Start with `coliseum_notification_channel_id`, `divine_games_notification_channel_id` and `voting_gauntlet_channel_id` empty | Log warnings `No channel ID is configured for the Coliseum notification task, so it will not be initiated` and the same for the `Divine Games notification` and `Voting Gauntlet scores` tasks |
+| 1.5 | Start with `guild_id` set, then type `/` in the test server | All commands are listed (section 11) and each shows once |
+| 1.6 | Empty `guild_id`, restart | The commands are registered globally (they can take a while to show up). Guild commands left over from 1.5 show twice until cleared (README, local setup) |
+| 1.7 | Set `slash_max_characters=26`, then `0`, then start | Exits with `Invalid configuration: art_ping.slash_max_characters must be between 1 and 25`. Put it back afterwards |
+| 1.7a | Set `autocomplete_max_choices=26`, then `0`, then start | Exits with `Invalid configuration: commands.autocomplete_max_choices must be between 1 and 25`. Put it back afterwards |
+| 1.8 | Start with a wrong `guild_id`, or without network after login | Log `Syncing the slash commands failed`, the bot keeps running and `~help` still works |
+
+## 2. Message dispatch (`on_message`)
+
+| # | Who | Message | Expected |
+|---|---|---|---|
+| 2.1 | Webhook in the channel (Channel settings → Integrations → Webhook, post with curl) | `~help` | Silence (bots are ignored) |
+| 2.2 | U1 | an image with no text | Silence |
+| 2.3 | U1 | `hello` | Silence |
+| 2.4 | U1 | `thanks lorenz` / `Thank You Lorenz` | LorenzSmile emoji |
+| 2.5 | U1 | `CHROMK` | 3×4 grid of the chromk emoji |
+| 2.6 | U1 | `thanks lorenz!` / `chromk please` | Silence (only whole-message matches count) |
+| 2.7 | U1 | `~nonexistent` | Silence (no command and no resource) |
+| 2.8 | U1 | `~HeLp` | Help (command names ignore case) |
+| 2.9 | U1 | `~help extra words` | Help (extra arguments are ignored) |
+| 2.10 | U1 | `~helpme` | Silence (exact match only) |
+| 2.11 | U1 | `~addcurrency Orbs` (admin-only) | Silence |
+| 2.12 | U1 in server | `~help` | A box: the title `Commands` with the brackets explanation, the underscore hint and `All commands are also available as slash commands, type /`; then, after separators, the headings **Art Ping Commands** and **Gacha Currency Commands**, each command's usage in bold with its description on the next line. No **Admin Commands** section |
+| 2.13 | A in server | `~help` | Includes **Admin Commands**, still one message |
+| 2.14 | A in **DM** | `~help`, then `~addcurrency X` | No admin section, and silence on `~addcurrency` (DMs have no permissions) |
+| 2.15 | U1 | `~setcurrency @everyone 5` | Reply echoes `@everyone` but **nobody gets pinged** |
+| 2.16 | A | Lock the DB: `sqlite3 test.db` → `BEGIN EXCLUSIVE;` (keep it open), then `~addcurrency Lock` | After about 5 s: `Something went wrong while running ~addcurrency`, with a traceback in the log. Then run `ROLLBACK;` |
+| 2.17 | U1 | `~artping` followed by about 1900 characters of made-up names (`aaaaaaaaa bbbbbbbbb …`) | The reply (`No character entry for …`) arrives as **2 messages**, split under 2000 characters |
+
+## 3. Cooldown (every command, cooldown 10 s)
+
+Do these after creating the character `Lucina` (step 5.4).
+
+| # | Who | Action | Expected |
+|---|---|---|---|
+| 3.1 | U1 | `~artping Lucina` twice quickly | 2nd: `You used a command recently. Try again in N seconds` |
+| 3.1a | U1 | `~artping Lucina`, then `~checkping` and `~hof` straight away | Both turned down the same way: the cooldown holds back every command |
+| 3.2 | U1 | Wait about 9.5 s and retry | `… Try again in 1 second` (singular) |
+| 3.3 | U2 | `~artping Lucina` during U1's cooldown | Works (the cooldown is per user) |
+| 3.4 | U1 | `~artping Nobody`, then `~artping Lucina` straight away | The 2nd works (a failed command doesn't start the cooldown) |
+| 3.5 | U1 | `~artping`, then `~artping Lucina` | The 2nd works (a missing argument doesn't start it either) |
+| 3.6 | A | `~artping Lucina` twice quickly | Both work (admins are exempt) |
+| 3.7 | U1 | `~artping Lucina`, restart the bot, repeat | Works (cooldowns are in memory) |
+| 3.7a | U1 | `Thanks Lorenz` twice quickly | Both answered (easter egg replies are not commands) |
+| 3.8 | — | Set `cooldown_seconds=0`, restart, U1 spams `~artping Lucina` | Never turned down |
+
+## 4. Art pings
+
+Preparation: A creates `Lucina` and `Chrom`, and adds the alias `Luci` to Lucina. U1 subscribes to both, U2 to Lucina.
+
+| # | Who | Message | Expected |
+|---|---|---|---|
+| 4.1 | U1 | `~artping` | `Character name is missing. Usage: ~artping (character name)` |
+| 4.2 | U1 | `~artping marth` | A box: `No character entry for Marth`, a separator, `Use ~addcharacter Marth to start a vote to add it` (A gets `… to add it`) |
+| 4.3 | U1 | `~artping black_KNIGHT` | As 4.2 with `Black_Knight` (normalized) |
+| 4.4 | U1 | `~artping Robin` (exists, no subscribers) | A box: the heading `Robin`, `Nobody is subscribed to Robin`, a separator, `Want to be pinged for Robin? Use ~addping Robin` |
+| 4.5 | U1 | `~artping lucina` | A box with a blurple bar: the heading `Lucina`, `@U1 @U2` under it, a separator, `Want to be pinged for Lucina? Use ~addping Lucina`. **Both get pinged** (a notification, not only the mention) |
+| 4.5a | — | Seed 200 subscribers to Lucina (fake IDs), `~artping Lucina` | Several boxes: the first with the heading, the last with the footer; every mention once |
+| 4.6 | U1 | `~artping Luci` | The heading `Lucina` (the alias resolves to the name) |
+| 4.7 | U1 | `~artping Lucina Luci` | Lucina is listed once |
+| 4.8 | U1 | `~artping Lucina Chrom` | The heading `Chrom, Lucina` (sorted), U1 mentioned **once**, the footer about Chrom |
+| 4.9 | U1 | `~artping Lucina Marth` | The heading `Lucina`, then `No character entry for Marth`, then the ping; the footer has the addping reminder and the addcharacter hint |
+| 4.10 | U1 | `~addping` | `Character name is missing. Usage: ~addping (character name)` |
+| 4.11 | U1 | `~addping Lucina Chrom` | `Only one name is allowed. Use underscores for multi-word names, e.g. Black_Knight` |
+| 4.12 | U1 | `~addping marth` | `Character Marth doesn't exist` |
+| 4.13 | U2 | `~addping luci` | `Ping for Lucina already exists` (if already subscribed). Otherwise `… has been added` |
+| 4.14 | U2 | `~addping Chrom` | `Ping for Chrom has been added` |
+| 4.15 | U2 | `~removeping`, `~removeping a b`, `~removeping marth` | Missing-argument, one-name and doesn't-exist errors as above |
+| 4.16 | U2 | `~removeping Robin` (not subscribed) | `Ping for Robin doesn't exist` |
+| 4.17 | U2 | `~removeping chrom` | `Ping for Chrom has been removed` |
+| 4.18 | U2 | `~checkping` | A box: the heading `<U2's name>'s pings`, a separator, `Lucina` (one per line, sorted when there are several). Public, as every `~` reply |
+| 4.18a | U2 | Subscribe U2 to 11 or more characters, then `~checkping` | `(page 1/2)` in the heading, 10 characters, a separator and `◀ Previous` (disabled) / `Next ▶`; `Next ▶` turns the same message to page 2. Anyone may click; a click has the cooldown |
+| 4.19 | new user / U2 after removing all | `~checkping` | `You are not subscribed to any characters` |
+
+## 5. Characters (admin path)
+
+| # | Who | Message | Expected |
+|---|---|---|---|
+| 5.1 | A | `~addcharacter` | `Character name is missing. Usage: ~addcharacter (character name)` |
+| 5.2 | A | `~addcharacter Black Knight` | Only-one-name error |
+| 5.3 | A | `~addcharacter black_KNIGHT` | A box with a blurple bar: `Character Black_Knight has been added`, a separator line, and the button `Subscribe to Black_Knight` |
+| 5.3a | U1 | Click `Subscribe to Black_Knight`, then again | Ephemeral `Ping for Black_Knight has been added`, then `Ping for Black_Knight already exists` (the button never unsubscribes). Clicking right after another command works: the button has no cooldown |
+| 5.3b | U2 | Restart the bot, then click `Subscribe to Black_Knight` | Ephemeral `Ping for Black_Knight has been added` (the button survives restarts) |
+| 5.4 | A | `~addcharacter m!robin`, `~addcharacter l'arachel`, `~addcharacter Lucina` | `M!Robin`, `L'Arachel`, `Lucina` added |
+| 5.5 | A | `~addcharacter LUCINA` | `Character Lucina already exists` |
+| 5.6 | A | `~addcharacter luci` (alias) | `Luci is already an alias of Lucina` |
+| 5.7 | A / U1 | `~checkcharacter`, `~checkcharacter a b`, `~checkcharacter marth` | Missing-argument, one-name and doesn't-exist errors |
+| 5.8 | U1 | `~checkcharacter Black_Knight` (no aliases or users) | A box: the heading `Black_Knight's pings` (no Aliases line), a separator, `Nobody is subscribed to Black_Knight` |
+| 5.9 | U1 | `~checkcharacter luci` | The heading `Lucina's pings` with `Aliases: Luci` under it, a separator, the users' names one per line. With 11 or more subscribers: `(page 1/2)` and the page buttons, as in 4.18a; after `~removecharacter`, a page click answers ephemerally `This character doesn't exist anymore` |
+| 5.10 | A | `~removecharacter` / `a b` / `marth` | Missing-argument, one-name and doesn't-exist errors |
+| 5.11 | A | `~removecharacter luci` | `Character Lucina has been removed`. Subscribers' `~checkping` no longer lists it, and `~artping Luci` now says no entry (the alias went too) |
+
+## 6. Aliases (admin)
+
+| # | Message | Expected |
+|---|---|---|
+| 6.1 | `~addalias` | `Character name is missing. Usage: ~addalias (character name) (alias)` |
+| 6.2 | `~addalias Lucina` | `Alias is missing. Usage: ~addalias (character name) (alias)` |
+| 6.3 | `~addalias Lucina a b` | Only-one-name error |
+| 6.4 | `~addalias marth x` | `Character Marth doesn't exist` |
+| 6.5 | `~addalias lucina LUCI` | `Alias Luci has been added to Lucina` |
+| 6.6 | `~addalias Luci masked_marth` (alias used as the character) | `Alias Masked_Marth has been added to Lucina` |
+| 6.7 | `~addalias Chrom luci` | `Luci is already an alias of Lucina` |
+| 6.8 | `~addalias Chrom lucina` | `Character Lucina already exists` |
+| 6.9 | `~removealias` / `~removealias Lucina` / `~removealias a b c` / `~removealias marth x` | The same argument and doesn't-exist errors |
+| 6.10 | `~removealias Chrom luci` | `Luci is not an alias of Chrom` |
+| 6.11 | `~removealias Lucina masked_marth` | `Alias Masked_Marth has been removed from Lucina` |
+| 6.12 | `~setprimaryname` | `Alias is missing. Usage: ~setprimaryname (alias)` |
+| 6.13 | `~setprimaryname a b` / `~setprimaryname marth` | One-name error / `Character Marth doesn't exist` |
+| 6.14 | `~setprimaryname Lucina` | `Lucina is already the primary name` |
+| 6.15 | `~setprimaryname luci` | `Luci is now the primary name; Lucina has become an alias`. `~checkcharacter Lucina` shows the header `Luci`, `Aliases: Lucina`, and the same users |
+
+## 7. Character votes (non-admin `~addcharacter`, `votes_needed=2`)
+
+Votes are cast with the Vote button. "Clicks" are button clicks; a click's reply is ephemeral (only the clicker sees it).
+
+| # | Action | Expected |
+|---|---|---|
+| 7.1 | U1 in **DM**: `~addcharacter Marth` | `Votes can only be started in a server` |
+| 7.2 | U1: `~addcharacter Lucina` (exists) | `Character Lucina already exists` (no vote) |
+| 7.3 | U1: `~addcharacter marth` | Only the bot's message, a box with a blurple bar: `Vote to add Marth. Votes needed: 2`, a separator line, and a button `Vote (1/2)` showing ⭐: U1's own vote is already counted. The bot adds no reaction and sends no other reply |
+| 7.4 | U1 reacts with ⭐ or 👍 on the vote message | Nothing happens (reactions don't count) |
+| 7.5 | U1 clicks the button | Ephemeral `Your vote for Marth has been taken back`; the label becomes `Vote (0/2)` |
+| 7.6 | U1 clicks again | Ephemeral `Your vote for Marth has been added`; the label is `Vote (1/2)` again |
+| 7.7 | U2 clicks | The message is edited to `Character Marth has been added` and its Vote button makes way for `Subscribe to Marth`. U1 and U2 both have Marth in `~checkping`. U2's click got `Your vote for Marth has been added` |
+| 7.7a | A clicks `Subscribe to Marth`; then U1 clicks it | A: ephemeral `Ping for Marth has been added`. U1 (a voter): `Ping for Marth already exists` |
+| 7.7b | A: `~removecharacter marth`, then U2 clicks `Subscribe to Marth` | Ephemeral `This character doesn't exist anymore` |
+| 7.8 | U1: `~addcharacter ike` **twice** → two vote messages. U2 clicks the 1st | The 1st becomes `…has been added` with `Subscribe to Ike`, the 2nd `Character Ike has already been added`; both now have `Subscribe to Ike` |
+| 7.9 | U1: `~addcharacter roy`. **A** clicks | Passes at once (an admin's vote). A and U1 (the proposer's vote) are subscribed to Roy |
+| 7.10 | U1: `~addcharacter eliwood` (2 votes). A runs `~addcharacter eliwood` | A gets `Character Eliwood has been added`, and both vote messages are edited to `…has already been added` with `Subscribe to Eliwood` |
+| 7.11 | U1: `~addcharacter hector`. A: `~addalias Lucina hector`. U2 clicks the vote | U2 gets an ephemeral `Hector is already an alias of Lucina`, and the vote message is edited to that text without a button. The vote is dropped |
+| 7.12 | U1: `~addcharacter lyn`, then **delete** the vote message. A: `~addcharacter lyn` | Added, with no errors in the log about fetching the deleted vote (it was dropped on delete) |
+| 7.13 | U1: `~addcharacter ephraim`. Stop the bot, U2 tries to click (`This interaction failed`), start the bot, U2 clicks | The vote and U1's vote survived the restart; U2's click now passes it (button votes survive restarts) |
+| 7.14 | U1: `~addcharacter eirika`. Stop the bot, delete the vote message, start. A: `~addcharacter eirika` | Nothing about the vote at startup. Added; the log warns `Failed to fetch the message of closed vote …` |
+| 7.15 | U1 starts 6 votes in one channel (`~addcharacter` with 6 new names). Restart | The vote messages are left as they are, and the log has no `We are being rate limited` warnings |
+| 7.16 | U1: `~addcharacter alm`. Stop the bot, set `votes_needed=3`, start | The message still says `Votes needed: 2`. U2 clicks: `Vote to add Alm. Votes needed: 3` and `Vote (2/3)` |
+| 7.17 | With `votes_needed=3`, U1: `~addcharacter celica`, U2 clicks (`Vote (2/3)`). Stop the bot, set `votes_needed=2`, start | Nothing changes at startup. U3 clicks: `Character Celica has been added` |
+| 7.18 | Set `votes_needed=1`, restart. U1: `~addcharacter lucius` | `Character Lucius has been added` straight away (no vote). Put it back to 2 |
+| 7.19 | Set `emoji=<:yourEmoji:id>` (a custom emoji in the server), restart, start a vote | The button shows the custom emoji |
+| 7.20 | A clicks a vote button, then U1 starts another vote for the same name and A clicks that too | The 1st click passes the vote; the second vote was closed with it, so there is nothing to click |
+
+## 8. Gacha currency
+
+| # | Who | Message | Expected |
+|---|---|---|---|
+| 8.1 | A | `~addcurrency` / `~addcurrency a b` | Missing-argument / one-name error |
+| 8.2 | A | `~addcurrency orbs` | `Currency orbs has been added` (**not** normalized) |
+| 8.3 | A | `~addcurrency ORBS` | `Currency orbs already exists` |
+| 8.4 | U1 | `~setcurrency` | `Currency name is missing. Usage: ~setcurrency (currency name) (amount)` |
+| 8.5 | U1 | `~setcurrency orbs` | `Amount is missing. Usage: …` |
+| 8.6 | U1 | `~setcurrency orbs 1 2` | Only-one-name error |
+| 8.7 | U1 | `~setcurrency orbs abc` / `orbs 1.5` | `Failed to set currency. Please enter a valid amount for your orbs.` |
+| 8.8 | U1 | `~setcurrency gems abc` (unknown + invalid) | The **amount** error (the amount is checked first) |
+| 8.9 | U1 | `~setcurrency orbs -1` | `… The amount can't be negative` |
+| 8.10 | U1 | `~setcurrency orbs 9223372036854775808` | `… The amount is too large` |
+| 8.11 | U1 | `~setcurrency orbs 9223372036854775807` | Set to that amount |
+| 8.12 | U1 | `~setcurrency gems 5` | `Currency gems doesn't exist` |
+| 8.13 | U1 | `~setcurrency ORBS 100`, then `~setcurrency orbs 250` | `Your orbs has been set to 100`, then `… to 250` (overwrites) |
+| 8.14 | U1 | `~setcurrency orbs +5` / `orbs 1_000` | Accepted as 5 / 1000 (Python `int()` takes these) |
+| 8.15 | U1 | `~clearcurrency` / `a b` / `gems` | Missing-argument / one-name / doesn't-exist errors |
+| 8.16 | U2 | `~clearcurrency orbs` (never set) | `You don't have any orbs set` |
+| 8.17 | U1 | `~clearcurrency orbs` | `Your orbs has been cleared` |
+| 8.18 | U2 | `~checkwallet` (empty) | `Your wallet is empty. Use ~setcurrency to add a currency` |
+| 8.19 | U1 | Set `orbs` and `feathers` → `~checkwallet` | A box: the heading `<display name>'s wallet`, a separator, `feathers: …`, `orbs: …` (sorted, one per line) |
+| 8.20 | U1 | `~scoreboard` | `Currency name is missing. Usage: ~scoreboard (currency name) (optional page number)` |
+| 8.21 | U1 | `~scoreboard orbs 1 2` / `~scoreboard orbs abc` | Only-one-name error (both) |
+| 8.22 | U1 | `~scoreboard gems` | `Currency gems doesn't exist` |
+| 8.23 | U1 | `~scoreboard feathers` (A adds `~addcurrency feathers`, nobody has set it) | The box: `Scoreboard for feathers`, a separator, `Nobody has set their feathers yet`, then the currency dropdown |
+| 8.24 | U1 | `~scoreboard orbs` (U1 and U2 have set it) | A box with a blurple bar: the heading `Scoreboard for orbs` (no page info), a separator, `1. … (amount)` in descending order, a separator and a dropdown listing feathers and orbs, orbs selected. No page buttons |
+| 8.24a | U2 | Pick `feathers` in the dropdown of 8.24 | The same message turns to the feathers scoreboard (page 1), feathers selected. Within the cooldown: an ephemeral cooldown error, and the dropdown goes back to feathers (the refused pick doesn't stay shown); on page 2 the redraw stays on page 2. After a restart the dropdown still works |
+| 8.24b | A | `~removecurrency feathers`, then U1 picks `feathers` in an older scoreboard's dropdown | Ephemeral `This currency doesn't exist anymore`; the message stays |
+| 8.25 | U1 | `~scoreboard orbs 0` / `orbs 2` | `Page 0 doesn't exist. The scoreboard for orbs has 1 page` |
+| 8.26 | — | Seed fake users (below), then `~scoreboard orbs` | `(page 1/2)` header, ranks 1–10, buttons `◀ Previous` (disabled) and `Next ▶`. Fake IDs show as `Unknown user (<id>)` |
+| 8.27 | U1 | `~scoreboard orbs 2` | `(page 2/2)`, ranks starting at 11, `◀ Previous` enabled and `Next ▶` disabled |
+| 8.27a | U2 | Click `Next ▶` on the message of 8.26 | The same message is edited to page 2 (nothing new is posted); anyone may click |
+| 8.27b | U2 | Click `◀ Previous` within the cooldown | Ephemeral cooldown error; the page stays. After the cooldown it turns back to page 1. A has no cooldown |
+| 8.27c | U1 | Restart the bot, click a page button | Still works |
+| 8.27d | U1 | Delete the seeded rows, then click `Next ▶` on a page 1 message | Ephemeral `Page 2 doesn't exist. The scoreboard for orbs has 1 page`; `◀ Previous` on a page 2 message turns it into the one-page scoreboard without buttons |
+| 8.28 | A | `~removecurrency` / `a b` / `gems` | Missing-argument / one-name / doesn't-exist errors |
+| 8.29 | A | `~removecurrency ORBS` | `Currency orbs has been removed`. U1's `~checkwallet` no longer shows orbs, and a page button on an orbs scoreboard answers ephemerally `This currency doesn't exist anymore` |
+
+Seed for 8.26 (run while the bot is stopped, or between commands):
+
+```sql
+-- sqlite3 test.db
+INSERT INTO GACHA_CURRENCY_WALLET (GACHA_CURRENCY_ID, USER, AMOUNT)
+SELECT (SELECT GACHA_CURRENCY_ID FROM GACHA_CURRENCY WHERE NAME='orbs'), 1000 + value, value
+FROM generate_series(1, 11);   -- older sqlite3: use 11 separate INSERTs
+```
+
+## 9. Resources
+
+| # | Who | Message | Expected |
+|---|---|---|---|
+| 9.1 | U1 | `~setresource hof https://example.com` | Silence (admin only) |
+| 9.2 | A | `~setresource` / `~setresource hof` | `Resource name is missing. Usage: …` / `Link is missing. Usage: …` |
+| 9.3 | A | `~setresource hof a b` | Only-one-name error |
+| 9.4 | A | `~setresource h@f https://x.com` | `Resource names can only contain letters, digits, _ and -` |
+| 9.5 | A | `~setresource help https://x.com` / `HELP` / `~help` | `~help is a command, so it can't be a resource` |
+| 9.6 | A | `~setresource hof www.example.com` | `That isn't a link to a Discord message or a website` |
+| 9.7 | A | `~setresource guide https://example.com/guide` | `Resource guide has been set`. `~guide` posts the link |
+| 9.8 | A | `~setresource ~hof <https://discord.com/channels/…/…/…>` (copied link of a text message, in `<>`) | `Resource hof has been set` |
+| 9.9 | A | The same with the link changed to `ptb.discord.com`, `canary.discord.com`, `discordapp.com` | All accepted |
+| 9.10 | A | A link whose message ID is wrong (change the last digit) | `Couldn't read that message. Check the link, and that the bot can read that channel` |
+| 9.11 | A | A link to a message in a channel the bot can't see | Same "Couldn't read" error |
+| 9.12 | A | A link to an image-only message, or a forwarded message | `That message has no text` |
+| 9.13 | U1 | `~hof`, `~HOF`, `~hof extra words` | All post the stored text |
+| 9.14 | A | Source message contains `@everyone` and `<@U2>`: set it, then U1 runs `~hof` | The text is shown, **nobody is pinged** |
+| 9.15 | A | Edit the source message, then U1 runs `~hof` | Still the old text (a snapshot). After running `~setresource` again → the new text |
+| 9.16 | A | Source message over 2000 characters (Nitro), set it, then `~hof` | Posted as 2 or more messages |
+| 9.17 | A | `~setresource HOF https://example.com` (existing, different case) | Overwrites it, and `~resources` now lists `~HOF` |
+| 9.18 | U1 | `~resources` with none, then with some | `No resources have been set yet` / a box: the heading `Resources`, a separator, `~guide` and `~HOF` one per line (sorted) |
+| 9.19 | A | `~removeresource` / `a b` / `h@f` | Missing-argument / one-name / invalid-name errors |
+| 9.20 | A | `~removeresource nope` | `Resource nope doesn't exist` |
+| 9.21 | A | `~removeresource ~hof` | `Resource HOF has been removed`. `~hof` → silence |
+
+## 10. Coliseum reminder (runs Mondays at 18:00 and 22:00 UTC)
+
+| # | Setup | Expected |
+|---|---|---|
+| 10.1 | Channel ID set, bot running on a Monday through 18:00 or 22:00 UTC | A box with a blurple bar in the channel: `Coliseum/Aether Raids closes <t:…:R> at <t:…:f>`. The timestamp shows 23:00 UTC in your local time |
+| 10.2 | Same, on a non-Monday at those times | Nothing |
+| 10.3 | Channel ID set to a channel the bot can't see (or a wrong ID) | At the trigger time, log error `Channel … not found. Task will be skipped` |
+| 10.4 | Disconnect the network briefly so `on_ready` fires again | No `RuntimeError` about the task already running, and no duplicate reminders (nor duplicate Voting Gauntlet scores, section 12) |
+| 10.5 | Channel empty | See 1.4. No reminders |
+
+To test the reminder without waiting for Monday, temporarily change `weekday` and `closing_time` of `COLISEUM` in
+`weekly_reminder.py`. Don't commit that change.
+
+## 10a. Divine Games reminder (runs Saturdays at 18:00 and 22:00 UTC)
+
+| # | Setup | Expected |
+|---|---|---|
+| 10a.1 | Channel ID set, bot running on a Saturday through 18:00 or 22:00 UTC | A box with a blurple bar in the channel: `Divine Games closes <t:…:R> at <t:…:f>`. The timestamp shows Saturday 23:00 UTC (00:00 GMT+1) in your local time |
+| 10a.2 | Same, on a non-Saturday at those times | Nothing |
+| 10a.3 | Channel ID set to a channel the bot can't see (or a wrong ID) | At the trigger time, log error `Channel … not found. Task will be skipped` |
+| 10a.4 | Channel empty | See 1.4. No reminders |
+
+To test the reminder without waiting for Saturday, temporarily change `weekday` and `closing_time` of `DIVINE_GAMES`
+in `weekly_reminder.py`. Don't commit that change.
+
+## 10b. Closing times and sending the reminders
+
+| # | Who | Command | Expected |
+|---|---|---|---|
+| 10b.1 | U1 | `~closingtimes` (also `/closingtimes`, public) | A box: the heading `Closing times`, a separator, then `Coliseum/Aether Raids closes <t:…:R> at <t:…:f>` and `Divine Games closes <t:…:R> at <t:…:f>`, the soonest first. The times are next Monday 23:00 UTC and next Saturday 23:00 UTC, any day of the week; right after closing, the next week's |
+| 10b.2 | U1 | `~sendreminders` / `/sendreminders` | Silence for `~` (admin only); `/sendreminders` isn't listed for U1 |
+| 10b.3 | A | `~sendreminders` with both channel IDs set, on any day | Each reminder's box is posted in its channel, with its next closing time. Reply `Coliseum notification: sent to #…` and `Divine Games notification: sent to #…`; `/sendreminders` gives the same reply, ephemeral |
+| 10b.4 | A | `~sendreminders` with `divine_games_notification_channel_id` empty, or a channel the bot can't see or post in | That line says `no channel is configured`, `channel … not found` or `sending to #… failed`; the other reminder is still sent |
+
+## 11. Slash commands
+
+Every case of sections 4 to 9 also holds for the slash command; what differs is listed here. Errors are ephemeral
+(only the person who ran the command sees them), successful replies are public. Options autocomplete from the
+database. Run each command as the account named in the section it comes from.
+
+| # | Who | Command | Expected |
+|---|---|---|---|
+| 11.1 | U1 | Type `/` | The admin commands (`removecharacter`, `addalias`, `removealias`, `setprimaryname`, `addcurrency`, `removecurrency`, `setresource`, `removeresource`, `sendreminders` and `sendvotinggauntlet`) aren't listed for U1; A sees them all. `/help` is listed for both |
+| 11.2 | A | Type `/` | All commands of the README table, plus `/resource`, `/lorenz` and `/chromk`, each with a description |
+| 11.3 | U1 | `/addping character:Lucina` | Public `Ping for Lucina has been added`. Autocomplete suggested `Lucina` while typing `lu` (names and aliases) |
+| 11.3a | U1 | Set `autocomplete_max_choices=2`, restart, type `/addping character:` with more than 2 characters, then type `l` | At most 2 suggestions, the first names alphabetically; `l` (and `L`) narrows them to names starting with L. Put it back to 20 |
+| 11.4 | U1 | `/addping character:black knight` (with a space) | The name is `Black_Knight`: `Character Black_Knight doesn't exist` (or, if it exists, the ping is added) |
+| 11.5 | U1 | `/addping character:marth` | Ephemeral `Character Marth doesn't exist` |
+| 11.6 | U1 | `/addping character:Lucina` again | Ephemeral `Ping for Lucina already exists` |
+| 11.7 | U1 | `/removeping character:Lucina`, then again | `Ping for Lucina has been removed`, then ephemeral `Ping for Lucina doesn't exist`. Autocomplete only suggests the characters U1 is subscribed to (no aliases); typing another name still gives that error |
+| 11.8 | U1 | `/checkping` | Ephemeral (only U1 sees it): the box of 4.18, its page buttons work / `You are not subscribed to any characters` |
+| 11.9 | U1 | `/artping character:Lucina` | The box of 4.5 with `/addping` in the footer; the subscribers are pinged. `/artping character:Marth` alone: the box of 4.2 with `/addcharacter`, ephemeral |
+| 11.10 | U1 | `/artping character:Lucina character2:Chrom character3:Luci` | The heading `Chrom, Lucina` (sorted, Lucina once); U1 mentioned once |
+| 11.11 | U1 | `/artping character:Lucina character2:Marth` | As 4.9, with `/addping` and `/addcharacter` in the footer |
+| 11.12 | U1 | `/artping`, then `~checkping` or `/checkping` (cooldown 10 s) | The 2nd: `You used a command recently. Try again in N seconds` (ephemeral for the slash one): one cooldown for every command of both syntaxes. A failed attempt doesn't start it, and A is never held back |
+| 11.13 | U1 | `/artping` | The options go up to `character10` (`slash_max_characters=10`), and there is no `character11`. Set it to 2 and restart: only `character` and `character2` |
+| 11.14 | A | `/addcharacter character:black knight` | `Character Black_Knight has been added` (deferred, so the reply may take a moment) |
+| 11.15 | A | `/addcharacter character:Black_Knight` | `Character Black_Knight already exists`. The deferred reply follows the defer, so it is public rather than ephemeral |
+| 11.16 | U1 | `/addcharacter character:marth2` | A vote message as in 7.3, sent by the bot as a reply to the command. The votes work as in section 7 |
+| 11.17 | U1 in **DM** | `/addcharacter character:x` | `Votes can only be started in a server` |
+| 11.18 | A in **DM** | Type `/` | The admin commands aren't offered (they are server-only) |
+| 11.19 | U1 | `/checkcharacter character:luci` | The box of 5.9, public |
+| 11.20 | A | `/removecharacter character:luci` | `Character Lucina has been removed` |
+| 11.21 | A | `/addalias character:Lucina alias:luci`, `/removealias …`, `/setprimaryname alias:luci` | The same replies as 6.5, 6.11 and 6.15 |
+| 11.22 | U1 | Run any admin command by typing it out (an admin has hidden the permission in the server settings, to test the check: Server settings → Integrations → the bot → allow the command for everyone) | Ephemeral `This command is for admins only`. Restore the permission afterwards |
+| 11.23 | A | `/addcurrency currency:orbs`, then again | `Currency orbs has been added`, then `Currency orbs already exists` |
+| 11.24 | U1 | `/setcurrency currency:orbs amount:-1` | Discord refuses the option (minimum 0) |
+| 11.25 | U1 | `/setcurrency currency:orbs amount:100` | `Your orbs has been set to 100` |
+| 11.26 | U1 | `/setcurrency currency:orbs amount:9223372036854775808` | Ephemeral `… The amount is too large` (or Discord refuses the number) |
+| 11.27 | U1 | `/setcurrency currency:gems amount:5` | Ephemeral `Currency gems doesn't exist` |
+| 11.28 | U1 | `/clearcurrency currency:orbs`, then again | `Your orbs has been cleared`, then ephemeral `You don't have any orbs set` |
+| 11.29 | U2 | `/checkwallet` (empty) | `Your wallet is empty. Use /setcurrency to add a currency` (the slash form) |
+| 11.30 | U1 | `/checkwallet` with two currencies set | The box of 8.19 |
+| 11.31 | U1 | `/scoreboard currency:orbs` | The scoreboard box of 8.24, with the usernames resolved |
+| 11.32 | U1 | `/scoreboard currency:orbs page:0` | Discord refuses the option (minimum 1) |
+| 11.33 | U1 | `/scoreboard currency:orbs page:5` | Ephemeral `Page 5 doesn't exist. The scoreboard for orbs has N pages` |
+| 11.34 | U1 | `/scoreboard currency:orbs` with the 11 seeded users (8.26) | `(page 1/2)` with the page buttons, which turn the page as in 8.27a; `page:2` shows page 2 |
+| 11.35 | A | `/removecurrency currency:orbs` | `Currency orbs has been removed` |
+| 11.36 | A | `/setresource name:guide link:https://example.com/guide` | `Resource guide has been set` (deferred) |
+| 11.37 | A | `/setresource name:help link:https://x.com`, `name:h@f …`, `name:my guide …` (space), `link:www.example.com` | The errors of 9.4 to 9.6 (`~help is a command, so it can't be a resource`, the letters-digits rule for the `@` and the space, and the link error). The command defers, so they follow the defer's visibility (public) |
+| 11.38 | A | `/setresource` with a Discord message link, an unreadable link and an image-only message | `Resource … has been set`, `Couldn't read that message…`, `That message has no text`, as in 9.8 to 9.12 |
+| 11.39 | U1 | `/resource name:guide` | Posts the stored text; autocomplete suggests `guide` |
+| 11.40 | U1 | `/resource name:nope` | Ephemeral `Resource nope doesn't exist` (where `~nope` is silent) |
+| 11.41 | A | A resource whose source message contains `@everyone` and `<@U2>`; U1 runs `/resource` | The text is shown, **nobody is pinged** |
+| 11.42 | U1 | `/resources`, with none and with some | `No resources have been set yet` / the box of 9.18 with `guide` and `HOF`, then a separator and `Post one with /resource` |
+| 11.43 | A | `/removeresource name:guide`, then again | `Resource guide has been removed`, then ephemeral `Resource guide doesn't exist` |
+| 11.44 | U1 | `/lorenz`, wait out the cooldown, `/chromk` | The LorenzSmile emoji, the 3×4 chromk grid; public. Like every command they start the cooldown |
+| 11.45 | A | Lock the DB as in 2.16, then `/addcurrency currency:Lock` | After about 5 s: ephemeral `Something went wrong while running /addcurrency`, with a traceback in the log. Then `ROLLBACK;` |
+| 11.46 | U1 | `/resource` on a resource of over 2000 characters (9.16) | Posted as 2 or more messages |
+| 11.47 | U1 in server | `/help` | Ephemeral (only U1 sees it): a box with the title `Commands`, `Options in brackets are optional` and `The same commands also work with ~, type ~help`; then the headings **Art Ping Commands** and **Gacha Currency Commands**, each command's slash usage in bold with its slash description on the next line, e.g. `/artping character [character2 … character10]`, `/addping character`, `/scoreboard currency [page]`. `/resource name` comes right after `/resources`, `/help` itself is listed, and `/lorenz` and `/chromk` aren't. No **Admin Commands** section |
+| 11.48 | A in server | `/help` | Also **Admin Commands** (`/removecharacter character` to `/removecurrency currency`, in the order of `~help`), still one message |
+| 11.49 | A in **DM** | `/help` | No admin section (DMs have no permissions), and none of the admin commands |
+| 11.50 | U1 | Set `slash_max_characters=2`, restart, `/help` | `/artping character [character2]`; with 3, `/artping character [character2] [character3]`. Put it back to 10 |
+| 11.51 | U1 | `/help`, then `/checkping` (cooldown 10 s) | The 2nd: ephemeral `You used a command recently…`: `/help` is a command, like `~help` |
+| 11.52 | A | Empty `guild_id`, restart, wait until the global commands show up, `/help`; then set `guild_id` again and restart | The same overview as 11.48 (the commands are read from where the sync put them, globally here and in the server with `guild_id`), not an empty list |
+
+## 12. Voting Gauntlet scores (hourly at 5 past, UTC, while a round runs)
+
+The bot reads the official page (https://support.fire-emblem-heroes.com/voting_gauntlet/current). A live gauntlet
+only runs a few days a month, so test with the saved pages instead: temporarily change `voting_gauntlet.py` so that
+
+- `POSTING_TIMES` is every minute: `[time(hour=h, minute=m, tzinfo=timezone.utc) for h in range(24) for m in range(60)]`
+- `fetch_page` returns `112, Path("tests/fjormcord/bot/artping/voting_gauntlet_112_round_3.html").read_text("utf-8")`
+  (an absolute path if the bot isn't started from the repository root)
+- `now` returns a fixed time: `datetime(2026, 10, 2, 12, tzinfo=timezone.utc)` is in round 1 (4 matchups),
+  `datetime(2026, 10, 6, 12, …)` in the final round (1 matchup, Edelgard against Dimitri) and
+  `datetime(2026, 10, 7, 5, …)` after the end
+
+and restart after each change. Don't commit that change. 12.1 needs a real gauntlet. Instead of waiting for the next
+posting time, A can run `~sendvotinggauntlet` (12.14), which posts the scores at once; then `POSTING_TIMES` can stay.
+
+| # | Setup | Expected |
+|---|---|---|
+| 12.1 | Unchanged code, during a real gauntlet round, at 5 past the hour | One message per matchup in the site's order, e.g. **Edelgard** \| 🔵 Stronger 🔵 / `123,456` / **Dimitri** \| 🔴 Weaker 🔴 / `98,765`, the names in bold, each with the buttons `Track Edelgard` and `Track Dimitri`. Outside a round: nothing |
+| 12.2 | `now` in round 1 | 4 matchup boxes, labelled 🔵 Stronger 🔵 and 🔴 Weaker 🔴 (or Same, without emoji, for both when neither is behind), a separator, and a blurple `Track <name>` button per character |
+| 12.2a | Seed 200 trackers of a Weaker character, `now` in that round | The scores in a box of their own, then the 200 trackers in two boxes of 100, each headed with the character's name, every tracker mentioned once and pinged, the buttons only on the last |
+| 12.3 | U1 clicks `Track Theodora` (Weaker) | Ephemeral `You now track Theodora. You'll be pinged every hour when Theodora is Weaker`. The next minute's message for that matchup has **Theodora**: @U1 after a separator, and U1 is **pinged** |
+| 12.4 | U1 clicks `Track Edelgard` under Theodora's matchup | Ephemeral `You now track Edelgard instead of Theodora`. The next messages show **Edelgard**: @U1 there, but U1 is **not pinged** (Edelgard is Stronger) |
+| 12.5 | U1 clicks `Track Edelgard` again | Ephemeral `You no longer track Edelgard` |
+| 12.6 | U1 and U2 track the same Weaker character, U3 its opponent | The message lists U1 and U2 under the Weaker character and U3 under the other, each once; only U1 and U2 are pinged |
+| 12.7 | U1 tracks a Weaker character, stop the bot, U1 clicks a button (`This interaction failed`), start it, clicks again | The click works after the restart (the buttons are rebuilt from their `custom_id`), and the tracking survived it |
+| 12.8 | U1 tracks Dimitri, then `now` in the final round | The final round's single message mentions U1 under Dimitri (tracking lasts across rounds) |
+| 12.9 | Then `now` after the end | No messages. `sqlite3 test.db "select * from voting_gauntlet_tracker"` is empty, and clicks on the old buttons answer `This Voting Gauntlet has ended` |
+| 12.10 | `fetch_page` returns `113` with the same page, after U1 tracked something in 112 | The trackers of 112 are gone; old 112 buttons answer `This Voting Gauntlet has ended`, the new messages track in 113 |
+| 12.11 | `fetch_page` raises `aiohttp.ClientError()`, or returns a page with the `tournaments-art` classes changed (`normal` → `ahead`) | Log `Voting Gauntlet scores could not be read. Task will be skipped` with a traceback, no messages; the next minute tries again (the loop keeps running) |
+| 12.12 | `voting_gauntlet_channel_id` set to a channel the bot can't see | Log error `Channel … not found. Task will be skipped` |
+| 12.13 | U1 runs `~artping …` straight after clicking a Track button | Works: clicks are not commands and start no cooldown |
+| 12.14 | A runs `~sendvotinggauntlet` with `now` in round 1 | The 4 matchup boxes of 12.2 in the channel at once, trackers pinged as in the hourly post. Reply `Posted 4 of the 4 matchups of Voting Gauntlet 112 to #…`; `/sendvotinggauntlet` gives the same reply, ephemeral |
+| 12.15 | A runs `~sendvotinggauntlet` with `now` between rounds or after the end, unchanged code outside a gauntlet | Reply `No round of Voting Gauntlet … is running, so nothing was posted`; nothing in the channel |
+| 12.16 | A runs `~sendvotinggauntlet` with `voting_gauntlet_channel_id` empty, or a channel the bot can't see | Reply `No channel is configured for the Voting Gauntlet scores` / `Channel … not found` |
+| 12.17 | U1 runs `~sendvotinggauntlet` | Silence (admin only); `/sendvotinggauntlet` isn't listed for U1 |
+| 12.18 | `fetch_page` returns `113, Path("tests/fjormcord/bot/artping/voting_gauntlet_113_upcoming.html").read_text("utf-8")`, `now` `datetime(2026, 10, 31, 7, 5, tzinfo=timezone.utc)` (the first hour of round 1, before the site shows scores) | 4 matchup boxes, both characters labelled Same with `No score yet` under each name, and the `Track <name>` buttons; clicking one tracks in 113 (no `This Voting Gauntlet has ended`). No `could not be read` in the log |
+
+## Not testable by hand
+
+These branches are covered by the unit tests instead:
+
+- A failing `vote_message.edit` (only logs a warning).
+- Two button clicks racing to pass the same vote.
