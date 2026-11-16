@@ -3,6 +3,7 @@ import sqlite3
 import pytest
 
 from fjormcord.bot.artping.database import MIGRATIONS_PATH, connect
+from fjormcord.bot.artping.util.name_util import normalize_name
 
 
 def table_names(connection):
@@ -24,6 +25,16 @@ def unversioned_database(path):
     return connection
 
 
+def database_at_version_2(path):
+    # A database as the live one was after migration 002, when trackers were stored by character name
+    connection = sqlite3.connect(path)
+    connection.create_function("NORMALIZE_NAME", 1, normalize_name, deterministic=True)
+    for script in ("001_initial_schema.sql", "002_upgrade_initial_schema.sql"):
+        connection.executescript((MIGRATIONS_PATH / script).read_text(encoding="utf-8"))
+    connection.execute("PRAGMA user_version = 2")
+    return connection
+
+
 def test_new_database_gets_schema(tmp_path):
     connection = connect(tmp_path / "new.db")
 
@@ -37,7 +48,9 @@ def test_new_database_gets_schema(tmp_path):
         "CHARACTER_VOTE_VOTER",
         "RESOURCE",
         "VOTING_GAUNTLET",
+        "VOTING_GAUNTLET_ENTRANT",
         "VOTING_GAUNTLET_TRACKER",
+        "VOTING_GAUNTLET_NAMED_TRACKER",
     }
     assert user_version(connection) == latest_version()
     connection.close()
@@ -141,6 +154,28 @@ def test_migration_deletes_pings_and_wallets_left_by_deletes(tmp_path):
     assert user_version(connection) == latest_version()
     assert connection.execute("SELECT CHARACTER_ID, USER FROM PINGS").fetchall() == [(7, "1")]
     assert connection.execute("SELECT GACHA_CURRENCY_ID FROM GACHA_CURRENCY_WALLET").fetchall() == [(3,)]
+    connection.close()
+
+
+def test_migration_keeps_the_trackers_stored_by_name(tmp_path):
+    # They move to their entrant's slot on the next hourly post, which stores the entrants
+    path = tmp_path / "live.db"
+    old = database_at_version_2(path)
+    with old:
+        old.execute("INSERT INTO VOTING_GAUNTLET (TOURNAMENT_ID) VALUES (114)")
+        old.execute(
+            "INSERT INTO VOTING_GAUNTLET_TRACKER (TOURNAMENT_ID, USER, CHARACTER_NAME) VALUES (114, '1', 'Ivy')"
+        )
+    old.close()
+
+    connection = connect(path)
+
+    assert connection.execute("SELECT * FROM VOTING_GAUNTLET_NAMED_TRACKER").fetchall() == [(114, "1", "Ivy")]
+    assert connection.execute("SELECT * FROM VOTING_GAUNTLET_TRACKER").fetchall() == []
+    connection.execute("PRAGMA foreign_keys = ON")
+    connection.execute("DELETE FROM VOTING_GAUNTLET")
+    # They still go with the gauntlet when it ends
+    assert connection.execute("SELECT * FROM VOTING_GAUNTLET_NAMED_TRACKER").fetchall() == []
     connection.close()
 
 

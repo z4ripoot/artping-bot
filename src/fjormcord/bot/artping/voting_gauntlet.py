@@ -25,7 +25,7 @@ TOURNAMENT_PATTERN = re.compile(r"/tournaments/(\d+)$")
 ROUND_PATTERN = re.compile(r'<article class="body-section-tournament">(.*?)</article>', re.DOTALL)
 WINDOW_PATTERN = re.compile(r'<div class="tournaments-date">([^<]*)</div>')
 ENTRANT_PATTERN = re.compile(
-    r'<div class="tournaments-art-(?:left|right) art-\d+-\d+-(\w+)">'
+    r'<div class="tournaments-art-(?:left|right) art-\d+-(\d+)-(\w+)">'
     r'.*?<p class="name">([^<]*)</p><p>([\d,]*)</p>',
     re.DOTALL,
 )
@@ -69,7 +69,9 @@ async def post_scores(client: discord.Client) -> str:
             voting_gauntlet_service.end_gauntlet()
         return f"No round of Voting Gauntlet {tournament_id} is running, so nothing was posted"
 
-    voting_gauntlet_service.start_gauntlet(tournament_id)
+    voting_gauntlet_service.start_gauntlet(
+        tournament_id, [entrant for matchup in rounds[-1].matchups for entrant in matchup]
+    )
 
     channel_id = config.read_settings().voting_gauntlet_channel_id
     channel = get_task_channel(client, channel_id)
@@ -78,7 +80,7 @@ async def post_scores(client: discord.Client) -> str:
 
     failed = 0
     for matchup in running.matchups:
-        trackers = tuple(voting_gauntlet_service.get_trackers(tournament_id, entrant.name) for entrant in matchup)
+        trackers = tuple(voting_gauntlet_service.get_trackers(tournament_id, entrant.slot) for entrant in matchup)
         pinged = [user_id for entrant, users in zip(matchup, trackers) if entrant.behind for user_id in users]
         try:
             for part in format_matchup(matchup, trackers, tournament_id):
@@ -125,10 +127,11 @@ def parse_rounds(page: str, current_time: datetime) -> list[Round]:
 
 def _parse_matchup(battle: str) -> tuple[Entrant, Entrant]:
     entrants = []
-    for status, name, score in ENTRANT_PATTERN.findall(battle):
+    for slot, status, name, score in ENTRANT_PATTERN.findall(battle):
         if status not in STATUSES:
             raise ValueError(f"Unknown status {status} of {name}")
-        entrants.append(Entrant(html.unescape(name), int(score.replace(",", "")) if score else None, STATUSES[status]))
+        score_value = int(score.replace(",", "")) if score else None
+        entrants.append(Entrant(int(slot), html.unescape(name), score_value, STATUSES[status]))
 
     if len(entrants) != 2:
         raise ValueError(f"Matchup with {len(entrants)} entrants")

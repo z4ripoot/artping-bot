@@ -18,13 +18,13 @@ from fjormcord.bot.artping.repository import resource_repository
 from fjormcord.bot.artping.view.layout import layout_text
 from fjormcord.bot.artping.view.page_view import PageButton
 from fjormcord.bot.artping.view.scoreboard_view import CurrencySelect
-from fjormcord.bot.artping.view.subscribe_view import SubscribeButton
+from fjormcord.bot.artping.view.subscribe_view import SubscribeButton, SubscribeSelect
 from fjormcord.bot.artping.view.vote_view import VoteButton
 from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
 from tests.fakes import FakeClock, button_labels, make_message, text_length, use_settings
 
 # ~artping Lucina, with U1 subscribed
-LUCINA_PING = "### Lucina\n<@1>\nWant to be pinged for Lucina? Use ~addping Lucina"
+LUCINA_PING = "### Lucina\n<@1>\nWant to be pinged for Lucina? Use ~addping Lucina or click the button below"
 
 
 @pytest.fixture
@@ -119,7 +119,7 @@ def test_setup_adds_the_cogs_and_the_buttons_then_syncs(bot, monkeypatch):
     assert bot.get_cog("CharacterVoteCog") is not None
     assert bot.persistent_views == []
     # Routes clicks on every button, also those of messages sent before a restart
-    assert dynamic_items == [TrackButton, PageButton, CurrencySelect, SubscribeButton, VoteButton]
+    assert dynamic_items == [TrackButton, PageButton, CurrencySelect, SubscribeButton, SubscribeSelect, VoteButton]
     # The sync comes last, so it registers the commands of every cog
     assert synced == [(bot.tree, config.read_settings().guild_id)]
 
