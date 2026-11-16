@@ -115,7 +115,8 @@ def subscribe_many(user_id: str, character_ids: list[int]) -> str:
 
     lines = []
     if added:
-        lines.append(log_and_reply(f"Ping for {', '.join(added)} has been added"))
+        pings = "Ping for {} has been added" if len(added) == 1 else "Pings for {} have been added"
+        lines.append(log_and_reply(pings.format(", ".join(added))))
     if existing:
         lines.append(f"You are already subscribed to {', '.join(existing)}")
     if removed:

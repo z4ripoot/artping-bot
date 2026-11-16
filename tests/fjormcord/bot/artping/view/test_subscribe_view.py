@@ -108,7 +108,7 @@ def test_pick_after_restart_subscribes():
     chrom, lucina = add_character("Chrom"), add_character("Lucina")
     select = SubscribeSelect.for_characters([chrom, lucina])
 
-    assert pick(select, [chrom.id, lucina.id]) == [("Ping for Chrom, Lucina has been added", True, None)]
+    assert pick(select, [chrom.id, lucina.id]) == [("Pings for Chrom, Lucina have been added", True, None)]
     assert art_ping_repository.get_art_ping_users([lucina.id]) == ["7"]
 
 
@@ -135,3 +135,22 @@ def test_pick_has_no_cooldown():
     pick(select, [chrom.id])
 
     assert pick(select, [lucina.id]) == [("Ping for Lucina has been added", True, None)]
+
+
+def test_pick_never_unsubscribes():
+    # Leaving a character out of a later pick keeps its ping: unsubscribing is only done with removeping
+    chrom, lucina = add_character("Chrom"), add_character("Lucina")
+    select = SubscribeSelect.for_characters([chrom, lucina])
+    pick(select, [chrom.id, lucina.id])
+
+    assert pick(select, [chrom.id]) == [("You are already subscribed to Chrom", True, None)]
+    assert art_ping_repository.get_art_ping_users([lucina.id]) == ["7"]
+
+
+def test_button_click_never_unsubscribes():
+    lucina = add_character("Lucina")
+    button = SubscribeButton.for_character(lucina)
+    click(button)
+    click(button)
+
+    assert art_ping_repository.get_art_ping_users([lucina.id]) == ["7"]
