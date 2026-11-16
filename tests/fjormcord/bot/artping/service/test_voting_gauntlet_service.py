@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from fjormcord.bot.artping.service.voting_gauntlet_service import (
@@ -55,6 +57,15 @@ def test_ended_gauntlet_cannot_be_tracked():
 
     assert get_trackers(112, "Dimitri") == []
     assert toggle_tracking(112, "1", "Dimitri", "Edelgard") == MESSAGE_ENDED
+
+
+def test_ending_an_ended_gauntlet_again_logs_nothing(caplog):
+    end_gauntlet()
+
+    with caplog.at_level(logging.INFO):
+        end_gauntlet()
+
+    assert caplog.records == []
 
 
 def test_older_gauntlet_cannot_be_tracked():

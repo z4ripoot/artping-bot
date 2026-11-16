@@ -1,5 +1,3 @@
-import logging
-
 from fjormcord.bot.artping.database import execute, exists, fetch_column, fetch_value, get_database_connection
 
 _REMOVE_TRACKER = """
@@ -19,7 +17,6 @@ def set_running_tournament(tournament_id: int):
 
 
 def remove_running_tournament():
-    logging.info("Removing the running Voting Gauntlet and its trackers")
     execute("DELETE FROM VOTING_GAUNTLET")
 
 

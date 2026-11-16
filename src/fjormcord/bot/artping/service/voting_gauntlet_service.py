@@ -1,3 +1,5 @@
+import logging
+
 import discord
 
 from fjormcord.bot.artping import config
@@ -21,6 +23,11 @@ def start_gauntlet(tournament_id: int):
 
 
 def end_gauntlet():
+    # Called every hour after the final round, so only an ended gauntlet that is still stored is removed and logged
+    tournament_id = voting_gauntlet_repository.get_running_tournament()
+    if tournament_id is None:
+        return
+    logging.info("Voting Gauntlet %s has ended; removing it and its trackers", tournament_id)
     voting_gauntlet_repository.remove_running_tournament()
 
 
