@@ -88,6 +88,31 @@ def subscribe(user_id: str, character_id: int) -> str:
     return _add_ping(user_id, character)
 
 
+def subscribe_many(user_id: str, character_ids: list[int]) -> str:
+    added = []
+    existing = []
+    removed = False
+
+    for character_id in character_ids:
+        character = character_repository.get_character_by_id(character_id)
+        if character is None:
+            removed = True
+        elif art_ping_repository.has_ping(character.id, user_id):
+            existing.append(character.name)
+        else:
+            art_ping_repository.add_ping(character.id, user_id)
+            added.append(character.name)
+
+    lines = []
+    if added:
+        lines.append(log_and_reply(f"Ping for {', '.join(added)} has been added"))
+    if existing:
+        lines.append(f"You are already subscribed to {', '.join(existing)}")
+    if removed:
+        lines.append("Some picked characters don't exist anymore")
+    return "\n".join(lines)
+
+
 def _add_ping(user_id: str, character: Character) -> str:
     if art_ping_repository.has_ping(character.id, user_id):
         raise CommandError(f"Ping for {character.name} already exists")
