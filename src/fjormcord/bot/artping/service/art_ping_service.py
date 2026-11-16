@@ -14,7 +14,7 @@ from fjormcord.bot.artping.util.message_util import command_name, log_and_reply
 from fjormcord.bot.artping.util.name_util import normalize_name
 from fjormcord.bot.artping.util.page_util import get_page, paged_header
 from fjormcord.bot.artping.util.user_util import get_username, mentions
-from fjormcord.bot.artping.view import page_view
+from fjormcord.bot.artping.view import page_view, subscribe_view  # Modules: subscribe_view imports this one too
 
 MESSAGE_NO_PINGS = "You are not subscribed to any characters"
 
@@ -53,6 +53,14 @@ def _add_character_hint(name: str, administrator: bool, slash: bool) -> str:
     return f"Use {add_character} {name} to start a vote to add it"
 
 
+def _controls_hint(characters: list[Character]) -> str:
+    if len(characters) == 1:
+        return "or click the button below"
+    if len(characters) <= subscribe_view.MAX_SUBSCRIBE_BUTTONS:
+        return "or click one of the buttons below to subscribe to the corresponding character"
+    return "or pick characters from the menu below to subscribe to them"
+
+
 def do_art_ping(names: list[str], administrator: bool, slash: bool = False) -> Layout:
     characters, missing_names = _find_characters(names)
 
@@ -65,7 +73,9 @@ def do_art_ping(names: list[str], administrator: bool, slash: bool = False) -> L
     if characters:
         first = characters[0].name
         body.append(_ping(characters))
-        footer.append(f"Want to be pinged for {first}? Use {command_name('addping', slash)} {first}")
+        footer.append(
+            f"Want to be pinged for {first}? Use {command_name('addping', slash)} {first} {_controls_hint(characters)}"
+        )
 
     if missing_names:
         footer.append(_add_character_hint(missing_names[0], administrator, slash))
@@ -74,7 +84,7 @@ def do_art_ping(names: list[str], administrator: bool, slash: bool = False) -> L
         raise CommandError(body[0], layout=Layout((body[0], "\n".join(footer))))
 
     header = "### " + ", ".join(character.name for character in characters)
-    return Layout(("\n".join([header, *body]), "\n".join(footer)))
+    return Layout(("\n".join([header, *body]), "\n".join(footer)), subscribe_view.subscribe_rows(characters))
 
 
 def add_ping(user_id: str, name: str) -> str:

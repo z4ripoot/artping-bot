@@ -70,3 +70,14 @@ class SubscribeSelect(discord.ui.DynamicItem[discord.ui.Select], template=SUBSCR
             ),
             "Something went wrong while subscribing",
         )
+
+
+MAX_SUBSCRIBE_BUTTONS = 5  # One row of buttons; more characters get the dropdown
+
+
+def subscribe_rows(characters: list[Character]) -> tuple[tuple[discord.ui.Item, ...], ...]:
+    if not characters:
+        return ()
+    if len(characters) <= MAX_SUBSCRIBE_BUTTONS:
+        return (tuple(SubscribeButton.for_character(character) for character in characters),)
+    return ((SubscribeSelect.for_characters(characters),),)

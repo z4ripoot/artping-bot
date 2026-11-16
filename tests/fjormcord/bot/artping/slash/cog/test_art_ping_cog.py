@@ -41,7 +41,11 @@ def test_art_ping_pings_subscribers():
     invoke(build_art_ping_command(3), interaction, character="Lucina")
 
     assert interaction.sent == [
-        ("### Lucina\n<@5>\nWant to be pinged for Lucina? Use /addping Lucina", False, ALLOWED_MENTIONS)
+        (
+            "### Lucina\n<@5>\nWant to be pinged for Lucina? Use /addping Lucina or click the button below",
+            False,
+            ALLOWED_MENTIONS,
+        )
     ]
 
 

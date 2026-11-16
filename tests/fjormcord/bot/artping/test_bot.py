@@ -24,7 +24,7 @@ from fjormcord.bot.artping.view.voting_gauntlet_view import TrackButton
 from tests.fakes import FakeClock, button_labels, make_message, text_length, use_settings
 
 # ~artping Lucina, with U1 subscribed
-LUCINA_PING = "### Lucina\n<@1>\nWant to be pinged for Lucina? Use ~addping Lucina"
+LUCINA_PING = "### Lucina\n<@1>\nWant to be pinged for Lucina? Use ~addping Lucina or click the button below"
 
 
 @pytest.fixture
