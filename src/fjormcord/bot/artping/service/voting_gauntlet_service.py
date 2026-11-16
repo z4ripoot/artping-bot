@@ -3,6 +3,7 @@ import logging
 import discord
 
 from fjormcord.bot.artping import config
+from fjormcord.bot.artping.model.voting_gauntlet import Entrant
 from fjormcord.bot.artping.repository import voting_gauntlet_repository
 from fjormcord.bot.artping.util.message_util import log_and_reply
 
@@ -18,8 +19,8 @@ async def send_scores(client: discord.Client) -> str:
     return log_and_reply(await voting_gauntlet.post_scores(client))
 
 
-def start_gauntlet(tournament_id: int):
-    voting_gauntlet_repository.set_running_tournament(tournament_id)
+def start_gauntlet(tournament_id: int, entrants: list[Entrant]):
+    voting_gauntlet_repository.set_running_tournament(tournament_id, entrants)
 
 
 def end_gauntlet():
@@ -31,19 +32,24 @@ def end_gauntlet():
     voting_gauntlet_repository.remove_running_tournament()
 
 
-def get_trackers(tournament_id: int, name: str) -> list[str]:
-    return voting_gauntlet_repository.get_trackers(tournament_id, name)
+def get_trackers(tournament_id: int, slot: int) -> list[str]:
+    return voting_gauntlet_repository.get_trackers(tournament_id, slot)
 
 
-def toggle_tracking(tournament_id: int, user_id: str, name: str, opponent: str) -> str:
+def toggle_tracking(tournament_id: int, user_id: str, slot: int, opponent_slot: int) -> str:
     if voting_gauntlet_repository.get_running_tournament() != tournament_id:
         return MESSAGE_ENDED
 
-    if voting_gauntlet_repository.has_tracker(tournament_id, user_id, name):
-        voting_gauntlet_repository.remove_tracker(tournament_id, user_id, name)
+    name = voting_gauntlet_repository.get_entrant_name(tournament_id, slot)
+    opponent = voting_gauntlet_repository.get_entrant_name(tournament_id, opponent_slot)
+    if name is None or opponent is None:
+        return MESSAGE_ENDED
+
+    if voting_gauntlet_repository.has_tracker(tournament_id, user_id, slot):
+        voting_gauntlet_repository.remove_tracker(tournament_id, user_id, slot)
         return log_and_reply(f"You no longer track {name}")
 
-    switched = voting_gauntlet_repository.has_tracker(tournament_id, user_id, opponent)
-    voting_gauntlet_repository.add_tracker(tournament_id, user_id, name, opponent)
+    switched = voting_gauntlet_repository.has_tracker(tournament_id, user_id, opponent_slot)
+    voting_gauntlet_repository.add_tracker(tournament_id, user_id, slot, opponent_slot)
     instead = f" instead of {opponent}" if switched else ""
     return log_and_reply(f"You now track {name}{instead}. You'll be pinged every hour when {name} is Weaker")

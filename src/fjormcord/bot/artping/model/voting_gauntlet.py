@@ -4,6 +4,7 @@ from datetime import datetime
 
 @dataclass(frozen=True)
 class Entrant:
+    slot: int
     name: str
     score: int | None
     behind: bool

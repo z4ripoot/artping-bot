@@ -5,7 +5,7 @@ from fjormcord.bot.artping.service import voting_gauntlet_service
 from fjormcord.bot.artping.view.voting_gauntlet_view import track_buttons
 from tests.fakes import FakeInteraction, after_restart
 
-MATCHUP = (Entrant("Edelgard", 2, behind=False), Entrant("Dimitri", 1, behind=True))
+MATCHUP = (Entrant(2, "Edelgard", 2, behind=False), Entrant(8, "Dimitri", 1, behind=True))
 
 
 def click(button, user_id=1):
@@ -21,21 +21,21 @@ def test_a_button_per_character_in_the_site_order():
 def test_button_is_rebuilt_from_its_custom_id():
     button = after_restart(track_buttons(112, MATCHUP)[1])
 
-    assert (button.tournament_id, button.name, button.opponent) == (112, "Dimitri", "Edelgard")
+    assert (button.tournament_id, button.slot, button.opponent_slot) == (112, 8, 2)
     assert button.item.label == "Track Dimitri"
 
 
 def test_click_tracks_the_character_and_answers_privately():
-    voting_gauntlet_service.start_gauntlet(112)
+    voting_gauntlet_service.start_gauntlet(112, list(MATCHUP))
 
     sent = click(after_restart(track_buttons(112, MATCHUP)[1]), user_id=7)
 
     assert sent == [("You now track Dimitri. You'll be pinged every hour when Dimitri is Weaker", True, None)]
-    assert voting_gauntlet_service.get_trackers(112, "Dimitri") == ["7"]
+    assert voting_gauntlet_service.get_trackers(112, 8) == ["7"]
 
 
 def test_failed_click_is_answered_privately(monkeypatch, caplog):
-    def failing_toggle_tracking(tournament_id, user_id, name, opponent):
+    def failing_toggle_tracking(tournament_id, user_id, slot, opponent_slot):
         raise RuntimeError("database is locked")
 
     monkeypatch.setattr(voting_gauntlet_service, "toggle_tracking", failing_toggle_tracking)
